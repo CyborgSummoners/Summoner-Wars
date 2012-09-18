@@ -24,7 +24,7 @@ obj/%.o: src/%.cpp
 	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
 
 compiler-demo: $(COMPILER_DIR)summ.yy.cc $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ_compiler.cpp
-	$(CC) -Wall $(COMPILER_DIR)summ_compiler.cpp $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ.yy.cc -o compiler-demo
+	$(CC) -Wall $(COMPILER_DIR)summ_compiler.cpp $(COMPILER_DIR)bytecode.cpp $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ.yy.cc -o compiler-demo
 
 $(COMPILER_DIR)summ.yy.cc: $(COMPILER_DIR)summ.l
 	flex -i -o $(COMPILER_DIR)summ.yy.cc $(COMPILER_DIR)summ.l

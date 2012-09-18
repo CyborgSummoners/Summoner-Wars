@@ -1,7 +1,10 @@
 %lsp-needed
-%baseclass-preinclude <iostream>
+%baseclass-preinclude "semantics.hpp"
 
-%token IDENTIFIER
+%type <typ> type
+%type <exp> constant
+
+%token <name> IDENTIFIER
 %token K_PROCEDURE
 %token K_IS
 %token K_BEGIN
@@ -11,6 +14,9 @@
 %token K_ELSE
 %token K_WHILE
 %token K_LOOP
+
+%token T_INTEGER
+%token T_BOOLEAN
 
 %token OP_ASSIGNMENT
 
@@ -42,6 +48,14 @@
 
 %token K_NULL
 
+%union {
+	std::string* name;
+	type* typ;
+	expression* exp;
+	statement* stmt;
+}
+
+
 %%
 
 start:
@@ -71,10 +85,19 @@ declarations decl {
 ;
 
 decl:
-IDENTIFIER COLON IDENTIFIER {
+IDENTIFIER COLON type {
 	std::cout << "decl -> identifier colon type" << std::endl;
+
+	if(symtab.count(*$1) > 0) { // does the var exist already?
+		std::stringstream ss;
+		ss << "Variable '" << *$1 << "' already declared (on line " << symtab[*$1].decl << ")." << std::endl;
+		error(ss.str().c_str());
+	} else {
+		symtab[*$1] = var(d_loc__.first_line, *$3);
 	}
-;
+	delete $3;
+	delete $1;
+};
 
 proc_body:
 K_BEGIN statements K_END {
@@ -98,8 +121,8 @@ statement {
 ;
 
 statement:
-K_WHILE exp K_LOOP statements K_END K_LOOP {
-	std::cout << "statement -> while exp loop statements end loop" << std::endl;
+K_WHILE exp loop {
+	std::cout << "statement -> while exp loop" << std::endl;
 	}
 | conditional {
 	std::cout << "statement -> conditional" << std::endl;
@@ -112,6 +135,12 @@ K_WHILE exp K_LOOP statements K_END K_LOOP {
 	}
 | K_NULL {
 	std::cout << "statements -> null" << std::endl;
+	}
+;
+
+loop:
+K_LOOP statements K_END K_LOOP {
+	std::cout << "loop -> loop statements end loop" << std::endl;
 	}
 ;
 
@@ -183,12 +212,27 @@ IDENTIFIER {
 
 constant:
 L_TRUE {
-	std::cout << "constant -> TRUE" << std::endl;
+	$$ = new expression(boolean);
+	put_opcode($$->code, PUSH);
+	put_dword($$->code, 1);
 	}
 | L_FALSE {
-	std::cout << "constant -> FALSE" << std::endl;
+	$$ = new expression(boolean);
+	put_opcode($$->code, PUSH);
+	put_dword($$->code, 0);
 	}
 | L_INTEGER {
-	std::cout << "constant -> integer" << std::endl;
+	$$ = new expression(integer);
+	put_opcode($$->code, PUSH);
+	put_dword($$->code, 1); //FIXME proper value
+	}
+;
+
+type:
+T_INTEGER {
+	$$ = new type(integer);
+	}
+| T_BOOLEAN {
+	$$ = new type(boolean);
 	}
 ;

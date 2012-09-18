@@ -5,6 +5,8 @@
 
 // $insert baseclass
 #include "summparsebase.h"
+#include "semantics.hpp"
+#include <map>
 
 
 #undef Parser
@@ -25,6 +27,7 @@ class Parser: public ParserBase
 
     private:
         void error(char const *msg);    // called on (syntax) errors
+        void warning(char const *msg);
         int lex();                      // returns the next token from the
                                         // lexical scanner. 
         void print();                   // use, e.g., d_token, d_loc
@@ -34,12 +37,20 @@ class Parser: public ParserBase
         void errorRecovery();
         int lookup(bool recovery);
         void nextToken();
+
+		std::map<std::string, var> symtab;	// symbol table
 };
 
-inline void Parser::error(char const *msg)
-{
+inline void Parser::error(char const *msg) {
 	std::cerr << d_loc__.first_line << ": " << msg;
 }
+
+inline void Parser::warning(char const *msg) {
+	std::cerr << d_loc__.first_line << ": " << msg;
+}
+
+
+
 
 // $insert lex
 

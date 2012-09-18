@@ -3,6 +3,9 @@
 *.lo
 *.o
 
+# contents of bin in general
+bin/*
+
 # Compiled Dynamic libraries
 *.so
 
@@ -10,3 +13,6 @@
 *.lai
 *.la
 *.a
+
+# executable
+sumwar

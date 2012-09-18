@@ -1,0 +1,4 @@
+procedure test is
+begin
+	null
+end test

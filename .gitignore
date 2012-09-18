@@ -14,5 +14,14 @@ bin/*
 *.la
 *.a
 
-# executable
+# executables
 sumwar
+compiler-demo
+
+# flex-generated lexer
+src/compiler/summ.yy.cc
+
+# bisonc++-generated parser
+parse.cc
+summparse.ih
+summparsebase.h

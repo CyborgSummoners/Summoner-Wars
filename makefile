@@ -15,14 +15,25 @@ OBJS = obj/main.o
 
 PROG = sumwar
 
+COMPILER_DIR = src/compiler/
+
 $(PROG): $(OBJS)
 	$(CC) $(OBJS) -o $(PROG) $(LIBS)
 
 obj/%.o: src/%.cpp
 	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
 
+compiler-demo: $(COMPILER_DIR)summ.yy.cc $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ_compiler.cpp
+	$(CC) -Wall $(COMPILER_DIR)summ_compiler.cpp $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ.yy.cc -o compiler-demo
+
+$(COMPILER_DIR)summ.yy.cc: $(COMPILER_DIR)summ.l
+	flex -i -o $(COMPILER_DIR)summ.yy.cc $(COMPILER_DIR)summ.l
+
+$(COMPILER_DIR)parse.cc: src/compiler/summ.y
+	cd $(COMPILER_DIR) && bisonc++ --filenames=summparse summ.y
+
 all:
 	$(PROG)
 
 clean:
-	$(RM) $(PROG) $(OBJS)
+	$(RM) $(PROG) compiler-demo $(OBJS) $(COMPILER_DIR)*.o $(COMPILER_DIR)summparsebase.h $(COMPILER_DIR)summparse.ih $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ.yy.cc

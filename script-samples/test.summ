@@ -1,4 +1,10 @@
-procedure test is
+procedure counting is
+	i: integer
 begin
-	null
-end test
+	i:=1
+	while i < 101 loop
+		if i % 2 = 0  then
+			shout(i)
+		end if
+	end loop
+end counting

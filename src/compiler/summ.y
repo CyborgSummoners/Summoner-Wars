@@ -3,6 +3,7 @@
 
 %type <typ> type
 %type <exp> constant
+%type <exp> exp
 
 %token <name> IDENTIFIER
 %token K_PROCEDURE
@@ -94,6 +95,7 @@ IDENTIFIER COLON type {
 		error(ss.str().c_str());
 	} else {
 		symtab[*$1] = var(d_loc__.first_line, *$3);
+		std::cout << *$1 << " declared" << std::endl;
 	}
 	delete $3;
 	delete $1;
@@ -162,69 +164,294 @@ proc_call:
 assignment:
 IDENTIFIER OP_ASSIGNMENT exp {
 	std::cout << "assignment -> identifier OP_ASSIGNMENT exp" << std::endl;
+	for(size_t i=0; i<$3->code.size();++i) {
+		$3->code[i].print();
+	}
 }
 ;
 
 exp:
 IDENTIFIER {
 	std::cout << "exp -> identifier" << std::endl;
+
+		if(symtab.count(*$1) > 0) { //does it exist?
+			if(symtab[*$1].read == 0) { //is it read for the first time?
+				symtab[*$1].read = d_loc__.first_line;
+				if(symtab[*$1].read < symtab[*$1].writ) { //was it written?
+					std::stringstream ss;
+					ss << "variable " << *$1 << " doesn't seem to be initialized when first read";
+					warning(ss.str().c_str());
+				}
+			}
+			$$ = new expression(symtab[*$1].typ);
+			$$->code.push_back( codeline("", FETCH, symtab[*$1].num) );
+		} else {
+			std::stringstream ss;
+			ss << "Variable '" << *$1 << "' undeclared." << std::endl;
+			error(ss.str().c_str());
+		}
+		delete $1;
 	}
 | T_OPEN exp T_CLOSE {
 	std::cout << "exp -> ( exp )" << std::endl;
+	$$ = $2;
 	}
 | constant {
 	std::cout << "exp -> constant" << std::endl;
+	$$ = $1;
 	}
 | exp OP_PLUS exp {
 	std::cout << "exp -> exp + exp" << std::endl;
+		//both operands must be integers
+		if($1->typ == $3->typ && $1->typ == integer) {
+			$$ = new expression($1->typ);
+
+			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
+			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+
+			$$->code.push_back( codeline("", ADDI, 0) );
+
+			delete $1;
+			delete $3;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Type mismatch (both operands must be integers)" << std::endl;
+			error(ss.str().c_str());
+			$$ = $1;
+			delete $3;
+		}
 	}
 | exp OP_MINUS exp {
 	std::cout << "exp -> exp - exp" << std::endl;
+
+		//both operands must be integers
+		if($1->typ == $3->typ && $1->typ == integer) {
+			$$ = new expression($1->typ);
+
+			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
+			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+
+			$$->code.push_back( codeline("", SUBI, 0) );
+
+			delete $1;
+			delete $3;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Type mismatch (both operands must be integers)" << std::endl;
+			error(ss.str().c_str());
+			$$ = $1;
+			delete $3;
+		}
 	}
 | exp OP_DIV exp {
-	std::cout << "exp -> exp / exp" << std::endl;
+	std::cout << "exp -> exp div exp" << std::endl;
+
+		//both operands must be integers
+		if($1->typ == $3->typ && $1->typ == integer) {
+			$$ = new expression($1->typ);
+
+			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
+			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+
+			$$->code.push_back( codeline("", DIVI, 0) );
+
+			delete $1;
+			delete $3;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Type mismatch (both operands must be integers)" << std::endl;
+			error(ss.str().c_str());
+			$$ = $1;
+			delete $3;
+		}
 	}
 | exp OP_MOD exp {
-	std::cout << "exp -> exp % exp" << std::endl;
+	std::cout << "exp -> exp mod exp" << std::endl;
+
+		//both operands must be integers
+		if($1->typ == $3->typ && $1->typ == integer) {
+
+			$$ = new expression($1->typ);
+
+			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
+			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+
+			$$->code.push_back( codeline("", MODI, 0) );
+
+			delete $1;
+			delete $3;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Type mismatch (both operands must be integers)" << std::endl;
+			error(ss.str().c_str());
+			$$ = $1;
+			delete $3;
+		}
 	}
 | exp OP_MULTIPLY exp {
 	std::cout << "exp -> exp * exp" << std::endl;
+
+		//both operands must be integers
+		if($1->typ == $3->typ && $1->typ == integer) {
+			$$ = new expression($1->typ);
+
+			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
+			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+
+			$$->code.push_back( codeline("", MULI, 0) );
+
+			delete $1;
+			delete $3;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Type mismatch (both operands must be integers)" << std::endl;
+			error(ss.str().c_str());
+			$$ = $1;
+			delete $3;
+		}
 	}
 | exp OP_AND exp {
 	std::cout << "exp -> exp AND exp" << std::endl;
+
+		//both operands must be booleans
+		if($1->typ == $3->typ && $1->typ == boolean) {
+
+			$$ = new expression($1->typ);
+
+			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
+			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+
+			$$->code.push_back( codeline("", AND, 0) );
+
+			delete $1;
+			delete $3;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Type mismatch (both operands must be booleans)" << std::endl;
+			error(ss.str().c_str());
+			$$ = $1;
+			delete $3;
+		}
 	}
 | exp OP_OR exp {
 	std::cout << "exp -> exp OR exp" << std::endl;
+
+		//both operands must be booleans
+		if($1->typ == $3->typ && $1->typ == boolean) {
+
+			$$ = new expression($1->typ);
+
+			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
+			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+
+			$$->code.push_back( codeline("", OR, 0) );
+
+			delete $1;
+			delete $3;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Type mismatch (both operands must be booleans)" << std::endl;
+			error(ss.str().c_str());
+			$$ = $1;
+			delete $3;
+		}
 	}
 | OP_NOT exp {
 	std::cout << "exp -> NOT exp" << std::endl;
+	$$ = $2;
+	$$->code.push_back( codeline("", NOT, 0) );
 	}
 | exp OP_EQUALITY exp {
 	std::cout << "exp -> exp = exp" << std::endl;
+
+		//operands must be of the same type 
+		if($1->typ == $3->typ) {
+
+			$$ = new expression(boolean);
+
+			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
+			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+
+			$$->code.push_back( codeline("", EQ, 0) );
+
+			delete $1;
+			delete $3;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Type mismatch (operands must be of the same type)" << std::endl;
+			error(ss.str().c_str());
+			$$ = $1;
+			delete $3;
+		}
 	}
 | exp OP_LESS_THAN exp {
 	std::cout << "exp -> exp < exp" << std::endl;
+
+		//both operands must be integers
+		if($1->typ == $3->typ && $1->typ == integer) {
+			$$ = new expression(boolean);
+
+			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
+			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+
+			$$->code.push_back( codeline("", LESS, 0) );
+
+			delete $1;
+			delete $3;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Type mismatch (both operands must be integers)" << std::endl;
+			error(ss.str().c_str());
+			$$ = $1;
+			delete $3;
+		}
 	}
 | exp OP_GREATER_THAN exp {
 	std::cout << "exp -> exp > exp" << std::endl;
+
+		//both operands must be integers
+		if($1->typ == $3->typ && $1->typ == integer) {
+			$$ = new expression(boolean);
+
+			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
+			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+
+			$$->code.push_back( codeline("", GREATER, 0) );
+
+			delete $1;
+			delete $3;
+		}
+		else {
+			std::stringstream ss;
+			ss << "Type mismatch (both operands must be integers)" << std::endl;
+			error(ss.str().c_str());
+			$$ = $1;
+			delete $3;
+		}
 	}
 ;
 
 constant:
 L_TRUE {
 	$$ = new expression(boolean);
-	put_opcode($$->code, PUSH);
-	put_dword($$->code, 1);
+	$$->code.push_back( codeline("", PUSH, 1) );
 	}
 | L_FALSE {
 	$$ = new expression(boolean);
-	put_opcode($$->code, PUSH);
-	put_dword($$->code, 0);
+	$$->code.push_back( codeline("", PUSH, 0) );
 	}
 | L_INTEGER {
 	$$ = new expression(integer);
-	put_opcode($$->code, PUSH);
-	put_dword($$->code, 1); //FIXME proper value
+	$$->code.push_back( codeline("", PUSH, 5) ); //FIXME proper value
 	}
 ;
 

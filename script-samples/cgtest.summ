@@ -3,9 +3,6 @@ procedure counting is
 	b: integer
 	c: boolean
 begin
-	i:=1
-	while i < 101 loop
-		i:=i+1
-	end loop
+	i:=5+5*5
 end counting
 

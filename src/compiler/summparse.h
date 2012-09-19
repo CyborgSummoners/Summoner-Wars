@@ -8,6 +8,7 @@
 #include "summparsebase.h"
 #include "semantics.hpp"
 #include <map>
+#include <stdint.h>
 
 
 #undef Parser
@@ -40,6 +41,29 @@ class Parser: public ParserBase
         void nextToken();
 
 		std::map<std::string, var> symtab;	// symbol table
+
+		uint32_t gen_label() {
+			static int label = 0;
+			return ++label;
+		}
+
+		uint32_t get_value(const std::string& str) {
+			//maxint: 4,294,967,295
+			static uint32_t top=429496729; 	//4,294,967,295 / 10
+
+			uint32_t Result=0;
+			bool warn=false;
+
+			for(size_t i=0; i<str.size(); ++i) {
+				if( !warn && (Result>top || ( Result==top && (str[i]-48)>5) ) ) {
+					warning("overflow: numeric constant too large to be represented in a four byte unsigned integer.");
+					warn=true;
+				}
+				Result=Result*10 + (str[i]-48);
+			}
+
+			return Result;
+		}
 };
 
 inline void Parser::error(char const *msg) {

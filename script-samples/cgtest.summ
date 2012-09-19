@@ -1,8 +1,14 @@
 procedure counting is
 	i: integer
-	b: integer
-	c: boolean
+	b: boolean
 begin
-	i:=5+5*5
+	i:=23
+	while i<100 loop
+		i:=i+1 + 64 + (i mod 2)
+		
+		if i = 6 then
+			b := true and false
+		end if
+	end loop
 end counting
 

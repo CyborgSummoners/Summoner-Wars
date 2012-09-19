@@ -5,6 +5,15 @@
 %type <exp> constant
 %type <exp> exp
 
+%type <stmt> assignment
+%type <stmt> conditional
+%type <stmt> loop
+%type <stmt> proc_call
+%type <stmt> statement
+%type <stmt> statements
+%type <stmt> proc_body
+
+
 %token <name> IDENTIFIER
 %token K_PROCEDURE
 %token K_IS
@@ -45,7 +54,7 @@
 %left OP_DIV
 %left OP_MOD
 
-%token L_INTEGER
+%token<name> L_INTEGER
 
 %token K_NULL
 
@@ -61,19 +70,21 @@
 
 start:
 procedure {
-	std::cout << "start -> procedure" << std::endl;
 	}
 ;
 
 procedure:
 signature declarations proc_body {
-	std::cout << "procedure -> signature proc_body" << std::endl;
+	for(size_t i=0; i<$3->code.size(); ++i) {
+		$3->code[i].print();
+	}
+
+	delete $3;
 	}
 ;
 
 signature:
 K_PROCEDURE IDENTIFIER K_IS {
-	std::cout << "signature -> K_PROCEDURE IDENTIFIER K_IS" << std::endl;
 	}
 ;
 
@@ -81,14 +92,11 @@ declarations:
 //epszilon
 |
 declarations decl {
-	std::cout << "declarations -> declarations decl" << std::endl;
 	}
 ;
 
 decl:
 IDENTIFIER COLON type {
-	std::cout << "decl -> identifier colon type" << std::endl;
-
 	if(symtab.count(*$1) > 0) { // does the var exist already?
 		std::stringstream ss;
 		ss << "Variable '" << *$1 << "' already declared (on line " << symtab[*$1].decl << ")." << std::endl;
@@ -103,77 +111,145 @@ IDENTIFIER COLON type {
 
 proc_body:
 K_BEGIN statements K_END {
-	std::cout << "proc_body -> K_BEGIN K_NULL K_END" << std::endl;
+	$$ = $2;
 	}
 |
 K_BEGIN statements K_END IDENTIFIER {
-	std::cout << "proc_body -> K_BEGIN K_NULL K_END IDENTIFIER" << std::endl;
+	$$ = $2;	
 	}
 ;
 
 
 statements:
 statements statement {
-	std::cout << "statements -> statements statement" << std::endl;
+	$$ = $1;
+	$$->code.insert( $$->code.end(), $2->code.begin(), $2->code.end() );
 	}
 |
 statement {
-	std::cout << "statements -> statement" << std::endl;
+	$$ = $1;
 	}
 ;
 
 statement:
-K_WHILE exp loop {
-	std::cout << "statement -> while exp loop" << std::endl;
+loop {
+	$$ = $1;
 	}
 | conditional {
-	std::cout << "statement -> conditional" << std::endl;
+	$$ = $1;
 	}
 | proc_call {
-	std::cout << "statement -> proc_call" << std::endl;
+	$$ = $1;
 	}
 | assignment {
-	std::cout << "statements -> assignment" << std::endl;
+	$$ = $1;
 	}
 | K_NULL {
-	std::cout << "statements -> null" << std::endl;
+	$$ = new statement();
+	$$->code.push_back( codeline(NOP, 0) );
 	}
 ;
 
 loop:
-K_LOOP statements K_END K_LOOP {
-	std::cout << "loop -> loop statements end loop" << std::endl;
+K_WHILE exp K_LOOP statements K_END K_LOOP {
+	$$ = new statement();
+
+	if($2->typ != boolean) {
+		error("The condition must be a boolean expression");
+	}
+	else {
+		uint32_t start_label = gen_label();
+		uint32_t end_label = gen_label();
+
+		$$->code.push_back( codeline(NOP, 0, start_label) );
+		$$->code.insert( $$->code.end(), $2->code.begin(), $2->code.end() );
+		$$->code.push_back( codeline(JMPFALSE, end_label) );	// if condition is NOT true, we jump to the end.
+		$$->code.insert( $$->code.end(), $4->code.begin(), $4->code.end() );  //loop body
+		$$->code.push_back( codeline(JMP, start_label) );	//then jump back to the start
+		$$->code.push_back( codeline(NOP, 0, end_label) );
+	}
+	
+	delete $2;
+	delete $4;
 	}
 ;
 
 conditional:
 K_IF exp K_THEN statements K_END K_IF {
-	std::cout << "conditional -> if exp then statements end if" << std::endl;
+	$$ = new statement();
+
+	if($2->typ != boolean) {
+		error("The condition must be a boolean expression");
+	}
+	else {
+		uint32_t label = gen_label();
+
+		$$->code.insert( $$->code.begin(), $2->code.begin(), $2->code.end() );	//feltétel
+		$$->code.push_back( codeline(JMPFALSE, label) );	// if condition is NOT true, we jump to the end.
+		$$->code.insert( $$->code.end(), $4->code.begin(), $4->code.end() );
+		$$->code.push_back( codeline(NOP, 0, label) );
+	}
+
+	delete $2;
+	delete $4;
 	}
 | K_IF exp K_THEN statements K_ELSE statements K_END K_IF {
-	std::cout << "conditional -> if exp then statements else statements end if" << std::endl;
+	if($2->typ != boolean) {
+		error("The condition must be a boolean expression");
+	}
+	else {
+		uint32_t else_label = gen_label();
+		uint32_t end_label = gen_label();
+
+		$$->code.insert( $$->code.begin(), $2->code.begin(), $2->code.end() );	//feltétel
+		$$->code.push_back( codeline(JMPFALSE, else_label) );	// if condition is NOT true, we jump to the else branch.
+		$$->code.insert( $$->code.end(), $4->code.begin(), $4->code.end() ); // true branch
+		$$->code.push_back( codeline(JMP, end_label) );	//when finished with the branch, we jump to the end.
+		$$->code.push_back( codeline(NOP, 0, else_label) );
+		$$->code.insert( $$->code.end(), $6->code.begin(), $6->code.end() );
+		$$->code.push_back( codeline(NOP, 0, end_label) );
+	}
+
+	delete $2;
+	delete $4;
+	delete $6;
 	}
 ;
 
 proc_call:
 	IDENTIFIER T_OPEN exp T_CLOSE {
-		std::cout << "proc_call -> identifier(exp)" << std::endl;
+		$$ = new statement();
+		$$->code.push_back( codeline(NOP, 0) );
 	}
 ;
 
 assignment:
 IDENTIFIER OP_ASSIGNMENT exp {
-	std::cout << "assignment -> identifier OP_ASSIGNMENT exp" << std::endl;
-	for(size_t i=0; i<$3->code.size();++i) {
-		$3->code[i].print();
+	if(symtab.count(*$1) > 0)  { //does the variable exist?	
+		if(symtab[*$1].typ == $3->typ ) { //type matches?
+			symtab[*$1].writ = d_loc__.first_line; // mark as written into
+
+			$$ = new statement();
+			$$->code = $3->code;
+			$$->code.push_back( codeline(STORE_X, symtab[*$1].num) );
+		}
+		else {
+			error("Type mismatch (both sides of the assignment must have the same type)");
+		}
 	}
+	else {
+		std::stringstream ss;
+		ss << "Variable '" << *$1 << "' undeclared." << std::endl;
+		error(ss.str().c_str());
+	}
+
+	delete $1;
+	delete $3;
 }
 ;
 
 exp:
 IDENTIFIER {
-	std::cout << "exp -> identifier" << std::endl;
-
 		if(symtab.count(*$1) > 0) { //does it exist?
 			if(symtab[*$1].read == 0) { //is it read for the first time?
 				symtab[*$1].read = d_loc__.first_line;
@@ -184,8 +260,9 @@ IDENTIFIER {
 				}
 			}
 			$$ = new expression(symtab[*$1].typ);
-			$$->code.push_back( codeline("", FETCH, symtab[*$1].num) );
-		} else {
+			$$->code.push_back( codeline(FETCH_X, symtab[*$1].num) );
+		}
+		else {
 			std::stringstream ss;
 			ss << "Variable '" << *$1 << "' undeclared." << std::endl;
 			error(ss.str().c_str());
@@ -193,15 +270,12 @@ IDENTIFIER {
 		delete $1;
 	}
 | T_OPEN exp T_CLOSE {
-	std::cout << "exp -> ( exp )" << std::endl;
 	$$ = $2;
 	}
 | constant {
-	std::cout << "exp -> constant" << std::endl;
 	$$ = $1;
 	}
 | exp OP_PLUS exp {
-	std::cout << "exp -> exp + exp" << std::endl;
 		//both operands must be integers
 		if($1->typ == $3->typ && $1->typ == integer) {
 			$$ = new expression($1->typ);
@@ -209,7 +283,7 @@ IDENTIFIER {
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
 			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
 
-			$$->code.push_back( codeline("", ADDI, 0) );
+			$$->code.push_back( codeline(ADDI, 0) );
 
 			delete $1;
 			delete $3;
@@ -223,7 +297,6 @@ IDENTIFIER {
 		}
 	}
 | exp OP_MINUS exp {
-	std::cout << "exp -> exp - exp" << std::endl;
 
 		//both operands must be integers
 		if($1->typ == $3->typ && $1->typ == integer) {
@@ -232,7 +305,7 @@ IDENTIFIER {
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
 			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
 
-			$$->code.push_back( codeline("", SUBI, 0) );
+			$$->code.push_back( codeline(SUBI, 0) );
 
 			delete $1;
 			delete $3;
@@ -246,7 +319,6 @@ IDENTIFIER {
 		}
 	}
 | exp OP_DIV exp {
-	std::cout << "exp -> exp div exp" << std::endl;
 
 		//both operands must be integers
 		if($1->typ == $3->typ && $1->typ == integer) {
@@ -255,7 +327,7 @@ IDENTIFIER {
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
 			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
 
-			$$->code.push_back( codeline("", DIVI, 0) );
+			$$->code.push_back( codeline(DIVI, 0) );
 
 			delete $1;
 			delete $3;
@@ -269,7 +341,6 @@ IDENTIFIER {
 		}
 	}
 | exp OP_MOD exp {
-	std::cout << "exp -> exp mod exp" << std::endl;
 
 		//both operands must be integers
 		if($1->typ == $3->typ && $1->typ == integer) {
@@ -279,7 +350,7 @@ IDENTIFIER {
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
 			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
 
-			$$->code.push_back( codeline("", MODI, 0) );
+			$$->code.push_back( codeline(MODI, 0) );
 
 			delete $1;
 			delete $3;
@@ -293,7 +364,6 @@ IDENTIFIER {
 		}
 	}
 | exp OP_MULTIPLY exp {
-	std::cout << "exp -> exp * exp" << std::endl;
 
 		//both operands must be integers
 		if($1->typ == $3->typ && $1->typ == integer) {
@@ -302,7 +372,7 @@ IDENTIFIER {
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
 			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
 
-			$$->code.push_back( codeline("", MULI, 0) );
+			$$->code.push_back( codeline(MULI, 0) );
 
 			delete $1;
 			delete $3;
@@ -316,7 +386,6 @@ IDENTIFIER {
 		}
 	}
 | exp OP_AND exp {
-	std::cout << "exp -> exp AND exp" << std::endl;
 
 		//both operands must be booleans
 		if($1->typ == $3->typ && $1->typ == boolean) {
@@ -326,7 +395,7 @@ IDENTIFIER {
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
 			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
 
-			$$->code.push_back( codeline("", AND, 0) );
+			$$->code.push_back( codeline(AND, 0) );
 
 			delete $1;
 			delete $3;
@@ -340,7 +409,6 @@ IDENTIFIER {
 		}
 	}
 | exp OP_OR exp {
-	std::cout << "exp -> exp OR exp" << std::endl;
 
 		//both operands must be booleans
 		if($1->typ == $3->typ && $1->typ == boolean) {
@@ -350,7 +418,7 @@ IDENTIFIER {
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
 			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
 
-			$$->code.push_back( codeline("", OR, 0) );
+			$$->code.push_back( codeline(OR, 0) );
 
 			delete $1;
 			delete $3;
@@ -364,12 +432,10 @@ IDENTIFIER {
 		}
 	}
 | OP_NOT exp {
-	std::cout << "exp -> NOT exp" << std::endl;
 	$$ = $2;
-	$$->code.push_back( codeline("", NOT, 0) );
+	$$->code.push_back( codeline(NOT, 0) );
 	}
 | exp OP_EQUALITY exp {
-	std::cout << "exp -> exp = exp" << std::endl;
 
 		//operands must be of the same type 
 		if($1->typ == $3->typ) {
@@ -379,7 +445,7 @@ IDENTIFIER {
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
 			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
 
-			$$->code.push_back( codeline("", EQ, 0) );
+			$$->code.push_back( codeline(EQ, 0) );
 
 			delete $1;
 			delete $3;
@@ -393,7 +459,6 @@ IDENTIFIER {
 		}
 	}
 | exp OP_LESS_THAN exp {
-	std::cout << "exp -> exp < exp" << std::endl;
 
 		//both operands must be integers
 		if($1->typ == $3->typ && $1->typ == integer) {
@@ -402,7 +467,7 @@ IDENTIFIER {
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
 			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
 
-			$$->code.push_back( codeline("", LESS, 0) );
+			$$->code.push_back( codeline(LESS, 0) );
 
 			delete $1;
 			delete $3;
@@ -416,7 +481,6 @@ IDENTIFIER {
 		}
 	}
 | exp OP_GREATER_THAN exp {
-	std::cout << "exp -> exp > exp" << std::endl;
 
 		//both operands must be integers
 		if($1->typ == $3->typ && $1->typ == integer) {
@@ -425,7 +489,7 @@ IDENTIFIER {
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
 			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
 
-			$$->code.push_back( codeline("", GREATER, 0) );
+			$$->code.push_back( codeline(GREATER, 0) );
 
 			delete $1;
 			delete $3;
@@ -443,15 +507,15 @@ IDENTIFIER {
 constant:
 L_TRUE {
 	$$ = new expression(boolean);
-	$$->code.push_back( codeline("", PUSH, 1) );
+	$$->code.push_back( codeline(PUSH, 1) );
 	}
 | L_FALSE {
 	$$ = new expression(boolean);
-	$$->code.push_back( codeline("", PUSH, 0) );
+	$$->code.push_back( codeline(PUSH, 0) );
 	}
 | L_INTEGER {
 	$$ = new expression(integer);
-	$$->code.push_back( codeline("", PUSH, 5) ); //FIXME proper value
+	$$->code.push_back( codeline(PUSH, get_value(*$1)) );
 	}
 ;
 

@@ -9,6 +9,8 @@
 namespace bytecode {
 
 	enum Instruction {
+		NOP = 0,
+	
 		// stack ops
 		PUSH = 1,     // X, pushes a (literal) value onto the stack
 		DROP,         // pops a value and discards it
@@ -18,6 +20,8 @@ namespace bytecode {
 		// mem ops
 		FETCH = 20,  // pops a value, which is an address. pushes the value of that address.
 		STORE,       // pops a value (address), then pops another. The second value is stored at the first.
+		FETCH_X,     // X, an address, pushes the value of X.
+		STORE_X,     // X, pops a value, which is stores @X.
 
 		// comparisons
 		CMP = 30,     // pops two values, subtracts the second from the first, and pushes the result.
@@ -28,7 +32,7 @@ namespace bytecode {
 
 		// control flow
 		JMP = 40,     // X, jumps to argument (line num)
-		JMPTRUE,      // X, jump if true. pops a value. If it's > 0, then jumps to argument
+		JMPTRUE,      // X, jump if true. pops a value. If it's != 0, then jumps to argument
 		JMPFALSE,     // X, jump if false. pops a value. if it's = 0, then jumps to argument
 		CALL,         // X, pushes the current line number, then pushes the current routine number. Then yields control to X, which is a routine number.
 		RET,          // pops a value, which is a routine number, then another, which is a line number in that routine. control yielded.
@@ -47,14 +51,14 @@ namespace bytecode {
 	}; // MUST NOT exceed 256
 
 	struct codeline {
-		std::string label;
+		uint32_t label;
 		Instruction opcode;
 		uint32_t argument;
 
-		codeline(std::string label, Instruction opcode, uint32_t argument) : label(label), opcode(opcode), argument(argument) {}
+		codeline(Instruction opcode, uint32_t argument, uint32_t label=0) : label(label), opcode(opcode), argument(argument) {}
 
 		void print() {
-			std::cout << opcode << " " << argument << std::endl;
+			std::cout << label << "\t" << opcode << "\t" << argument << std::endl;
 		}
 	};
 }

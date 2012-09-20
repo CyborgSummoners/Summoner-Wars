@@ -12,6 +12,9 @@
 %type <stmt> statement
 %type <stmt> statements
 %type <stmt> proc_body
+%type <stmt> decl
+%type <stmt> declarations
+%type <stmt> procedure
 
 
 %token <name> IDENTIFIER
@@ -76,35 +79,49 @@ procedure
 
 procedure:
 signature declarations proc_body {
-	for(size_t i=0; i<$3->code.size(); ++i) {
-		$3->code[i].print();
+	$$ = $2;
+	$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );
+
+	for(size_t i=0; i<$$->code.size(); ++i) {
+		$$->code[i].print();
 	}
+	delete $2;
 	delete $3;
 	}
 ;
 
 signature:
 K_PROCEDURE IDENTIFIER K_IS {
+	delete $2;
 	}
 ;
 
 declarations:
 //epszilon
+	{
+		$$ = new statement();
+	}
 |
 declarations decl {
+	$$ = $1;
+	$$->code.insert( $$->code.end(), $2->code.begin(), $2->code.end() );
+	delete $2;
 	}
 ;
 
 decl:
-IDENTIFIER COLON type {
+IDENTIFIER COLON type SEMICOLON {
+	$$ = new statement();
+
 	if(symtab.count(*$1) > 0) { // does the var exist already?
 		std::stringstream ss;
 		ss << "Variable '" << *$1 << "' already declared (on line " << symtab[*$1].decl << ")." << std::endl;
 		error(ss.str().c_str());
 	} else {
 		symtab.insert( make_pair(*$1, var(d_loc__.first_line, *$3)) );
-		std::cout << *$1 << " declared" << std::endl;
+		$$->code.push_back( codeline(ISP, 1) );	// reserve a single space for the variable. Great Big Idea takes care of the rest.
 	}
+
 	delete $3;
 	delete $1;
 };
@@ -116,6 +133,7 @@ K_BEGIN statements K_END SEMICOLON {
 |
 K_BEGIN statements K_END IDENTIFIER SEMICOLON {
 	$$ = $2;
+	delete $4;
 	}
 ;
 

@@ -46,6 +46,7 @@ not                     return Parser::OP_NOT;
 \*                      return Parser::OP_MULTIPLY;
 div                     return Parser::OP_DIV;
 mod                     return Parser::OP_MOD;
+&                       return Parser::OP_CONCAT;
 
 [a-zA-Z][a-zA-Z0-9_]*   return Parser::IDENTIFIER;
 

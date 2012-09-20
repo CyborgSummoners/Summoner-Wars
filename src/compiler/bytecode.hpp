@@ -37,7 +37,7 @@ namespace bytecode {
 		CALL,         // X, pushes the current line number, then pushes the current routine number. Then yields control to X, which is a routine number.
 		RET,          // pops a value, which is a routine number, then another, which is a line number in that routine. control yielded.
 
-		// int ops
+		// int ops - but these will be used for other types as well if the Great Big Idea is implemented.
 		ADDI = 60,
 		SUBI,
 		MULI,
@@ -47,8 +47,11 @@ namespace bytecode {
 		// boolean ops
 		AND = 80,
 		OR,
-		NOT
-	}; // MUST NOT exceed 256
+		NOT,
+
+		// meta
+		DELAY = 200   // X, the interpreter releases the puppet for a delay of X ticks.
+	}; // MUST NOT exceed 255
 
 	struct codeline {
 		uint32_t label;
@@ -58,7 +61,8 @@ namespace bytecode {
 		codeline(Instruction opcode, uint32_t argument, uint32_t label=0) : label(label), opcode(opcode), argument(argument) {}
 
 		void print() {
-			std::cout << label << "\t" << opcode << "\t" << argument << std::endl;
+			if(label != 0) std::cout << label << ":";
+			std::cout << "\t" << opcode << "\t" << argument << std::endl;
 		}
 	};
 }

@@ -48,6 +48,8 @@
 %left OP_LESS_THAN
 %left OP_GREATER_THAN
 
+%left OP_CONCAT
+
 %left OP_PLUS
 %left OP_MINUS
 %left OP_MULTIPLY
@@ -69,8 +71,7 @@
 %%
 
 start:
-procedure {
-	}
+procedure
 ;
 
 procedure:
@@ -78,7 +79,6 @@ signature declarations proc_body {
 	for(size_t i=0; i<$3->code.size(); ++i) {
 		$3->code[i].print();
 	}
-
 	delete $3;
 	}
 ;
@@ -110,25 +110,28 @@ IDENTIFIER COLON type {
 };
 
 proc_body:
-K_BEGIN statements K_END {
+K_BEGIN statements K_END SEMICOLON {
 	$$ = $2;
 	}
 |
-K_BEGIN statements K_END IDENTIFIER {
-	$$ = $2;	
+K_BEGIN statements K_END IDENTIFIER SEMICOLON {
+	$$ = $2;
 	}
 ;
 
 
 statements:
-statements statement {
+statements statement SEMICOLON {
 	$$ = $1;
 	$$->code.insert( $$->code.end(), $2->code.begin(), $2->code.end() );
 	}
-|
-statement {
+| statement SEMICOLON {
 	$$ = $1;
 	}
+| error SEMICOLON {
+	std::cout << "statements -> error semicolon" << std::endl;
+	$$ = new statement();
+}
 ;
 
 statement:
@@ -246,6 +249,7 @@ IDENTIFIER OP_ASSIGNMENT exp {
 	delete $1;
 	delete $3;
 }
+
 ;
 
 exp:

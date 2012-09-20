@@ -32,6 +32,8 @@ and                     return Parser::OP_AND;
 or                      return Parser::OP_OR;
 not                     return Parser::OP_NOT;
 
+do                      return Parser::K_DO;
+
 ;                       return Parser::SEMICOLON;
 :                       return Parser::COLON;
 ,                       return Parser::COMMA;

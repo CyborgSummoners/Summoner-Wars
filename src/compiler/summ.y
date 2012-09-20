@@ -15,6 +15,8 @@
 %type <stmt> decl
 %type <stmt> declarations
 %type <stmt> procedure
+%type <stmt> exp_list
+%type <stmt> arguments
 
 
 %token <name> IDENTIFIER
@@ -27,6 +29,7 @@
 %token K_ELSE
 %token K_WHILE
 %token K_LOOP
+%token K_DO
 
 %token T_INTEGER
 %token T_BOOLEAN
@@ -43,21 +46,15 @@
 %token L_TRUE
 %token L_FALSE
 
-%left OP_AND
-%left OP_OR
+%left OP_AND OP_OR
 %right OP_NOT
 
-%left OP_EQUALITY
-%left OP_LESS_THAN
-%left OP_GREATER_THAN
+%left OP_EQUALITY OP_LESS_THAN OP_GREATER_THAN
 
 %left OP_CONCAT
 
-%left OP_PLUS
-%left OP_MINUS
-%left OP_MULTIPLY
-%left OP_DIV
-%left OP_MOD
+%left OP_PLUS OP_MINUS
+%left OP_MULTIPLY OP_DIV OP_MOD
 
 %token<name> L_INTEGER
 
@@ -238,9 +235,34 @@ K_IF exp K_THEN statements K_END K_IF {
 ;
 
 proc_call:
-	IDENTIFIER T_OPEN exp T_CLOSE {
-		$$ = new statement();
-		$$->code.push_back( codeline(NOP, 0) );
+	K_DO IDENTIFIER arguments {
+		$$ = $3;
+		$$->code.push_back( codeline(CALL, 0, 0, subprogram::name(*$2) ) );
+		delete $2;
+	}
+;
+
+arguments:
+	//epszilon
+	{
+	$$ = new statement();
+	}
+| T_OPEN exp_list T_CLOSE {
+	$$ = new statement();
+	$$->code.insert($$->code.begin(), $2->code.begin(), $2->code.end());
+}
+;
+
+exp_list:
+exp_list COMMA exp {
+	$$ = $1;
+	$$->code.insert($$->code.begin(), $3->code.begin(), $3->code.end());
+	delete $3;
+	}
+| exp {
+	$$ = new statement();
+	$$->code = $1->code;
+	delete $1;
 	}
 ;
 
@@ -267,7 +289,6 @@ IDENTIFIER OP_ASSIGNMENT exp {
 	delete $1;
 	delete $3;
 }
-
 ;
 
 exp:

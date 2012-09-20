@@ -6,5 +6,8 @@ begin
 	if i = 6 then
 		b := i = 5;
 	end if;
+	do move;
+	do print(b);
+	do print((5+6)*8);
 end counting;
 

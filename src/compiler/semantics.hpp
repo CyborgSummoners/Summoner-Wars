@@ -1,11 +1,12 @@
 #ifndef SEMANTICS_HPP
 #define SEMANTICS_HPP 1
 
-#include <vector>
 #include <iostream>
 #include <sstream>
 #include "bytecode.hpp"
 #include <vector>
+#include <string>
+#include <cctype>
 
 using namespace bytecode;
 
@@ -26,6 +27,14 @@ struct var {
 	void numgen() {
 		static int last = 0;
 		num = last++;
+	}
+};
+
+struct subprogram {
+	static std::string name(std::string str) {
+		if( str.size() > 15 ) str.resize(15);
+		for(size_t i=0; i<str.length(); ++i) str[i] = toupper(str[i]);
+		return str;
 	}
 };
 

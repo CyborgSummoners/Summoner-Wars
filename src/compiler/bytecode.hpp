@@ -37,7 +37,7 @@ namespace bytecode {
 		JMP = 40,     // X, jumps to argument (line num)
 		JMPTRUE,      // X, jump if true. pops a value. If it's != 0, then jumps to argument
 		JMPFALSE,     // X, jump if false. pops a value. if it's = 0, then jumps to argument
-		CALL,         // X, pushes the current line number, then pushes the current routine number. Then yields control to X, which is a routine number.
+		CALL,         // pushes the current line number, then pushes the current routine number. Then yields control to the procedure specified by the followup string.
 		RET,          // pops a value, which is a routine number, then another, which is a line number in that routine. control yielded.
 
 		// int ops - but these will be used for other types as well if the Great Big Idea is implemented.
@@ -60,12 +60,16 @@ namespace bytecode {
 		uint32_t label;
 		Instruction opcode;
 		uint32_t argument;
+		std::string followup;
 
-		codeline(Instruction opcode, uint32_t argument, uint32_t label=0) : label(label), opcode(opcode), argument(argument) {}
+		codeline(Instruction opcode, uint32_t argument, uint32_t label=0, std::string followup="")
+			: label(label), opcode(opcode), argument(argument), followup(followup) {}
 
 		void print() {
 			if(label != 0) std::cout << label << ":";
-			std::cout << "\t" << opcode << "\t" << argument << std::endl;
+			std::cout << "\t" << opcode << "\t" << argument;
+			if(followup.length() > 0) std::cout << " '" << followup << "'";
+			std::cout << std::endl;
 		}
 	};
 }

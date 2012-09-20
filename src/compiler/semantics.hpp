@@ -25,8 +25,7 @@ struct var {
 
 	void numgen() {
 		static int last = 0;
-		num = last;
-		++last;
+		num = last++;
 	}
 };
 

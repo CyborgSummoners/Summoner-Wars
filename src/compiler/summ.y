@@ -102,7 +102,7 @@ IDENTIFIER COLON type {
 		ss << "Variable '" << *$1 << "' already declared (on line " << symtab[*$1].decl << ")." << std::endl;
 		error(ss.str().c_str());
 	} else {
-		symtab[*$1] = var(d_loc__.first_line, *$3);
+		symtab.insert( make_pair(*$1, var(d_loc__.first_line, *$3)) );
 		std::cout << *$1 << " declared" << std::endl;
 	}
 	delete $3;

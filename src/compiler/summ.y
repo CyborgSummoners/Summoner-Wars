@@ -1,5 +1,5 @@
 %lsp-needed
-%baseclass-preinclude "semantics.hpp"
+%baseclass-preinclude "compiler.hpp"
 
 %type <typ> type
 %type <exp> constant
@@ -78,7 +78,7 @@ procedure:
 K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
 	if(*$2 != *$6) {
 		std::stringstream ss;
-		ss << "Name mismatch. Procedure declared as '" << *$2 << "' ends as '" << *$6 << "'";
+		ss << "Name mismatch. Procedure declared as '" << subprogram::normalize_name(*$2) << "' ends as '" << subprogram::normalize_name(*$6) << "'";
 		error(ss.str().c_str());
 	}
 	else {
@@ -86,17 +86,10 @@ K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
 		$$->code.insert( $$->code.end(), $5->code.begin(), $5->code.end() );
 
 		second_pass($$->code);
-		for(size_t i=0; i<$$->code.size(); ++i) {
-			$$->code[i].print();
-		}
 
-		size_t len;
-		unsigned char* code = assemble($$->code, len);
-		for(size_t i=0; i<len; ++i) {
-			std::cout << (int)code[i] << " ";
-		}
-		std::cout << std::endl;
-		std::cout << "len: " << len<< std::endl;
+		subprogram proc = assemble($$->code);
+		proc.set_name(*$2);
+		subprograms.push_back(proc);
 	}
 
 	delete $2;
@@ -244,7 +237,7 @@ K_IF exp K_THEN statements K_END K_IF {
 proc_call:
 	K_DO IDENTIFIER arguments {
 		$$ = $3;
-		$$->code.push_back( codeline(CALL, 0, 0, subprogram::name(*$2) ) );
+		$$->code.push_back( codeline(CALL, 0, 0, subprogram::normalize_name(*$2) ) );
 		delete $2;
 	}
 ;

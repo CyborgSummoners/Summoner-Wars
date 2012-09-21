@@ -7,6 +7,7 @@
 #include <map>
 
 namespace bytecode {
+	typedef unsigned char byte;
 
 	enum Instruction {
 		NOP = 0,
@@ -58,6 +59,24 @@ namespace bytecode {
 
 	bool has_argument(Instruction i);
 	bool has_followup(Instruction i);
+
+
+	class subprogram {
+		public:
+			static std::string normalize_name(std::string str);
+
+		private:
+			std::string name;
+
+		public:
+			byte* code;
+			size_t len;
+
+		subprogram(std::string name, byte* code, size_t len);
+
+		void set_name(const std::string& str);
+		std::string get_name() const;
+	};
 
 
 	struct codeline {

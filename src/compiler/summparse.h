@@ -5,8 +5,9 @@
 #define Parser_h_included
 
 // $insert baseclass
+#include "../bytecode.hpp"
 #include "summparsebase.h"
-#include "semantics.hpp"
+#include "compiler.hpp"
 #include <map>
 #include <stdint.h>
 
@@ -19,10 +20,11 @@ class Parser: public ParserBase
 {
 	private:
 		yyFlexLexer* lexer;
+	public:
+		std::vector<bytecode::subprogram> subprograms;
 
 	public:
 		Parser(yyFlexLexer* lexer) : lexer(lexer){}
-
 
     public:
         int parse();
@@ -67,7 +69,7 @@ class Parser: public ParserBase
 
 	protected:
 		void second_pass(std::vector<codeline>& code);
-		unsigned char* assemble(std::vector<codeline>& code, size_t& length);
+		subprogram assemble(std::vector<codeline>& code);
 };
 
 inline void Parser::error(char const *msg) {

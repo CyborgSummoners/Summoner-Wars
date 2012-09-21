@@ -1,8 +1,8 @@
+#include <FlexLexer.h>
+#include "../bytecode.hpp"
+#include "summparse.h"
 #include <iostream>
 #include <fstream>
-#include "summparse.h"
-#include "bytecode.hpp"
-#include <FlexLexer.h>
 
 int Parser::lex() {
 	int ret = lexer->yylex();
@@ -39,7 +39,7 @@ void Parser::second_pass(std::vector<codeline>& code) {
 }
 
 
-unsigned char* Parser::assemble(std::vector<codeline>& code, size_t& length) {
+subprogram Parser::assemble(std::vector<codeline>& code) {
 	// build labelmap
 	std::map<uint32_t, int> labelmap;
 	for(size_t i=0; i<code.size(); ++i) {
@@ -47,7 +47,7 @@ unsigned char* Parser::assemble(std::vector<codeline>& code, size_t& length) {
 	}
 
 	// count length (in bytes), and also replace jump <label>s with jump <line_no>s
-	length=0;
+	size_t length=0;
 	for(size_t i=0; i<code.size(); ++i) {
 		if(code[i].opcode >= JMP && code[i].opcode <=JMPFALSE) {
 			code[i].argument = labelmap[static_cast<uint32_t>(code[i].argument)];
@@ -60,7 +60,7 @@ unsigned char* Parser::assemble(std::vector<codeline>& code, size_t& length) {
 		}
 	}
 
-	unsigned char* Result = new unsigned char[length];
+	byte* Result = new byte[length];
 	for(size_t i=0, len=0; i<code.size(); ++i) {
 		if( code[i].opcode == NOP && code[i].label==0 ) continue;	//cull labelless NOPs
 
@@ -83,14 +83,6 @@ unsigned char* Parser::assemble(std::vector<codeline>& code, size_t& length) {
 		};
 	}
 
-	return Result;
+	return subprogram("", Result, length);
 }
 
-
-int main() {
-	std::ifstream source("script-samples/cgtest.summ");
-	Parser parser(new yyFlexLexer(&source, &std::cout));
-	bool error=parser.parse();
-	source.close();
-	return error;
-}

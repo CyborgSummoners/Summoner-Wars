@@ -23,7 +23,7 @@ class Parser: public ParserBase
 	public:
 		Parser(yyFlexLexer* lexer) : lexer(lexer){}
 
-        
+
     public:
         int parse();
 
@@ -31,7 +31,7 @@ class Parser: public ParserBase
         void error(char const *msg);    // called on (syntax) errors
         void warning(char const *msg);
         int lex();                      // returns the next token from the
-                                        // lexical scanner. 
+                                        // lexical scanner.
         void print();                   // use, e.g., d_token, d_loc
 
     // support functions for parse():
@@ -67,7 +67,7 @@ class Parser: public ParserBase
 
 	protected:
 		void second_pass(std::vector<codeline>& code);
-		void assemble(std::vector<codeline>& code);
+		unsigned char* assemble(std::vector<codeline>& code, size_t& length);
 };
 
 inline void Parser::error(char const *msg) {

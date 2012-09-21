@@ -39,19 +39,49 @@ void Parser::second_pass(std::vector<codeline>& code) {
 }
 
 
-void Parser::assemble(std::vector<codeline>& code) {
+unsigned char* Parser::assemble(std::vector<codeline>& code, size_t& length) {
 	// build labelmap
 	std::map<uint32_t, int> labelmap;
 	for(size_t i=0; i<code.size(); ++i) {
 		if(code[i].label != 0) labelmap.insert( std::make_pair(code[i].label, code[i].line_no) );
 	}
 
-	// replace jump <label>s with jump <line_no>s
+	// count length (in bytes), and also replace jump <label>s with jump <line_no>s
+	length=0;
 	for(size_t i=0; i<code.size(); ++i) {
 		if(code[i].opcode >= JMP && code[i].opcode <=JMPFALSE) {
 			code[i].argument = labelmap[static_cast<uint32_t>(code[i].argument)];
 		}
+
+		if( !(code[i].opcode == NOP && code[i].label==0) ) {
+			++length;
+			if( has_argument(code[i].opcode) ) length+=4;
+			if( has_followup(code[i].opcode) ) length+=code[i].followup.length();
+		}
 	}
+
+	unsigned char* Result = new unsigned char[length];
+	for(size_t i=0, len=0; i<code.size(); ++i) {
+		if( code[i].opcode == NOP && code[i].label==0 ) continue;	//cull labelless NOPs
+
+		Result[len] = code[i].opcode;
+		++len;
+
+		if( has_argument(code[i].opcode) ) {
+			for(size_t k=0; k<4; ++k) {
+				Result[len+3-k] = (code[i].argument >> (8*k));	// bigendian
+			}
+			len+=4;
+		}
+
+		if( has_followup(code[i].opcode) ) {
+			for(size_t k=0; k<code[i].followup.length(); ++k, ++len) {
+				Result[len] = code[i].followup[k];
+			}
+		};
+	}
+
+	return Result;
 }
 
 

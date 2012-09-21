@@ -75,26 +75,35 @@ procedure
 ;
 
 procedure:
-signature declarations proc_body {
-	$$ = $2;
-	$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );
+K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
+	if(*$2 != *$6) {
+		std::stringstream ss;
+		ss << "Name mismatch. Procedure declared as '" << *$2 << "' ends as '" << *$6 << "'";
+		error(ss.str().c_str());
+	}
+	else {
+		$$ = $4;
+		$$->code.insert( $$->code.end(), $5->code.begin(), $5->code.end() );
 
-	second_pass($$->code);
-	assemble($$->code);
+		second_pass($$->code);
+		for(size_t i=0; i<$$->code.size(); ++i) {
+			$$->code[i].print();
+		}
 
-	for(size_t i=0; i<$$->code.size(); ++i) {
-		$$->code[i].print();
+		size_t len;
+		unsigned char* code = assemble($$->code, len);
+		for(size_t i=0; i<len; ++i) {
+			std::cout << (int)code[i] << " ";
+		}
+		std::cout << std::endl;
+		std::cout << "len: " << len<< std::endl;
 	}
 
 	delete $2;
-	delete $3;
+	delete $4;
+	delete $5;
+	delete $6;
 };
-
-signature:
-K_PROCEDURE IDENTIFIER K_IS {
-	delete $2;
-	}
-;
 
 declarations:
 //epszilon
@@ -127,13 +136,8 @@ IDENTIFIER COLON type SEMICOLON {
 };
 
 proc_body:
-K_BEGIN statements K_END SEMICOLON {
+K_BEGIN statements K_END {
 	$$ = $2;
-	}
-|
-K_BEGIN statements K_END IDENTIFIER SEMICOLON {
-	$$ = $2;
-	delete $4;
 	}
 ;
 

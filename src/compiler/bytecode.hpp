@@ -10,7 +10,7 @@ namespace bytecode {
 
 	enum Instruction {
 		NOP = 0,
-	
+
 		// stack ops
 		PUSH = 1,     // X, pushes a (literal) value onto the stack
 		DROP,         // pops a value and discards it
@@ -55,6 +55,10 @@ namespace bytecode {
 		// meta
 		DELAY = 200   // X, the interpreter releases the puppet for a delay of X ticks.
 	}; // MUST NOT exceed 255
+
+	bool has_argument(Instruction i);
+	bool has_followup(Instruction i);
+
 
 	struct codeline {
 		uint32_t label;

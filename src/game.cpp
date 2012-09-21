@@ -7,7 +7,7 @@ void Game::Start()
 {
   if(_gameState != Uninitialized)
     return;
-
+  _mainWindow.SetFramerateLimit(60);
   _mainWindow.Create(sf::VideoMode(800,600,32),"Sumwar");
   _gameState = Game::Playing;
   
@@ -29,14 +29,10 @@ void Game::GameLoop()
   sf::Event currentEvent;
   while(_mainWindow.GetEvent(currentEvent))
   {
-  
     switch(_gameState)
     {
       case Game::Playing:
         {
-          _mainWindow.Clear(sf::Color(255,0,0));
-          _mainWindow.Display();
-        
           if(currentEvent.Type == sf::Event::Closed)
             {
               _gameState = Game::Exiting;
@@ -45,6 +41,8 @@ void Game::GameLoop()
         }
     }
   }
+  _mainWindow.Clear();
+  _mainWindow.Display();
 }
 
 

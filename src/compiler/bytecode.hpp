@@ -61,11 +61,16 @@ namespace bytecode {
 		Instruction opcode;
 		uint32_t argument;
 		std::string followup;
+		int line_no;
 
 		codeline(Instruction opcode, uint32_t argument, uint32_t label=0, std::string followup="")
-			: label(label), opcode(opcode), argument(argument), followup(followup) {}
+			: label(label), opcode(opcode), argument(argument), followup(followup), line_no(-1) {}
 
 		void print() {
+			if(line_no > -1) {
+				std::cout << line_no << " -\t";
+			}
+			else std::cout << "\t";
 			if(label != 0) std::cout << label << ":";
 			std::cout << "\t" << opcode << "\t" << argument;
 			if(followup.length() > 0) std::cout << " '" << followup << "'";

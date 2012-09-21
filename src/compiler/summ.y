@@ -79,13 +79,16 @@ signature declarations proc_body {
 	$$ = $2;
 	$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );
 
+	second_pass($$->code);
+	assemble($$->code);
+
 	for(size_t i=0; i<$$->code.size(); ++i) {
 		$$->code[i].print();
 	}
+
 	delete $2;
 	delete $3;
-	}
-;
+};
 
 signature:
 K_PROCEDURE IDENTIFIER K_IS {
@@ -186,7 +189,7 @@ K_WHILE exp K_LOOP statements K_END K_LOOP {
 		$$->code.push_back( codeline(JMP, start_label) );	//then jump back to the start
 		$$->code.push_back( codeline(NOP, 0, end_label) );
 	}
-	
+
 	delete $2;
 	delete $4;
 	}
@@ -268,7 +271,7 @@ exp_list COMMA exp {
 
 assignment:
 IDENTIFIER OP_ASSIGNMENT exp {
-	if(symtab.count(*$1) > 0)  { //does the variable exist?	
+	if(symtab.count(*$1) > 0)  { //does the variable exist?
 		if(symtab[*$1].typ == $3->typ ) { //type matches?
 			symtab[*$1].writ = d_loc__.first_line; // mark as written into
 
@@ -480,7 +483,7 @@ IDENTIFIER {
 	}
 | exp OP_EQUALITY exp {
 
-		//operands must be of the same type 
+		//operands must be of the same type
 		if($1->typ == $3->typ) {
 
 			$$ = new expression(boolean);

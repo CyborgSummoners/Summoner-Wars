@@ -64,6 +64,10 @@ class Parser: public ParserBase
 
 			return Result;
 		}
+
+	protected:
+		void second_pass(std::vector<codeline>& code);
+		void assemble(std::vector<codeline>& code);
 };
 
 inline void Parser::error(char const *msg) {

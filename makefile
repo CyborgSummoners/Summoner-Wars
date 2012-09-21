@@ -11,7 +11,7 @@ LIBS = -lsfml-graphics -lsfml-window -lsfml-system
 RM = /bin/rm -f
 
 #Ehhez a sorhoz kell hozzaadni a forrasokbol keszult objectfileok helyet. 
-OBJS = obj/main.o
+OBJS = obj/main.o obj/game.o
 
 PROG = sumwar
 
@@ -20,8 +20,17 @@ COMPILER_DIR = src/compiler/
 $(PROG): $(OBJS)
 	$(CC) $(OBJS) -o $(PROG) $(LIBS)
 
-obj/%.o: src/%.cpp
-	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
+# A csoda script nem mukodott. Ki kell irni sajnos a dolgokat.
+#
+# obj/%.o: src/%.cpp
+# 	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
+
+obj/main.o: src/main.cpp
+	$(CC) $(CFLAGS) src/main.cpp -o obj/main.o $(LIBS)
+
+obj/game.o: src/game.cpp
+	$(CC) $(CFLAGS) src/game.cpp -o obj/game.o $(LIBS)
+
 
 compiler-demo: $(COMPILER_DIR)summ.yy.cc $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ_compiler.cpp
 	$(CC) -Wall $(COMPILER_DIR)summ_compiler.cpp $(COMPILER_DIR)bytecode.cpp $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ.yy.cc -o compiler-demo

@@ -56,7 +56,7 @@ unsigned char* Parser::assemble(std::vector<codeline>& code, size_t& length) {
 		if( !(code[i].opcode == NOP && code[i].label==0) ) {
 			++length;
 			if( has_argument(code[i].opcode) ) length+=4;
-			if( has_followup(code[i].opcode) ) length+=code[i].followup.length();
+			if( has_followup(code[i].opcode) ) length+=code[i].followup.length()+1;
 		}
 	}
 
@@ -78,6 +78,8 @@ unsigned char* Parser::assemble(std::vector<codeline>& code, size_t& length) {
 			for(size_t k=0; k<code[i].followup.length(); ++k, ++len) {
 				Result[len] = code[i].followup[k];
 			}
+			Result[len] = 0;
+			++len;
 		};
 	}
 

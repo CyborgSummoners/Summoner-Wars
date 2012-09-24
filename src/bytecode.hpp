@@ -9,6 +9,7 @@
 namespace bytecode {
 	typedef unsigned char byte;
 
+
 	enum Instruction {
 		NOP = 0,
 
@@ -32,6 +33,7 @@ namespace bytecode {
 		JMPFALSE,     // X, jump if false. pops a value. if it's = 0, then jumps to argument
 		CALL,         // pushes the current line number, then pushes the current routine number. Then yields control to the procedure specified by the followup string.
 		RET,          // pops a value, which is a routine number, then another, which is a line number in that routine. control yielded.
+		INTERRUPT,     // X, call for built-in procedures and functions. no followup.
 
 		// comparisons
 		//CMP = 50,   // pops two values, subtracts the second from the first, and pushes the result.
@@ -79,6 +81,21 @@ namespace bytecode {
 
 		public:
 			int get_int(size_t& startpos) const;
+	};
+
+
+	class builtin_call {
+		private:
+			static const std::map<std::string, builtin_call> mapping;
+			static const std::map<std::string, builtin_call> init_mapping();
+
+		public:
+			const unsigned int identifier;
+			const byte args;
+			builtin_call(unsigned int identifier, byte args) : identifier(identifier), args(args) {}
+
+			static bool call_exists(const std::string& name);
+			static builtin_call get_call(const std::string& name);
 	};
 
 

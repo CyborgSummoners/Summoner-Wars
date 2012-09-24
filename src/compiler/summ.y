@@ -86,12 +86,9 @@ K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
 		$$->code.insert( $$->code.end(), $5->code.begin(), $5->code.end() );
 
 		second_pass($$->code);
-
-		for(size_t i=0; i<$$->code.size();++i) {
-			$$->code[i].print();
-		}
-
 		subprogram proc = assemble($$->code);
+
+
 		proc.set_name(*$2);
 		subprograms.push_back(proc);
 	}
@@ -242,7 +239,16 @@ K_IF exp K_THEN statements K_END K_IF {
 proc_call:
 	K_DO IDENTIFIER arguments {
 		$$ = $3;
-		$$->code.push_back( codeline(CALL, 0, 0, subprogram::normalize_name(*$2) ) );
+
+		// is it a built-in call?
+		std::string norm=subprogram::normalize_name(*$2);
+		if(builtin_call::call_exists(norm)) {
+			$$->code.push_back( codeline(INTERRUPT, builtin_call::get_call(norm).identifier) );
+		}
+		else {
+			$$->code.push_back( codeline(CALL, 0, 0, norm ) );
+		}
+
 		delete $2;
 	}
 ;

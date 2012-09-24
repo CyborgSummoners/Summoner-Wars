@@ -1,0 +1,19 @@
+procedure counting is
+	i: integer;
+begin
+	i:=0;
+	while i<100 loop
+		if i mod 3 = 0 or i mod 5 = 0 then
+			if i mod 3 = 0 then
+				do print(false);
+			end if;
+			if i mod 5 = 0 then
+				do print(true);
+			end if;
+		else
+			do print(i);
+		end if;
+		i := i+1;
+	end loop;
+end counting;
+

@@ -1,6 +1,7 @@
 #include "interpreter.hpp"
+#include "util/debug.hpp"
 #include "bytecode.hpp"
-#include <iostream>
+#include <ostream>
 #include <stdexcept>
 
 namespace sum {
@@ -209,8 +210,8 @@ namespace sum {
 		}
 		void  Stack::push(Cell* cell) {
 			stack.push_back(cell);
-			std::cout << "pushed ";
-			cell->print(std::cout);
+			dout << "pushed ";
+			cell->print(dout);
 		}
 
 		const Cell* Stack::var_at(size_t loc) const {
@@ -220,15 +221,38 @@ namespace sum {
 		void Stack::set_var_at(size_t loc, Cell* cell) {
 			delete stack[loc];
 			stack[loc] = cell;
-			std::cout << "into "<< loc << " stored " << std::endl;
-			stack[loc]->print(std::cout);
+			dout << "into "<< loc << " stored " << std::endl;
+			stack[loc]->print(dout);
 		}
 
 		void Stack::reserve(size_t var_num) {
 			stack.resize(stack.size()+var_num, 0);
-			std::cout << "reserving " << var_num << " spaces, total " << stack.size() << std::endl;
+			dout << "reserving " << var_num << " spaces, total " << stack.size() << std::endl;
 		}
 
+
+		struct Interrupt {
+			static const std::vector<Interrupt*> list;
+			static const std::vector<Interrupt*> initialize_interrupts();
+
+			virtual Cell* operator()(Stack& stack) = 0;
+		};
+
+		struct Intrpt_Print : public Interrupt  {
+			Cell* operator()(Stack& stack) {
+				Cell* r1 = stack.pop();
+				r1->print(std::cout);
+				delete r1;
+				return 0;
+			}
+		};
+
+		const std::vector<Interrupt*> Interrupt::initialize_interrupts() {
+			std::vector<Interrupt*> Result;
+			Result.push_back( new Intrpt_Print() ); // 0 - PRINT - 1
+			return Result;
+		}
+		const std::vector<Interrupt*> Interrupt::list = Interrupt::initialize_interrupts();
 	}
 
 
@@ -248,18 +272,18 @@ namespace sum {
 	void Interpreter::execute(const std::string& program) const {
 		using namespace stack_machine;
 		using namespace bytecode;
-
 		program_id prog_id = program_map.find(program) -> second;
 		Stack stack;
 		size_t pc=0;	//program counter.
 		Cell* r1;
 		Cell* r2;
+		size_t ri;
 
 		while(pc < programs[prog_id].len) {
 			byte opcode = programs[prog_id].code[pc];
 			++pc;
 
-			std::cout << "#" << pc << " Opcode: " << (int)opcode <<std::endl;
+			dout << "#" << pc << " Opcode: " << (int)opcode <<std::endl;
 			switch(opcode) {
 				case NOP:	// 0
 					break;
@@ -285,13 +309,13 @@ namespace sum {
 				// control flow
 				case JMP:      //40
 					pc = programs[prog_id].get_int(pc);
-					std::cout << "jumping to " << pc <<std::endl;
+					dout << "jumping to " << pc <<std::endl;
 					break;
 				case JMPTRUE:  //41
 					r1 = stack.pop();
 					if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == true) {
 						pc = programs[prog_id].get_int(pc);
-						std::cout << "jumping to " << pc <<std::endl;
+						dout << "jumping to " << pc <<std::endl;
 					} else programs[prog_id].get_int(pc);	//mindenképp be kell olvasni
 					delete r1;
 					break;
@@ -299,34 +323,41 @@ namespace sum {
 					r1 = stack.pop();
 					if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == false) {
 						pc = programs[prog_id].get_int(pc);
-						std::cout << "jumping to " << pc <<std::endl;
+						dout << "jumping to " << pc <<std::endl;
 					} else programs[prog_id].get_int(pc);
 					delete r1;
 					break;
 
+				case INTERRUPT: //45
+					ri = programs[prog_id].get_int(pc);
+					if(ri < Interrupt::list.size()) {
+						(*Interrupt::list[ri])(stack);
+					}
+
+					break;
 				// comparisons
-				case LESS:    //31
+				case LESS:    //51
 					r1=stack.pop();
 					r2=stack.pop();
 					stack.push ( r1 -> less( r2 ) );
 					delete r1;
 					delete r2;
 					break;
-				case GREATER: //32
+				case GREATER: //52
 					r1=stack.pop();
 					r2=stack.pop();
 					stack.push ( r1 -> greater( r2 ) );
 					delete r1;
 					delete r2;
 					break;
-				case EQ:      //33
+				case EQ:      //53
 					r1=stack.pop();
 					r2=stack.pop();
 					stack.push ( r1 -> eq( r2 ) );
 					delete r1;
 					delete r2;
 					break;
-				case NEQ:     //34
+				case NEQ:     //54
 					r1=stack.pop();
 					r2=stack.pop();
 					stack.push (  r1-> neq( r2 ) );
@@ -391,10 +422,9 @@ namespace sum {
 					break;
 
 				default:
-					std::cerr << "unknown opcode " << opcode << std::endl;
+					std::cerr << "unknown opcode " << (int)opcode << std::endl;
 					break;
 			} //switch
 		} // while
-		stack.var_at(0)->print(std::cout);
 	} // Interpreter::execute
 }

@@ -1,9 +1,9 @@
 procedure counting is
 	i: integer;
 begin
-	i:=3;
+	i:=0;
 	while i<100 loop
-		--do print(i);
+		do print(i);
 		i := i+1;
 	end loop;
 end counting;

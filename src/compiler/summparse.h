@@ -18,13 +18,17 @@ class yyFlexLexer;
 
 class Parser: public ParserBase
 {
+	public:
+		enum action {FULL=0, ASSEMBLED, BYTECODE, NOINPUT, FILE_ERROR, MALFORMED_ARGS};
+
 	private:
+		action act;
 		yyFlexLexer* lexer;
 	public:
 		std::vector<bytecode::subprogram> subprograms;
 
 	public:
-		Parser(yyFlexLexer* lexer) : lexer(lexer){}
+		Parser(yyFlexLexer* lexer, action act=FULL) : act(act), lexer(lexer){}
 
     public:
         int parse();

@@ -8,7 +8,7 @@
 	static std::ostream& dout = std::cerr;
 
 #else
-	class debug_dummy {
+	class debug_dummy : public std::ostream {
 		public:
 			template<class T>
 			debug_dummy& operator<<(const T&) {

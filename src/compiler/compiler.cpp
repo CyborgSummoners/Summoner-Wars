@@ -36,6 +36,12 @@ void Parser::second_pass(std::vector<codeline>& code) {
 	for(size_t i=0, line=0; i<code.size(); ++i) {
 		if( !(code[i].opcode==NOP && code[i].label==0) ) code[i].line_no = line++;
 	}
+
+	if(act == ASSEMBLED) {
+		for(size_t i=0; i<code.size();++i) {
+			code[i].print();
+		}
+	}
 }
 
 
@@ -84,6 +90,11 @@ subprogram Parser::assemble(std::vector<codeline>& code) {
 		};
 	}
 
+	if(act == BYTECODE) {
+		for(size_t i=0; i<length;++i) {
+			std::cout << Result[i];
+		}
+	}
 	return subprogram("", Result, length);
 }
 

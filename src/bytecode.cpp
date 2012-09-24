@@ -5,6 +5,7 @@ namespace bytecode {
 	bool has_argument(Instruction i) {
 		switch(i) {
 			case PUSH:
+			case PSHB:
 			case ISP:
 			case DSP:
 			case FETCH_X:
@@ -37,5 +38,11 @@ namespace bytecode {
 	}
 	std::string subprogram::get_name() const {
 		return name;
+	}
+
+	int subprogram::get_int(size_t& startpos) const {
+		int Result = ((code[startpos] & 0xff) << 24) | ((code[startpos+1] & 0xff) << 16) | ((code[startpos+2] & 0xff) << 8) | (code[startpos+3] & 0xff);
+		startpos+=4;
+		return Result;
 	}
 }

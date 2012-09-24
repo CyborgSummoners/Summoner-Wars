@@ -2,17 +2,25 @@
 #include <fstream>
 #include <FlexLexer.h>
 #include "summparse.h"
+#include "../interpreter.hpp"
 
 
 int main() {
+	//interpreter demo
 	std::ifstream source("script-samples/cgtest.summ");
-	Parser parser(new yyFlexLexer(&source, &std::cout));
+	yyFlexLexer* lexer = new yyFlexLexer(&source, &std::cout);
+	Parser parser(lexer);
 	bool error=parser.parse();
 	source.close();
+	delete lexer;
 
-	for(size_t i=0; i<parser.subprograms.size(); ++i) {
-		std::cout << parser.subprograms[i].get_name() << " compiled." << std::endl;
-	}
+	if(error) return error;
+/*
+	sum::Interpreter interpreter;
 
+	interpreter.register_subprogram(parser.subprograms[0]);
+
+	interpreter.execute(parser.subprograms[0].get_name());
+*/
 	return error;
 }

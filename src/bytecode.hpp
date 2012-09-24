@@ -13,26 +13,18 @@ namespace bytecode {
 		NOP = 0,
 
 		// stack ops
-		PUSH = 1,     // X, pushes a (literal) value onto the stack
-		DROP,         // pops a value and discards it
-		SWAP,         // exchanges two top values
-		DUP,          // duplicates top value.
+		PUSH = 1,     // X, pushes an integer value onto the stack
+		PSHB,         // X, pushes a boolean value onto the stack
+		//DROP,         // pops a value and discards it
+		//SWAP,         // exchanges two top values
+		//DUP,          // duplicates top value.
 
 		ISP = 10,     // X, adds X to the stack pointer
 		DSP,          // X, subtracts X from the stack pointer.
 
 		// mem ops
-		FETCH = 20,  // pops a value, which is an address. pushes the value of that address.
-		STORE,       // pops a value (address), then pops another. The second value is stored at the first.
-		FETCH_X,     // X, an address, pushes the value of X.
-		STORE_X,     // X, pops a value, which is stores @X.
-
-		// comparisons
-		CMP = 30,     // pops two values, subtracts the second from the first, and pushes the result.
-		LESS,         // pops two values, pushes 1 if the first is less than the second, 0 otherwise
-		GREATER,      // pops two values, pushes 1 if the first is greater than the second, 0 otherwise
-		EQ,           // pops two values, pushes 1 if they're equal, 0 otherwise
-		NEQ,          // pops two values, pushes 1 if they're not equal, 0 otherwise
+		FETCH_X = 22,  // X, an address, pushes the value of X.
+		STORE_X,       // X, pops a value, which is stored @X.
 
 		// control flow
 		JMP = 40,     // X, jumps to argument (line num)
@@ -40,6 +32,13 @@ namespace bytecode {
 		JMPFALSE,     // X, jump if false. pops a value. if it's = 0, then jumps to argument
 		CALL,         // pushes the current line number, then pushes the current routine number. Then yields control to the procedure specified by the followup string.
 		RET,          // pops a value, which is a routine number, then another, which is a line number in that routine. control yielded.
+
+		// comparisons
+		//CMP = 50,   // pops two values, subtracts the second from the first, and pushes the result.
+		LESS = 51,    // pops two values, pushes true if the first is less than the second, false otherwise
+		GREATER,      // pops two values, pushes true if the first is greater than the second, false otherwise
+		EQ,           // pops two values, pushes true if they're equal, false otherwise
+		NEQ,          // pops two values, pushes true if they're not equal, false otherwise
 
 		// int ops - but these will be used for other types as well if the Great Big Idea is implemented.
 		ADDI = 60,
@@ -69,13 +68,17 @@ namespace bytecode {
 			std::string name;
 
 		public:
-			byte* code;
+			byte const* code;
 			size_t len;
 
 		subprogram(std::string name, byte* code, size_t len);
 
 		void set_name(const std::string& str);
 		std::string get_name() const;
+
+
+		public:
+			int get_int(size_t& startpos) const;
 	};
 
 

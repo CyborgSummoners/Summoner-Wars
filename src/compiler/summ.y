@@ -87,6 +87,10 @@ K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
 
 		second_pass($$->code);
 
+		for(size_t i=0; i<$$->code.size();++i) {
+			$$->code[i].print();
+		}
+
 		subprogram proc = assemble($$->code);
 		proc.set_name(*$2);
 		subprograms.push_back(proc);
@@ -212,6 +216,8 @@ K_IF exp K_THEN statements K_END K_IF {
 	delete $4;
 	}
 | K_IF exp K_THEN statements K_ELSE statements K_END K_IF {
+	$$ = new statement();
+
 	if($2->typ != boolean) {
 		error("The condition must be a boolean expression");
 	}
@@ -231,8 +237,7 @@ K_IF exp K_THEN statements K_END K_IF {
 	delete $2;
 	delete $4;
 	delete $6;
-	}
-;
+};
 
 proc_call:
 	K_DO IDENTIFIER arguments {
@@ -550,15 +555,16 @@ IDENTIFIER {
 constant:
 L_TRUE {
 	$$ = new expression(boolean);
-	$$->code.push_back( codeline(PUSH, 1) );
+	$$->code.push_back( codeline(PSHB, 1) );
 	}
 | L_FALSE {
 	$$ = new expression(boolean);
-	$$->code.push_back( codeline(PUSH, 0) );
+	$$->code.push_back( codeline(PSHB, 0) );
 	}
 | L_INTEGER {
 	$$ = new expression(integer);
 	$$->code.push_back( codeline(PUSH, get_value(*$1)) );
+	delete $1;
 	}
 ;
 

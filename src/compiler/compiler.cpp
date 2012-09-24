@@ -40,23 +40,24 @@ void Parser::second_pass(std::vector<codeline>& code) {
 
 
 subprogram Parser::assemble(std::vector<codeline>& code) {
-	// build labelmap
-	std::map<uint32_t, int> labelmap;
-	for(size_t i=0; i<code.size(); ++i) {
-		if(code[i].label != 0) labelmap.insert( std::make_pair(code[i].label, code[i].line_no) );
-	}
+	// count length (in bytes) and build labelmap
 
-	// count length (in bytes), and also replace jump <label>s with jump <line_no>s
+	std::map<uint32_t, int> labelmap;
 	size_t length=0;
 	for(size_t i=0; i<code.size(); ++i) {
-		if(code[i].opcode >= JMP && code[i].opcode <=JMPFALSE) {
-			code[i].argument = labelmap[static_cast<uint32_t>(code[i].argument)];
-		}
+		if(code[i].label != 0) labelmap.insert( std::make_pair(code[i].label, length) );
 
 		if( !(code[i].opcode == NOP && code[i].label==0) ) {
 			++length;
 			if( has_argument(code[i].opcode) ) length+=4;
 			if( has_followup(code[i].opcode) ) length+=code[i].followup.length()+1;
+		}
+	}
+
+	// replace jump <label>s with jump <line_no>s
+	for(size_t i=0; i<code.size(); ++i) {
+		if(code[i].opcode >= JMP && code[i].opcode <=JMPFALSE) {
+			code[i].argument = labelmap[static_cast<uint32_t>(code[i].argument)];
 		}
 	}
 

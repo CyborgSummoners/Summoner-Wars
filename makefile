@@ -13,10 +13,11 @@ RM = /bin/rm -f
 SOURCES := $(wildcard src/*.cpp)
 HEADERS := $(wildcard src/*.hpp)
 OBJECTS := $(patsubst src/%.cpp,obj/%.o,$(SOURCES))
+COMPILER_SOURCES := $(wildcard src/compiler/*.cpp) src/bytecode.cpp
+
+IDEMO_SOURCES := $(COMPILER_SOURCES) src/interpreter.cpp
 
 PROG = sumwar
-
-COMPILER_DIR = src/compiler/
 
 $(PROG): $(OBJECTS)
 	$(CC) -o $(PROG) $(OBJECTS) $(LIBS)
@@ -24,17 +25,17 @@ $(PROG): $(OBJECTS)
 obj/%.o: src/%.cpp
 	$(CC) $(CFLAGS) -c -o $@ $< $(LIBS)
 
-compiler-demo: $(COMPILER_DIR)summ.yy.cc $(COMPILER_DIR)parse.cc src/compiler/main.cpp
-	$(CC) -Wall src/compiler/main.cpp $(COMPILER_DIR)compiler.cpp src/bytecode.cpp $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ.yy.cc -o compiler-demo
+compiler-demo: src/compiler/summ.yy.cc src/compiler/parse.cc $(IDEMO_SOURCES)
+	$(CC) -Wall $(IDEMO_SOURCES) src/compiler/parse.cc src/compiler/summ.yy.cc -o compiler-demo
 
-$(COMPILER_DIR)summ.yy.cc: $(COMPILER_DIR)summ.l
-	flex -i -o $(COMPILER_DIR)summ.yy.cc $(COMPILER_DIR)summ.l
+src/compiler/summ.yy.cc: src/compiler/summ.l
+	flex -i -o src/compiler/summ.yy.cc src/compiler/summ.l
 
-$(COMPILER_DIR)parse.cc: src/compiler/summ.y
-	cd $(COMPILER_DIR) && bisonc++ --filenames=summparse summ.y
+src/compiler/parse.cc: src/compiler/summ.y
+	cd src/compiler && bisonc++ --filenames=summparse summ.y
 
 all:
 	$(PROG)
 
 clean:
-	$(RM) $(PROG) compiler-demo $(OBJECTS) $(COMPILER_DIR)*.o $(COMPILER_DIR)summparsebase.h $(COMPILER_DIR)summparse.ih $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ.yy.cc
+	$(RM) $(PROG) compiler-demo $(OBJECTS) src/compiler/*.o src/compiler/summparsebase.h src/compiler/summparse.ih src/compiler/parse.cc src/compiler/summ.yy.cc

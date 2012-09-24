@@ -1,13 +1,10 @@
 procedure counting is
 	i: integer;
-	b: boolean;
 begin
-	i:=6;
-	if i = 6 then
-		b := i = 5;
-	end if;
-	do move;
-	do print(b);
-	do print((5+6)*8);
+	i:=3;
+	while i<100 loop
+		--do print(i);
+		i := i+1;
+	end loop;
 end counting;
 

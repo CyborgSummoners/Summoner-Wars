@@ -280,8 +280,7 @@ namespace sum {
 		size_t ri;
 
 		while(pc < programs[prog_id].len) {
-			byte opcode = programs[prog_id].code[pc];
-			++pc;
+			byte opcode = programs[prog_id].get_byte(pc);
 
 			dout << "#" << pc << " Opcode: " << (int)opcode <<std::endl;
 			switch(opcode) {

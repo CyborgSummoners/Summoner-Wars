@@ -2,6 +2,7 @@
 #include "../bytecode.hpp"
 #include "summparse.h"
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 
 int Parser::lex() {
@@ -9,6 +10,30 @@ int Parser::lex() {
 	d_loc__.first_line = lexer->lineno();
 	d_val__.name = new std::string(lexer->YYText());
 	return ret;
+}
+
+
+uint32_t Parser::get_value(const std::string& str) {
+	//max signed int: 2^31-1 = 2,147,483,647
+	static uint32_t top=214748364; 	//2,147,483,647 / 10
+
+	uint32_t Result=0;
+	bool warn=false;
+
+	for(size_t i=0; i<str.size(); ++i) {
+		if( !warn && (Result>top || ( Result==top && (str[i]-48)>7) ) ) {
+			warning("overflow: numeric constant too large to be represented in a four byte signed integer.");
+			warn=true;
+		}
+		Result=Result*10 + (str[i]-48);
+	}
+	return Result;
+}
+
+
+uint32_t Parser::gen_label() {
+	static uint32_t label = 0;
+	return ++label;
 }
 
 
@@ -36,20 +61,13 @@ void Parser::second_pass(std::vector<codeline>& code) {
 	for(size_t i=0, line=0; i<code.size(); ++i) {
 		if( !(code[i].opcode==NOP && code[i].label==0) ) code[i].line_no = line++;
 	}
-
-	if(act == ASSEMBLED) {
-		for(size_t i=0; i<code.size();++i) {
-			code[i].print();
-		}
-	}
 }
 
 
-subprogram Parser::assemble(std::vector<codeline>& code) {
+void Parser::assemble(std::vector<codeline>& code, byte*& Result, size_t& length) {
 	// count length (in bytes) and build labelmap
-
 	std::map<uint32_t, int> labelmap;
-	size_t length=0;
+	length = 0;
 	for(size_t i=0; i<code.size(); ++i) {
 		if(code[i].label != 0) labelmap.insert( std::make_pair(code[i].label, length) );
 
@@ -60,14 +78,14 @@ subprogram Parser::assemble(std::vector<codeline>& code) {
 		}
 	}
 
-	// replace jump <label>s with jump <line_no>s
+	// replace jump <label>s with jump <program_counter>s
 	for(size_t i=0; i<code.size(); ++i) {
 		if(code[i].opcode >= JMP && code[i].opcode <=JMPFALSE) {
 			code[i].argument = labelmap[static_cast<uint32_t>(code[i].argument)];
 		}
 	}
 
-	byte* Result = new byte[length];
+	Result = new byte[length];
 	for(size_t i=0, len=0; i<code.size(); ++i) {
 		if( code[i].opcode == NOP && code[i].label==0 ) continue;	//cull labelless NOPs
 
@@ -89,12 +107,36 @@ subprogram Parser::assemble(std::vector<codeline>& code) {
 			++len;
 		};
 	}
-
-	if(act == BYTECODE) {
-		for(size_t i=0; i<length;++i) {
-			std::cout << Result[i];
-		}
-	}
-	return subprogram("", Result, length);
 }
 
+void subprogram::print_bytecode(std::ostream& out) {
+	// proc marker, followed by canonical name closed by a zero.
+	out << static_cast<byte>(bytecode::PROC) << get_name() << '\0';
+
+	//then the actual program
+	for(size_t i=0; i<len; ++i) out << code[i];
+}
+
+void subprogram::print_assembly(std::ostream& out) {
+	out << "PROCEDURE " << get_name() << std::endl
+	    << std::setw(4) << "line" << std::setw(6) << "code" << std::setw(10)  << "arg" << " followup" << std::endl;
+
+	size_t pc = 0;
+	size_t line = 0;
+	Instruction opcode;
+	while(pc<len) {
+		opcode = static_cast<Instruction>(get_byte(pc));
+		out << std::setw(4) << line << std::setw(6) << static_cast<int>(opcode) << std::setw(10);
+
+		if(has_argument(opcode)) {
+			out << get_int(pc);
+		} else out << " ";
+
+		if(has_followup(opcode)) {
+			out << " " << get_string(pc);
+		}
+
+		out << std::endl;
+		++line;
+	}
+}

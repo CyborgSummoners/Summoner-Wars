@@ -14,7 +14,6 @@
 %type <stmt> proc_body
 %type <stmt> decl
 %type <stmt> declarations
-%type <stmt> procedure
 %type <stmt> exp_list
 %type <stmt> arguments
 
@@ -71,8 +70,14 @@
 %%
 
 start:
-procedure
-;
+procedure {
+	if(act == BYTECODE) {
+		for(size_t i=0; i<subprograms.size(); ++i) subprograms[i].print_bytecode(std::cout);
+	}
+	else if(act == ASSEMBLED) {
+		for(size_t i=0; i<subprograms.size(); ++i) subprograms[i].print_assembly(std::cout);
+	}
+};
 
 procedure:
 K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
@@ -82,15 +87,15 @@ K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
 		error(ss.str().c_str());
 	}
 	else {
-		$$ = $4;
-		$$->code.insert( $$->code.end(), $5->code.begin(), $5->code.end() );
+		$4->code.insert( $4->code.end(), $5->code.begin(), $5->code.end() );
 
-		second_pass($$->code);
-		subprogram proc = assemble($$->code);
+		second_pass($4->code);
 
+		byte* code = 0;
+		size_t length = 0;
+		assemble($4->code, code, length);
 
-		proc.set_name(*$2);
-		subprograms.push_back(proc);
+		subprograms.push_back( subprogram(*$2, code, length) );
 	}
 
 	delete $2;

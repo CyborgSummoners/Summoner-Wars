@@ -55,7 +55,10 @@ namespace bytecode {
 		NOT,
 
 		// meta
-		DELAY = 200   // X, the interpreter releases the puppet for a delay of X ticks.
+		DELAY = 200,   // X, the interpreter releases the puppet for a delay of X ticks.
+
+		// anotations
+		PROC = 220,     // followed by proc name in c-string.
 	}; // MUST NOT exceed 255
 
 	bool has_argument(Instruction i);
@@ -73,14 +76,30 @@ namespace bytecode {
 			byte const* code;
 			size_t len;
 
-		subprogram(std::string name, byte* code, size_t len);
-
 		void set_name(const std::string& str);
-		std::string get_name() const;
-
 
 		public:
-			int get_int(size_t& startpos) const;
+			subprogram(std::string name, byte* code, size_t len);
+
+			const std::string& get_name() const;
+
+			// fetches the int at program_counter and increments program_counter by four.
+			byte get_byte(size_t& program_counter) const;
+
+			// fetches the byte at program_counter and increments program_counter by one.
+			int get_int(size_t& program_counter) const;
+
+			// fetches the C string at program_counter, and increments progrma_counter by len(string);
+			// this would be better given back as a proper cstring
+			std::string get_string(size_t& program_counter) const;
+
+
+			// prints as pure bytecode
+			void print_bytecode(std::ostream& out);
+
+			// prints 'assembly'
+			void print_assembly(std::ostream& out);
+
 	};
 
 

@@ -4,7 +4,6 @@
 #ifndef Parser_h_included
 #define Parser_h_included
 
-// $insert baseclass
 #include "../bytecode.hpp"
 #include "summparsebase.h"
 #include "compiler.hpp"
@@ -16,64 +15,45 @@
 
 class yyFlexLexer;
 
-class Parser: public ParserBase
-{
+class Parser: public ParserBase {
+	// more or less temporary:
 	public:
 		enum action {FULL=0, ASSEMBLED, BYTECODE, NOINPUT, FILE_ERROR, MALFORMED_ARGS};
-
 	private:
 		action act;
+
+
+	private:
 		yyFlexLexer* lexer;
+
 	public:
-		std::vector<bytecode::subprogram> subprograms;
+		std::vector<bytecode::subprogram> subprograms;	// list of parsed subprograms
+		std::map<std::string, var> symtab;	// symbol table of variables
 
 	public:
 		Parser(yyFlexLexer* lexer, action act=FULL) : act(act), lexer(lexer){}
 
     public:
-        int parse();
+        int parse();	// starts the parsing
+
+		static void second_pass(std::vector<codeline>& code);	// cleanup & optimize code a bit.
+		static void assemble(std::vector<codeline>& code, byte*& Result, size_t& length);	// assemble code into actual bytecode.
 
     private:
         void error(char const *msg);    // called on (syntax) errors
         void warning(char const *msg);
-        int lex();                      // returns the next token from the
-                                        // lexical scanner.
-        void print();                   // use, e.g., d_token, d_loc
+        int lex();                      // returns the next token from the lexical scanner.
+		void print();                   // use, e.g., d_token, d_loc
 
-    // support functions for parse():
-        void executeAction(int ruleNr);
-        void errorRecovery();
-        int lookup(bool recovery);
-        void nextToken();
+		// support functions for parse():
+		void executeAction(int ruleNr);
+		void errorRecovery();
+		int lookup(bool recovery);
+		void nextToken();
 
-		std::map<std::string, var> symtab;	// symbol table
-
-		uint32_t gen_label() {
-			static int label = 0;
-			return ++label;
-		}
-
-		uint32_t get_value(const std::string& str) {
-			//maxint: 4,294,967,295
-			static uint32_t top=429496729; 	//4,294,967,295 / 10
-
-			uint32_t Result=0;
-			bool warn=false;
-
-			for(size_t i=0; i<str.size(); ++i) {
-				if( !warn && (Result>top || ( Result==top && (str[i]-48)>5) ) ) {
-					warning("overflow: numeric constant too large to be represented in a four byte unsigned integer.");
-					warn=true;
-				}
-				Result=Result*10 + (str[i]-48);
-			}
-
-			return Result;
-		}
-
-	protected:
-		void second_pass(std::vector<codeline>& code);
-		subprogram assemble(std::vector<codeline>& code);
+		//utility
+		uint32_t gen_label();
+		uint32_t get_value(const std::string& str);
 };
 
 inline void Parser::error(char const *msg) {
@@ -84,13 +64,8 @@ inline void Parser::warning(char const *msg) {
 	std::cerr << d_loc__.first_line << ": " << msg;
 }
 
-
-
-
-// $insert lex
-
-inline void Parser::print()      // use d_token, d_loc
-{}
+inline void Parser::print() {
+}
 
 
 #endif

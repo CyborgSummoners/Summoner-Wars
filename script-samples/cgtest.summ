@@ -2,9 +2,18 @@ procedure counting is
 	i: integer;
 begin
 	i:=0;
-	while i<100 loop
+	while i<10 loop
 		do print(i);
 		i := i+1;
 	end loop;
 end counting;
 
+procedure countdown is
+	i: integer;
+begin
+	i:=10;
+	while i>0 loop
+		do print(i);
+		i := i-1;
+	end loop;
+end countdown;

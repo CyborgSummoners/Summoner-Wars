@@ -70,7 +70,7 @@
 %%
 
 start:
-procedure {
+procedures {
 	if(act == BYTECODE) {
 		for(size_t i=0; i<subprograms.size(); ++i) subprograms[i].print_bytecode(std::cout);
 	}
@@ -78,6 +78,12 @@ procedure {
 		for(size_t i=0; i<subprograms.size(); ++i) subprograms[i].print_assembly(std::cout);
 	}
 };
+
+procedures:
+procedures procedure
+|
+procedure
+;
 
 procedure:
 K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
@@ -94,7 +100,7 @@ K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
 		byte* code = 0;
 		size_t length = 0;
 		assemble($4->code, code, length);
-
+		symtab.clear();
 		subprograms.push_back( subprogram(*$2, code, length) );
 	}
 

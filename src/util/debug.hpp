@@ -2,9 +2,11 @@
 #define DEBUG_MACROS_HPP
 
 #include <iostream>
+#include <cstdio>
 
 #ifdef DEBUG_MACROS_ENABLED
 	#define debug_var(var) std::cerr << (#var) << ": " << var << std::endl;
+	#define debugf(format, ...) fprintf(stderr, format, ##__VA_ARGS__)
 	static std::ostream& dout = std::cerr;
 
 #else
@@ -26,6 +28,7 @@
 	};
 	static debug_dummy dout;
 	#define debug_var(var)
+	#define debugf(format, ...)
 #endif
 
 

@@ -1,0 +1,11 @@
+procedure this is
+	i: integer;
+begin
+	i:= 3;
+	do printit( i );
+end this;
+
+procedure printit(i: integer) is
+begin
+	do print(i);
+end printit;

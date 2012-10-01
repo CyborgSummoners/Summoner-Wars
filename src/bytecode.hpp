@@ -69,6 +69,7 @@ namespace bytecode {
 
 		private:
 			std::string name;
+			byte argc;
 
 		public:
 			byte const* code;
@@ -77,9 +78,10 @@ namespace bytecode {
 		void set_name(const std::string& str);
 
 		public:
-			subprogram(std::string name, byte* code, size_t len);
+			subprogram(std::string name, byte argc, byte* code, size_t len);
 
 			const std::string& get_name() const;
+			byte get_argc() const;
 
 			// fetches the int at program_counter and increments program_counter by four.
 			byte get_byte(size_t& program_counter) const;

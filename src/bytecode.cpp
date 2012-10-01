@@ -1,6 +1,7 @@
 #include "bytecode.hpp"
 #include "interpreter.hpp"
-
+#include <iomanip>
+#include <iostream>
 
 namespace bytecode {
 	bool has_argument(Instruction i) {
@@ -38,13 +39,16 @@ namespace bytecode {
 		return str;
 	}
 
-	subprogram::subprogram(std::string name, byte* code, size_t len) : name(normalize_name(name)), code(code), len(len) {}
+	subprogram::subprogram(std::string name, byte argc, byte* code, size_t len) : name(normalize_name(name)), argc(argc), code(code), len(len) {}
 
 	void subprogram::set_name(const std::string& str) {
 		name=normalize_name(str);
 	}
 	const std::string& subprogram::get_name() const {
 		return name;
+	}
+	byte subprogram::get_argc() const {
+		return argc;
 	}
 
 	int subprogram::get_int(size_t& program_counter) const {
@@ -68,5 +72,39 @@ namespace bytecode {
 		}
 		++program_counter;
 		return Result;
+	}
+
+	void subprogram::print_bytecode(std::ostream& out) {
+		// proc marker, followed by canonical name closed by a zero.
+		out << static_cast<byte>(bytecode::PROC) << get_name() << '\0'
+		//argc in a single byte
+			<< static_cast<byte>(argc);
+
+		//then the actual program
+		for(size_t i=0; i<len; ++i) out << code[i];
+	}
+
+	void subprogram::print_assembly(std::ostream& out) {
+		out << "PROCEDURE " << get_name() << " (" << (int)argc << ")" << std::endl
+			<< std::setw(4) << "line" << std::setw(6) << "code" << std::setw(10)  << "arg" << " followup" << std::endl;
+
+		size_t pc = 0;
+		size_t line = 0;
+		Instruction opcode;
+		while(pc<len) {
+			opcode = static_cast<Instruction>(get_byte(pc));
+			out << std::setw(4) << line << std::setw(6) << static_cast<int>(opcode) << std::setw(10);
+
+			if(has_argument(opcode)) {
+				out << get_int(pc);
+			} else out << " ";
+
+			if(has_followup(opcode)) {
+				out << " " << get_string(pc);
+			}
+
+			out << std::endl;
+			++line;
+		}
 	}
 }

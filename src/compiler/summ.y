@@ -15,9 +15,9 @@
 %type <stmt> decl
 %type <stmt> declarations
 %type <stmt> exp_list
-%type <stmt> arguments
+%type <stmt> call_arguments
 
-
+%type <count> argument_list arguments
 %token <name> IDENTIFIER
 %token K_PROCEDURE
 %token K_IS
@@ -55,6 +55,7 @@
 %token K_NULL
 
 %union {
+	size_t count;
 	std::string* name;
 	type* typ;
 	expression* exp;
@@ -75,36 +76,67 @@ procedures {
 };
 
 procedures:
-procedures procedure
-|
-procedure
-;
+procedures procedure | procedure;
 
 procedure:
-K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
-	if(*$2 != *$6) {
+K_PROCEDURE IDENTIFIER argument_list K_IS declarations proc_body IDENTIFIER SEMICOLON {
+	if(*$2 != *$7) {
 		std::stringstream ss;
-		ss << "Name mismatch. Procedure declared as '" << subprogram::normalize_name(*$2) << "' ends as '" << subprogram::normalize_name(*$6) << "'";
+		ss << "Name mismatch. Procedure declared as '" << subprogram::normalize_name(*$2) << "' ends as '" << subprogram::normalize_name(*$7) << "'";
 		error(ss.str().c_str());
 	}
 	else {
-		$4->code.insert( $4->code.end(), $5->code.begin(), $5->code.end() );
-		$4->code.push_back( codeline(RET, 0) );
 
-		second_pass($4->code);
+		$5->code.insert( $5->code.end(), $6->code.begin(), $6->code.end() );
+		$5->code.push_back( codeline(RET, 0) );
+
+		second_pass($5->code);
 
 		byte* code = 0;
 		size_t length = 0;
-		assemble($4->code, code, length);
-		subprograms.push_back( subprogram(*$2, code, length) );
+		assemble($5->code, code, length);
+		subprograms.push_back( subprogram(*$2, $3, code, length) );
 		reset();
 	}
 
 	delete $2;
-	delete $4;
 	delete $5;
 	delete $6;
+	delete $7;
 };
+
+argument_list:
+/*epszilon*/
+{
+	$$ = 0;
+}
+| T_OPEN arguments T_CLOSE {
+	$$ = $2;
+};
+
+arguments:
+argument {
+	$$ = 1;
+}
+| arguments SEMICOLON argument {
+	$$ = $1 + 1;
+};
+
+argument:
+IDENTIFIER COLON type {
+	if(symtab.count(*$1) > 0) { // a var with this name exist already?
+		std::stringstream ss;
+		ss << "Variable '" << *$1 << "' already declared (on line " << symtab.find(*$1)->second.decl << ")." << std::endl;
+		error(ss.str().c_str());
+	}
+	else {
+		symtab.insert( make_pair(*$1, var( gen_varnum(), d_loc__.first_line, *$3)) );
+	}
+
+	delete $1;
+	delete $3;
+};
+
 
 declarations:
 //epszilon
@@ -244,7 +276,7 @@ K_IF exp K_THEN statements K_END K_IF {
 };
 
 proc_call:
-	K_DO IDENTIFIER arguments {
+	K_DO IDENTIFIER call_arguments {
 		$$ = $3;
 
 		// is it an interrupt?
@@ -261,7 +293,7 @@ proc_call:
 	}
 ;
 
-arguments:
+call_arguments:
 	//epszilon
 	{
 	$$ = new statement();

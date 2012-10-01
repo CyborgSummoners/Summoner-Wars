@@ -14,7 +14,7 @@ struct var {
 	unsigned int decl; // on which line was it declared?
 	unsigned int writ; // on which line was it written into? 0 if never.
 	unsigned int read; // on which line was it read? 0 if never.
-	unsigned int num;
+	int num; // signed -- this is important. Parameters have negative numbers.
 
 	type typ;
 

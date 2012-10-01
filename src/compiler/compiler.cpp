@@ -1,9 +1,7 @@
 #include <FlexLexer.h>
 #include "../bytecode.hpp"
 #include "summparse.h"
-#include <iostream>
-#include <iomanip>
-#include <fstream>
+
 
 int Parser::lex() {
 	int ret = lexer->yylex();
@@ -116,36 +114,4 @@ void Parser::assemble(std::vector<codeline>& code, byte*& Result, size_t& length
 void Parser::reset() {
 	varnum = 0;
 	symtab.clear();
-}
-
-void subprogram::print_bytecode(std::ostream& out) {
-	// proc marker, followed by canonical name closed by a zero.
-	out << static_cast<byte>(bytecode::PROC) << get_name() << '\0';
-
-	//then the actual program
-	for(size_t i=0; i<len; ++i) out << code[i];
-}
-
-void subprogram::print_assembly(std::ostream& out) {
-	out << "PROCEDURE " << get_name() << std::endl
-	    << std::setw(4) << "line" << std::setw(6) << "code" << std::setw(10)  << "arg" << " followup" << std::endl;
-
-	size_t pc = 0;
-	size_t line = 0;
-	Instruction opcode;
-	while(pc<len) {
-		opcode = static_cast<Instruction>(get_byte(pc));
-		out << std::setw(4) << line << std::setw(6) << static_cast<int>(opcode) << std::setw(10);
-
-		if(has_argument(opcode)) {
-			out << get_int(pc);
-		} else out << " ";
-
-		if(has_followup(opcode)) {
-			out << " " << get_string(pc);
-		}
-
-		out << std::endl;
-		++line;
-	}
 }

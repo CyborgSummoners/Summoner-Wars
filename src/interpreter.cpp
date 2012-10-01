@@ -104,7 +104,8 @@ namespace sum {
 //*** Interrupts ***
 //*******************
 		struct Interrupt {
-			static const std::vector<Interrupt*> comparisons;
+			static const Interrupt* comparisons[];
+			static const Interrupt* operators[];
 			static const std::vector<Interrupt*> list;
 			static const std::map<std::string, size_t> mapping;
 
@@ -374,23 +375,7 @@ namespace sum {
 
 			const std::vector<Interrupt*> list_init() {
 				std::vector<Interrupt*> Result;
-				Result.push_back( new interrupt::add() );
-				Result.push_back( new interrupt::sub() );
-				Result.push_back( new interrupt::mul() );
-				Result.push_back( new interrupt::div() );
-				Result.push_back( new interrupt::mod() );
-				Result.push_back( new interrupt::land() );
-				Result.push_back( new interrupt::lor() );
-				Result.push_back( new interrupt::lnot() );
 				Result.push_back( new interrupt::print() );
-				return Result;
-			}
-			const std::vector<Interrupt*> comp_init() {
-				std::vector<Interrupt*> Result;
-				Result.push_back( new interrupt::eq() );
-				Result.push_back( new interrupt::neq() );
-				Result.push_back( new interrupt::less() );
-				Result.push_back( new interrupt::greater() );
 				return Result;
 			}
 			const std::map<std::string, size_t> mapping_init() {
@@ -400,8 +385,23 @@ namespace sum {
 			}
 		} // namespace interrupt
 
+		const Interrupt* Interrupt::operators[] = {
+			new interrupt::add(),
+			new interrupt::sub(),
+			new interrupt::mul(),
+			new interrupt::div(),
+			new interrupt::mod(),
+			new interrupt::land(),
+			new interrupt::lor(),
+			new interrupt::lnot()
+		};
+		const Interrupt* Interrupt::comparisons[] = {
+			new interrupt::eq(),
+			new interrupt::neq(),
+			new interrupt::less(),
+			new interrupt::greater()
+		};
 		const std::vector<Interrupt*> Interrupt::list = interrupt::list_init();
-		const std::vector<Interrupt*> Interrupt::comparisons = interrupt::comp_init();
 		const std::map<std::string, size_t> Interrupt::mapping = interrupt::mapping_init();
 
 
@@ -512,7 +512,7 @@ namespace sum {
 				case AND:
 				case OR:
 				case NOT:
-					(*Interrupt::list[opcode - ADDI])(stack);
+					(*Interrupt::operators[opcode - ADDI])(stack);
 					break;
 
 				default:

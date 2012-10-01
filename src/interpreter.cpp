@@ -32,7 +32,6 @@ namespace sum {
 			}
 		};
 
-
 		struct IntegerValue : public Cell {
 			const int value;
 
@@ -277,6 +276,11 @@ namespace sum {
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
 					if( r1->tag == integer && r2->tag == integer ) {
+						if(static_cast<IntegerValue*>(r1)->value == 0) {
+							delete r1;
+							delete r2;
+							throw except::division_by_zero();
+						}
 						stack.push( new IntegerValue( static_cast<IntegerValue*>(r2)->value / static_cast<IntegerValue*>(r1)->value ) );
 						done=true;
 					}
@@ -296,6 +300,11 @@ namespace sum {
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
 					if( r1->tag == integer && r2->tag == integer ) {
+						if(static_cast<IntegerValue*>(r1)->value == 0) {
+							delete r1;
+							delete r2;
+							throw except::division_by_zero();
+						}
 						stack.push( new IntegerValue( static_cast<IntegerValue*>(r2)->value % static_cast<IntegerValue*>(r1)->value ) );
 						done=true;
 					}
@@ -371,7 +380,6 @@ namespace sum {
 					delete r1;
 				}
 			};
-
 
 			const std::vector<Interrupt*> list_init() {
 				std::vector<Interrupt*> Result;

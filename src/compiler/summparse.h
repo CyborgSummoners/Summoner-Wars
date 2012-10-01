@@ -25,13 +25,14 @@ class Parser: public ParserBase {
 
 	private:
 		yyFlexLexer* lexer;
+		size_t varnum;
 
 	public:
 		std::vector<bytecode::subprogram> subprograms;	// list of parsed subprograms
 		std::map<std::string, var> symtab;	// symbol table of variables
 
 	public:
-		Parser(yyFlexLexer* lexer, action act=FULL) : act(act), lexer(lexer){}
+		Parser(yyFlexLexer* lexer, action act=FULL) : act(act), lexer(lexer), varnum(0) {}
 
     public:
         int parse();	// starts the parsing
@@ -53,7 +54,10 @@ class Parser: public ParserBase {
 
 		//utility
 		uint32_t gen_label();
+		size_t gen_varnum();
 		uint32_t get_value(const std::string& str);
+
+		void reset();
 };
 
 inline void Parser::error(char const *msg) {

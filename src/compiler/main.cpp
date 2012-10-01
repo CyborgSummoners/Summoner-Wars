@@ -71,7 +71,9 @@ int main(int argc, char** argv) {
 
 	sum::Interpreter interpreter;
 
-	interpreter.register_subprogram(parser.subprograms[0]);
+	for(size_t i=0; i<parser.subprograms.size(); ++i) {
+		interpreter.register_subprogram(parser.subprograms[i]);
+	}
 
 	interpreter.execute(parser.subprograms[0].get_name());
 

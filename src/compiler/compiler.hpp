@@ -18,14 +18,7 @@ struct var {
 
 	type typ;
 
-	var(unsigned int decl=0, type typ = integer) : decl(decl), writ(0), read(0), typ(typ) {
-		numgen();
-	}
-
-	void numgen() {
-		static int last = 0;
-		num = last++;
-	}
+	var(unsigned int num, unsigned int decl=0, type typ = integer) : decl(decl), writ(0), read(0), num(num), typ(typ) {}
 };
 
 struct expression {

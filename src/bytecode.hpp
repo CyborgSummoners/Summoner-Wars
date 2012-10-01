@@ -7,7 +7,7 @@
 #include <map>
 
 namespace bytecode {
-	enum type{ none, boolean, integer };
+	enum type{ none, meta, boolean, integer };
 
 	typedef unsigned char byte;
 
@@ -32,8 +32,8 @@ namespace bytecode {
 		JMP = 40,     // X, jumps to argument (line num)
 		JMPTRUE,      // X, jump if true. pops a value. If it's != 0, then jumps to argument
 		JMPFALSE,     // X, jump if false. pops a value. if it's = 0, then jumps to argument
-		CALL,         // pushes the current line number, then pushes the current routine number. Then yields control to the procedure specified by the followup string.
-		RET,          // pops a value, which is a routine number, then another, which is a line number in that routine. control yielded.
+		CALL,         // passes control to the procedure specified by the followup string.
+		RET,          // returns control to the calling procedure, if any. If there's none, the program terminates.
 		INTERRUPT,     // X, call for built-in procedures and functions. no followup.
 
 		// comparisons. These MUST be continuous, their order MUST NOT change.

@@ -1,0 +1,4 @@
+procedure calc is
+begin
+	do print( 5 div 0 );
+end calc;

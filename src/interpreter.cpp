@@ -9,8 +9,10 @@ namespace sum {
 
 	namespace stack_machine {
 		namespace except {
+			struct corrupted_stack : public std::exception {};
 			struct incompatible_types : public std::exception {};
 			struct division_by_zero : public std::exception {};
+			struct subprogram_does_not_exist : public std::exception {};
 		}
 
 		struct Cell {
@@ -46,6 +48,22 @@ namespace sum {
 			}
 		};
 
+		struct ActivationRecord : public Cell {
+			const size_t prog;
+			const size_t pc;
+			const size_t bp;
+
+			ActivationRecord(size_t prog, size_t pc, size_t bp) : prog(prog), pc(pc), bp(bp) {
+				this->tag = none;
+			}
+			virtual void print(std::ostream& out) const {
+				out << "Activation record\n" << " \tprog: " << prog << "\n\tpc: " << pc << "\n\tbp: " << bp << std::endl;
+			}
+			virtual ActivationRecord* clone() const {
+				return new ActivationRecord(this->prog, this->pc, this->bp);
+			}
+		};
+
 
 		class Stack {
 			private:
@@ -58,6 +76,8 @@ namespace sum {
 
 				const Cell* var_at(size_t loc) const;
 				void set_var_at(size_t loc, Cell* cell);
+				size_t get_stack_pointer() const;
+				void set_stack_pointer(size_t sp);
 
 				void reserve(size_t var_num);
 
@@ -93,10 +113,28 @@ namespace sum {
 			stack[loc]->print(dout);
 		}
 
+		size_t Stack::get_stack_pointer() const {
+			return stack.size();
+		}
+		void Stack::set_stack_pointer(size_t sp) {
+			if(sp > stack.size()) {
+				stack.resize(sp, 0); //~ stack.reserve(stack.size() - loc);
+				return;
+			}
+			else if( sp == stack.size() ) return;
+
+			for(size_t i=stack.size()-1; sp <= i; --i) {
+				delete stack[i];
+			}
+			stack.resize(sp);
+		}
+
 		void Stack::reserve(size_t var_num) {
 			stack.resize(stack.size()+var_num, 0);
 			dout << "reserving " << var_num << " spaces, total " << stack.size() << std::endl;
 		}
+
+
 
 
 //*******************
@@ -426,7 +464,15 @@ namespace sum {
 	}
 
 
+	size_t Interpreter::get_program_id(const std::string& str) const {
+		std::map<std::string, size_t>::const_iterator it = program_map.find(str);
+		if(it == program_map.end()) throw stack_machine::except::subprogram_does_not_exist();
+		return it->second;
+	}
+
 	bool Interpreter::register_subprogram(const bytecode::subprogram& prog) {
+		debugf("Registering subprogram %s...", prog.get_name().c_str());
+
 		// do we already have a program with this name?
 		std::map<std::string, size_t>::iterator it = program_map.find(prog.get_name());
 		if(it != program_map.end()) return false;
@@ -435,6 +481,7 @@ namespace sum {
 		program_map.insert( make_pair( prog.get_name(), programs.size() ) );
 		programs.push_back(prog);
 
+		debugf("done.\n");
 		return true;
 	}
 
@@ -442,11 +489,13 @@ namespace sum {
 	void Interpreter::execute(const std::string& program) const {
 		using namespace stack_machine;
 		using namespace bytecode;
-		size_t prog_id = program_map.find(program) -> second;
+
+		size_t prog_id = get_program_id(program);
 		Stack stack;
 		size_t pc=0;	//program counter.
+		size_t bp=0;	//base pointer.
 		Cell* r1;
-		Cell* r2;
+		ActivationRecord* ar;
 		size_t ri;
 
 		while(pc < programs[prog_id].len) {
@@ -468,11 +517,11 @@ namespace sum {
 					stack.reserve( programs[prog_id].get_int(pc) );
 					break;
 				case FETCH_X: //23
-					stack.push( stack.var_at(programs[prog_id].get_int(pc))->clone() );
+					stack.push( stack.var_at(bp + programs[prog_id].get_int(pc))->clone() );
 					break;
 				case STORE_X: //23
 					r1 = stack.pop();
-					stack.set_var_at(programs[prog_id].get_int(pc), r1);
+					stack.set_var_at(bp + programs[prog_id].get_int(pc), r1);
 					break;
 
 				// control flow
@@ -496,7 +545,32 @@ namespace sum {
 					} else programs[prog_id].get_int(pc);
 					delete r1;
 					break;
+				case CALL:      //43
+					ri = get_program_id( programs[prog_id].get_string(pc) );	// get callee's id.
+					// parameters are on the top of the stack. callee will know how many
 
+					// reserve space for return value
+
+					// return to which program, at which point, and what was the base pointer?
+					stack.push( new ActivationRecord(prog_id, pc, bp) );
+
+					bp = stack.get_stack_pointer(); // new 0 is the top of the stack.
+					prog_id = ri; // jump to new program
+					pc = 0; // start at the beginning.
+					break;
+				case RET:		//44
+					if(bp == 0) break;	// ez kicsit hack.
+
+					stack.set_stack_pointer(bp); // rewind the stack all the way down to 0, to before the local vars
+					r1 = stack.pop(); // get back the activation record.
+					if((ar = dynamic_cast<ActivationRecord*>(r1))==0) throw stack_machine::except::corrupted_stack();
+					// pop retval to r1, if applicable.
+					prog_id = ar->prog;
+					pc = ar->pc;
+					bp = ar->bp;
+					// don't forget to subtract the number of parameters from the bp!
+					delete ar;
+					break;
 				case INTERRUPT: //45
 					ri = programs[prog_id].get_int(pc);
 					if(ri < Interrupt::list.size()) {

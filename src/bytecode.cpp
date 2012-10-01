@@ -38,7 +38,7 @@ namespace bytecode {
 		return str;
 	}
 
-	subprogram::subprogram(std::string name, byte* code, size_t len) : name(name), code(code), len(len) {}
+	subprogram::subprogram(std::string name, byte* code, size_t len) : name(normalize_name(name)), code(code), len(len) {}
 
 	void subprogram::set_name(const std::string& str) {
 		name=normalize_name(str);

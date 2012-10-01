@@ -28,6 +28,9 @@ obj/%.o: src/%.cpp
 compiler-demo: src/compiler/summ.yy.cc src/compiler/parse.cc $(IDEMO_SOURCES)
 	$(CC) -Wall $(IDEMO_SOURCES) src/compiler/parse.cc src/compiler/summ.yy.cc -o compiler-demo
 
+compiler-demo-debug: src/compiler/summ.yy.cc src/compiler/parse.cc $(IDEMO_SOURCES)
+	$(CC) -Wall $(IDEMO_SOURCES) src/compiler/parse.cc src/compiler/summ.yy.cc -DDEBUG_MACROS_ENABLED -o compiler-demo
+
 src/compiler/summ.yy.cc: src/compiler/summ.l
 	flex -i -o src/compiler/summ.yy.cc src/compiler/summ.l
 

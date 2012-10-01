@@ -89,14 +89,15 @@ K_PROCEDURE IDENTIFIER K_IS declarations proc_body IDENTIFIER SEMICOLON {
 	}
 	else {
 		$4->code.insert( $4->code.end(), $5->code.begin(), $5->code.end() );
+		$4->code.push_back( codeline(RET, 0) );
 
 		second_pass($4->code);
 
 		byte* code = 0;
 		size_t length = 0;
 		assemble($4->code, code, length);
-		symtab.clear();
 		subprograms.push_back( subprogram(*$2, code, length) );
+		reset();
 	}
 
 	delete $2;
@@ -124,10 +125,10 @@ IDENTIFIER COLON type SEMICOLON {
 
 	if(symtab.count(*$1) > 0) { // does the var exist already?
 		std::stringstream ss;
-		ss << "Variable '" << *$1 << "' already declared (on line " << symtab[*$1].decl << ")." << std::endl;
+		ss << "Variable '" << *$1 << "' already declared (on line " << symtab.find(*$1)->second.decl << ")." << std::endl;
 		error(ss.str().c_str());
 	} else {
-		symtab.insert( make_pair(*$1, var(d_loc__.first_line, *$3)) );
+		symtab.insert( make_pair(*$1, var( gen_varnum(), d_loc__.first_line, *$3)) );
 		$$->code.push_back( codeline(ISP, 1) );	// reserve a single space for the variable. Great Big Idea takes care of the rest.
 	}
 
@@ -287,12 +288,12 @@ exp_list COMMA exp {
 assignment:
 IDENTIFIER OP_ASSIGNMENT exp {
 	if(symtab.count(*$1) > 0)  { //does the variable exist?
-		if(symtab[*$1].typ == $3->typ ) { //type matches?
-			symtab[*$1].writ = d_loc__.first_line; // mark as written into
+		if(symtab.find(*$1)->second.typ == $3->typ ) { //type matches?
+			symtab.find(*$1)->second.writ = d_loc__.first_line; // mark as written into
 
 			$$ = new statement();
 			$$->code = $3->code;
-			$$->code.push_back( codeline(STORE_X, symtab[*$1].num) );
+			$$->code.push_back( codeline(STORE_X, symtab.find(*$1)->second.num) );
 		}
 		else {
 			error("Type mismatch (both sides of the assignment must have the same type)");
@@ -312,16 +313,16 @@ IDENTIFIER OP_ASSIGNMENT exp {
 exp:
 IDENTIFIER {
 		if(symtab.count(*$1) > 0) { //does it exist?
-			if(symtab[*$1].read == 0) { //is it read for the first time?
-				symtab[*$1].read = d_loc__.first_line;
-				if(symtab[*$1].read < symtab[*$1].writ) { //was it written?
+			if(symtab.find(*$1)->second.read == 0) { //is it read for the first time?
+				symtab.find(*$1)->second.read = d_loc__.first_line;
+				if(symtab.find(*$1)->second.read < symtab.find(*$1)->second.writ) { //was it written?
 					std::stringstream ss;
 					ss << "variable " << *$1 << " doesn't seem to be initialized when first read";
 					warning(ss.str().c_str());
 				}
 			}
-			$$ = new expression(symtab[*$1].typ);
-			$$->code.push_back( codeline(FETCH_X, symtab[*$1].num) );
+			$$ = new expression(symtab.find(*$1)->second.typ);
+			$$->code.push_back( codeline(FETCH_X, symtab.find(*$1)->second.num) );
 		}
 		else {
 			std::stringstream ss;

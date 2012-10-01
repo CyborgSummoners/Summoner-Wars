@@ -37,6 +37,10 @@ uint32_t Parser::gen_label() {
 }
 
 
+size_t Parser::gen_varnum() {
+	return varnum++;
+}
+
 void Parser::second_pass(std::vector<codeline>& code) {
 	if(code.size() < 1) return;
 
@@ -107,6 +111,11 @@ void Parser::assemble(std::vector<codeline>& code, byte*& Result, size_t& length
 			++len;
 		};
 	}
+}
+
+void Parser::reset() {
+	varnum = 0;
+	symtab.clear();
 }
 
 void subprogram::print_bytecode(std::ostream& out) {

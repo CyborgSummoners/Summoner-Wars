@@ -36,12 +36,11 @@ namespace bytecode {
 		RET,          // pops a value, which is a routine number, then another, which is a line number in that routine. control yielded.
 		INTERRUPT,     // X, call for built-in procedures and functions. no followup.
 
-		// comparisons
-		//CMP = 50,   // pops two values, subtracts the second from the first, and pushes the result.
-		LESS = 51,    // pops two values, pushes true if the first is less than the second, false otherwise
-		GREATER,      // pops two values, pushes true if the first is greater than the second, false otherwise
-		EQ,           // pops two values, pushes true if they're equal, false otherwise
+		// comparisons. These MUST be continuous.
+		EQ = 50,      // pops two values, pushes true if they're equal, false otherwise
 		NEQ,          // pops two values, pushes true if they're not equal, false otherwise
+		LESS,         // pops two values, pushes true if the first is less than the second, false otherwise
+		GREATER,      // pops two values, pushes true if the first is greater than the second, false otherwise
 
 		// ops. These MUST be continuous.
 		ADDI = 60,

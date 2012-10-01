@@ -104,6 +104,7 @@ namespace sum {
 //*** Interrupts ***
 //*******************
 		struct Interrupt {
+			static const std::vector<Interrupt*> comparisons;
 			static const std::vector<Interrupt*> list;
 			static const std::map<std::string, size_t> mapping;
 
@@ -113,7 +114,101 @@ namespace sum {
 		};
 
 		namespace interrupt {
+			//*******************
+			//*** Comparisons ***
+			//*******************
+			// operator==
+			struct eq : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == r2->tag) {
+						if(r1->tag == integer) {
+							stack.push( new BooleanValue( static_cast<IntegerValue*>(r2)->value == static_cast<IntegerValue*>(r1)->value ) );
+							done = true;
+						}
+						else if(r1->tag == boolean) {
+							stack.push( new BooleanValue( static_cast<BooleanValue*>(r2)->value == static_cast<BooleanValue*>(r1)->value ) );
+							done = true;
+						}
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+			// operator!=
+			struct neq : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == r2->tag) {
+						if(r1->tag == integer) {
+							stack.push( new BooleanValue( static_cast<IntegerValue*>(r2)->value != static_cast<IntegerValue*>(r1)->value ) );
+							done = true;
+						}
+						else if(r1->tag == boolean) {
+							stack.push( new BooleanValue( static_cast<BooleanValue*>(r2)->value != static_cast<BooleanValue*>(r1)->value ) );
+							done = true;
+						}
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+			// operator<
+			struct less : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == r2->tag) {
+						if(r1->tag == integer) {
+							stack.push( new BooleanValue( static_cast<IntegerValue*>(r2)->value < static_cast<IntegerValue*>(r1)->value ) );
+							done = true;
+						}
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+			// operator>
+			struct greater : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == r2->tag) {
+						if(r1->tag == integer) {
+							stack.push( new BooleanValue( static_cast<IntegerValue*>(r2)->value > static_cast<IntegerValue*>(r1)->value ) );
+							done = true;
+						}
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
 
+			//*****************
+			//*** Operators ***
+			//*****************
 			// operator+
 			struct add : public Interrupt  {
 				const char* get_name() const {
@@ -276,6 +371,7 @@ namespace sum {
 				}
 			};
 
+
 			const std::vector<Interrupt*> list_init() {
 				std::vector<Interrupt*> Result;
 				Result.push_back( new interrupt::add() );
@@ -289,6 +385,14 @@ namespace sum {
 				Result.push_back( new interrupt::print() );
 				return Result;
 			}
+			const std::vector<Interrupt*> comp_init() {
+				std::vector<Interrupt*> Result;
+				Result.push_back( new interrupt::eq() );
+				Result.push_back( new interrupt::neq() );
+				Result.push_back( new interrupt::less() );
+				Result.push_back( new interrupt::greater() );
+				return Result;
+			}
 			const std::map<std::string, size_t> mapping_init() {
 				std::map<std::string, size_t> Result;
 				for(size_t i=0; i<Interrupt::list.size(); ++i) Result.insert( std::make_pair( Interrupt::list[i]->get_name(), i ) );
@@ -297,6 +401,7 @@ namespace sum {
 		} // namespace interrupt
 
 		const std::vector<Interrupt*> Interrupt::list = interrupt::list_init();
+		const std::vector<Interrupt*> Interrupt::comparisons = interrupt::comp_init();
 		const std::map<std::string, size_t> Interrupt::mapping = interrupt::mapping_init();
 
 
@@ -392,7 +497,12 @@ namespace sum {
 
 					break;
 				// comparisons
-
+				case EQ:
+				case NEQ:
+				case LESS:
+				case GREATER:
+					(*Interrupt::comparisons[opcode - EQ])(stack);
+					break;
 				// operations
 				case ADDI:    //60
 				case SUBI:

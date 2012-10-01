@@ -5,8 +5,7 @@
 #include <stdexcept>
 
 namespace sum {
-	enum type{ none, boolean, integer };
-
+	using namespace bytecode;
 
 	namespace stack_machine {
 		namespace except {
@@ -16,82 +15,15 @@ namespace sum {
 
 		struct Cell {
 			type tag;
-			virtual Cell* less(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* greater(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* eq(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* neq(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* add(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* sub(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* mul(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* div(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* mod(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* land(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* lor(Cell* left) {
-				throw except::incompatible_types();
-			};
-			virtual Cell* lnot() {
-				throw except::incompatible_types();
-			};
-
 			virtual void print(std::ostream& out) const = 0;
 			virtual Cell* clone() const = 0;
 		};
-
 
 		struct BooleanValue : public Cell {
 			const bool value;
 			BooleanValue(bool val) : value(val) {
 				this->tag = boolean;
 			}
-			virtual Cell* land(Cell* left) {
-				if(left->tag == boolean) return new BooleanValue( (dynamic_cast<BooleanValue*>(left)->value) && (this->value) );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-			virtual Cell* lor(Cell* left) {
-				if(left->tag == boolean) return new BooleanValue( dynamic_cast<BooleanValue*>(left)->value || this->value );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-			virtual Cell* lnot() {
-				return new BooleanValue( !(this->value) );
-			};
-			virtual Cell* eq(Cell* left) {
-				if(left->tag == boolean) return new BooleanValue( dynamic_cast<BooleanValue*>(left)->value == this->value );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-			virtual Cell* neq(Cell* left) {
-				if(left->tag == boolean) return new BooleanValue( dynamic_cast<BooleanValue*>(left)->value != this->value );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-
-
 			virtual void print(std::ostream& out) const {
 				out << (this->value? "true" : "false") << std::endl;
 			}
@@ -107,69 +39,6 @@ namespace sum {
 			IntegerValue(int val) : value(val) {
 				this->tag = integer;
 			}
-
-			virtual Cell* less(Cell* left) {
-				if(left->tag == integer) return new BooleanValue( dynamic_cast<IntegerValue*>(left)->value < this->value );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-			virtual Cell* greater(Cell* left) {
-				if(left->tag == integer) return new BooleanValue( dynamic_cast<IntegerValue*>(left)->value > this->value );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-			virtual Cell* eq(Cell* left) {
-				if(left->tag == integer) return new BooleanValue( dynamic_cast<IntegerValue*>(left)->value == this->value );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-			virtual Cell* neq(Cell* left) {
-				if(left->tag == integer) return new BooleanValue( dynamic_cast<IntegerValue*>(left)->value != this->value );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-
-			virtual Cell* add(Cell* left) {
-				if(left->tag == integer) return new IntegerValue( this->value + dynamic_cast<IntegerValue*>(left)->value );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-			virtual Cell* sub(Cell* left) {
-				if(left->tag == integer) return new IntegerValue( dynamic_cast<IntegerValue*>(left)->value - this->value );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-			virtual Cell* mul(Cell* left) {
-				if(left->tag == integer) return new IntegerValue( dynamic_cast<IntegerValue*>(left)->value * this->value );
-
-				throw except::incompatible_types();
-				return 0;
-			}
-			virtual Cell* div(Cell* left) {
-				if(left->tag == integer) {
-					if(this->value == 0) throw except::division_by_zero();
-					return new IntegerValue( dynamic_cast<IntegerValue*>(left)->value / this->value );
-				}
-
-				throw except::incompatible_types();
-				return 0;
-			}
-			virtual Cell* mod(Cell* left) {
-				if(left->tag == integer) {
-					if(this->value == 0) throw except::division_by_zero();
-					return new IntegerValue( dynamic_cast<IntegerValue*>(left)->value % this->value );
-				}
-
-				throw except::incompatible_types();
-				return 0;
-			}
-
 			virtual void print(std::ostream& out) const {
 				out << value << std::endl;
 			}
@@ -231,34 +100,222 @@ namespace sum {
 		}
 
 
+//*******************
+//*** Interrupts ***
+//*******************
 		struct Interrupt {
 			static const std::vector<Interrupt*> list;
-			static const std::vector<Interrupt*> initialize_interrupts();
+			static const std::map<std::string, size_t> mapping;
 
-			virtual Cell* operator()(Stack& stack) = 0;
+
+			virtual void operator()(Stack& stack) const = 0;
+			virtual const char* get_name() const = 0;
 		};
 
-		struct Intrpt_Print : public Interrupt  {
-			Cell* operator()(Stack& stack) {
-				Cell* r1 = stack.pop();
-				r1->print(std::cout);
-				delete r1;
-				return 0;
+		namespace interrupt {
+
+			// operator+
+			struct add : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == integer && r2->tag == integer ) {
+						stack.push( new IntegerValue( static_cast<IntegerValue*>(r2)->value + static_cast<IntegerValue*>(r1)->value ) );
+						done=true;
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+
+			// operator-
+			struct sub : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == integer && r2->tag == integer ) {
+						stack.push( new IntegerValue( static_cast<IntegerValue*>(r2)->value - static_cast<IntegerValue*>(r1)->value ) );
+						done=true;
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+
+			// operator*
+			struct mul : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == integer && r2->tag == integer ) {
+						stack.push( new IntegerValue( static_cast<IntegerValue*>(r2)->value * static_cast<IntegerValue*>(r1)->value ) );
+						done=true;
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+
+			// operator /
+			struct div : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == integer && r2->tag == integer ) {
+						stack.push( new IntegerValue( static_cast<IntegerValue*>(r2)->value / static_cast<IntegerValue*>(r1)->value ) );
+						done=true;
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+
+			// operator %
+			struct mod : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == integer && r2->tag == integer ) {
+						stack.push( new IntegerValue( static_cast<IntegerValue*>(r2)->value % static_cast<IntegerValue*>(r1)->value ) );
+						done=true;
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+
+			// operator &&
+			struct land : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == boolean && r2->tag == boolean ) {
+						stack.push( new BooleanValue( static_cast<BooleanValue*>(r2)->value && static_cast<BooleanValue*>(r1)->value ) );
+						done=true;
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+
+			// operator ||
+			struct lor : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == boolean && r2->tag == boolean ) {
+						stack.push( new BooleanValue( static_cast<BooleanValue*>(r2)->value || static_cast<BooleanValue*>(r1)->value ) );
+						done=true;
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+
+			// operator !
+			struct lnot : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				void operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					if( r1->tag == boolean ) {
+						stack.push( new BooleanValue( !(static_cast<BooleanValue*>(r1)->value) ) );
+						done=true;
+					}
+					delete r1;
+					if(!done) throw except::incompatible_types();
+				}
+			};
+
+			// builtin: print
+			struct print : public Interrupt  {
+				const char* get_name() const {
+					return "PRINT";
+				}
+				void operator()(Stack& stack) const {
+					Cell* r1 = stack.pop();
+					r1->print(std::cout);
+					delete r1;
+				}
+			};
+
+			const std::vector<Interrupt*> list_init() {
+				std::vector<Interrupt*> Result;
+				Result.push_back( new interrupt::add() );
+				Result.push_back( new interrupt::sub() );
+				Result.push_back( new interrupt::mul() );
+				Result.push_back( new interrupt::div() );
+				Result.push_back( new interrupt::mod() );
+				Result.push_back( new interrupt::land() );
+				Result.push_back( new interrupt::lor() );
+				Result.push_back( new interrupt::lnot() );
+				Result.push_back( new interrupt::print() );
+				return Result;
 			}
-		};
+			const std::map<std::string, size_t> mapping_init() {
+				std::map<std::string, size_t> Result;
+				for(size_t i=0; i<Interrupt::list.size(); ++i) Result.insert( std::make_pair( Interrupt::list[i]->get_name(), i ) );
+				return Result;
+			}
+		} // namespace interrupt
 
-		const std::vector<Interrupt*> Interrupt::initialize_interrupts() {
-			std::vector<Interrupt*> Result;
-			Result.push_back( new Intrpt_Print() ); // 0 - PRINT - 1
-			return Result;
-		}
-		const std::vector<Interrupt*> Interrupt::list = Interrupt::initialize_interrupts();
+		const std::vector<Interrupt*> Interrupt::list = interrupt::list_init();
+		const std::map<std::string, size_t> Interrupt::mapping = interrupt::mapping_init();
+
+
+	} // namespace stack_machine
+
+
+//*******************
+//*** Interpreter ***
+//*******************
+	int Interpreter::get_interrupt_id(const std::string& name) {
+		std::map<std::string, size_t>::const_iterator it = stack_machine::Interrupt::mapping.find(name);
+		if(it == stack_machine::Interrupt::mapping.end()) return -1;
+		return it->second;
 	}
 
 
 	bool Interpreter::register_subprogram(const bytecode::subprogram& prog) {
 		// do we already have a program with this name?
-		std::map<std::string, program_id>::iterator it = program_map.find(prog.get_name());
+		std::map<std::string, size_t>::iterator it = program_map.find(prog.get_name());
 		if(it != program_map.end()) return false;
 
 		// if not, let's register it.
@@ -272,7 +329,7 @@ namespace sum {
 	void Interpreter::execute(const std::string& program) const {
 		using namespace stack_machine;
 		using namespace bytecode;
-		program_id prog_id = program_map.find(program) -> second;
+		size_t prog_id = program_map.find(program) -> second;
 		Stack stack;
 		size_t pc=0;	//program counter.
 		Cell* r1;
@@ -335,89 +392,17 @@ namespace sum {
 
 					break;
 				// comparisons
-				case LESS:    //51
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push ( r1 -> less( r2 ) );
-					delete r1;
-					delete r2;
-					break;
-				case GREATER: //52
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push ( r1 -> greater( r2 ) );
-					delete r1;
-					delete r2;
-					break;
-				case EQ:      //53
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push ( r1 -> eq( r2 ) );
-					delete r1;
-					delete r2;
-					break;
-				case NEQ:     //54
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push (  r1-> neq( r2 ) );
-					delete r1;
-					delete r2;
-					break;
 
 				// operations
 				case ADDI:    //60
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push ( r1 -> add( r2 ) );
-					delete r1;
-					delete r2;
-					break;
-				case SUBI:    //61
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push ( r1 -> sub( r2 ) );
-					delete r1;
-					delete r2;
-					break;
-				case MULI:    //62
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push ( r1 -> mul( r2 ) );
-					delete r1;
-					delete r2;
-					break;
-				case DIVI:    //63
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push ( r1 -> div( r2 ) );
-					delete r1;
-					delete r2;
-					break;
-				case MODI:    //64
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push ( r1 -> mod( r2 ) );
-					delete r1;
-					delete r2;
-					break;
-				case AND:     //80
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push ( r1 -> land( r2 ) );
-					delete r1;
-					delete r2;
-					break;
-				case OR:      //81
-					r1=stack.pop();
-					r2=stack.pop();
-					stack.push ( r1 -> lor( r2 ) );
-					delete r1;
-					delete r2;
-					break;
-				case NOT:     //81
-					r1=stack.pop();
-					stack.push ( r1 -> lnot() );
-					delete r1;
+				case SUBI:
+				case MULI:
+				case DIVI:
+				case MODI:
+				case AND:
+				case OR:
+				case NOT:
+					(*Interrupt::list[opcode - ADDI])(stack);
 					break;
 
 				default:

@@ -1,4 +1,5 @@
 #include "bytecode.hpp"
+#include "interpreter.hpp"
 
 
 namespace bytecode {
@@ -23,6 +24,11 @@ namespace bytecode {
 
 	bool has_followup(Instruction i) {
 		return i==CALL;
+	}
+
+
+	int get_interrupt_id(const std::string& str) {
+		return sum::Interpreter::get_interrupt_id(str);
 	}
 
 
@@ -62,20 +68,5 @@ namespace bytecode {
 		}
 		++program_counter;
 		return Result;
-	}
-
-
-	const std::map<std::string, builtin_call> builtin_call::init_mapping() {
-		std::map<std::string, builtin_call> Result;
-		Result.insert( std::make_pair("PRINT", builtin_call(0, 1)) );
-		return Result;
-	}
-	const std::map<std::string, builtin_call> builtin_call::mapping=init_mapping();
-
-	bool builtin_call::call_exists(const std::string& name) {
-		return mapping.find(name) != mapping.end();
-	}
-	builtin_call builtin_call::get_call(const std::string& name) {
-		return mapping.find(name)->second;
 	}
 }

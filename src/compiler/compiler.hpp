@@ -10,8 +10,6 @@
 
 using namespace bytecode;
 
-enum type{ boolean, integer };
-
 struct var {
 	unsigned int decl; // on which line was it declared?
 	unsigned int writ; // on which line was it written into? 0 if never.

@@ -7,8 +7,9 @@
 #include <map>
 
 namespace bytecode {
-	typedef unsigned char byte;
+	enum type{ none, boolean, integer };
 
+	typedef unsigned char byte;
 
 	enum Instruction {
 		NOP = 0,
@@ -42,15 +43,13 @@ namespace bytecode {
 		EQ,           // pops two values, pushes true if they're equal, false otherwise
 		NEQ,          // pops two values, pushes true if they're not equal, false otherwise
 
-		// int ops - but these will be used for other types as well if the Great Big Idea is implemented.
+		// ops. These MUST be continuous.
 		ADDI = 60,
 		SUBI,
 		MULI,
 		DIVI,
 		MODI,
-
-		// boolean ops
-		AND = 80,
+		AND,
 		OR,
 		NOT,
 
@@ -63,7 +62,7 @@ namespace bytecode {
 
 	bool has_argument(Instruction i);
 	bool has_followup(Instruction i);
-
+	int get_interrupt_id(const std::string& str);
 
 	class subprogram {
 		public:
@@ -100,21 +99,6 @@ namespace bytecode {
 			// prints 'assembly'
 			void print_assembly(std::ostream& out);
 
-	};
-
-
-	class builtin_call {
-		private:
-			static const std::map<std::string, builtin_call> mapping;
-			static const std::map<std::string, builtin_call> init_mapping();
-
-		public:
-			const unsigned int identifier;
-			const byte args;
-			builtin_call(unsigned int identifier, byte args) : identifier(identifier), args(args) {}
-
-			static bool call_exists(const std::string& name);
-			static builtin_call get_call(const std::string& name);
 	};
 
 

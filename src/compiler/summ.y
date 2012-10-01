@@ -30,20 +30,15 @@
 %token K_LOOP
 %token K_DO
 
-%token T_INTEGER
-%token T_BOOLEAN
+%token T_INTEGER T_BOOLEAN
 
 %token OP_ASSIGNMENT
 
-%token COLON
-%token SEMICOLON
-%token COMMA
+%token COLON SEMICOLON COMMA
 
-%token T_OPEN
-%token T_CLOSE
+%token T_OPEN T_CLOSE
 
-%token L_TRUE
-%token L_FALSE
+%token L_TRUE L_FALSE
 
 %left OP_AND OP_OR
 %right OP_NOT
@@ -251,10 +246,11 @@ proc_call:
 	K_DO IDENTIFIER arguments {
 		$$ = $3;
 
-		// is it a built-in call?
+		// is it an interrupt?
 		std::string norm=subprogram::normalize_name(*$2);
-		if(builtin_call::call_exists(norm)) {
-			$$->code.push_back( codeline(INTERRUPT, builtin_call::get_call(norm).identifier) );
+		int intrpt = get_interrupt_id(norm);
+		if( intrpt >= 0 ) {
+			$$->code.push_back( codeline(INTERRUPT, intrpt) );
 		}
 		else {
 			$$->code.push_back( codeline(CALL, 0, 0, norm ) );

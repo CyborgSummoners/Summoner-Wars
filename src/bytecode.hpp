@@ -21,8 +21,7 @@ namespace bytecode {
 		//SWAP,         // exchanges two top values
 		//DUP,          // duplicates top value.
 
-		ISP = 10,     // X, adds X to the stack pointer
-		DSP,          // X, subtracts X from the stack pointer.
+		RSRV = 10,     // X, reserve space for X vars.
 
 		// mem ops
 		FETCH_X = 22,  // X, an address, pushes the value of X.

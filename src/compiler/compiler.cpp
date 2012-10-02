@@ -43,13 +43,12 @@ void Parser::second_pass(std::vector<codeline>& code) {
 	if(code.size() < 1) return;
 
 	// fixes
+	size_t vars = 0;
 	for(size_t i=0; i<code.size(); ++i) {
-		// unite uninterrupted stack pointer movement blocks
-		if( code[i].opcode == ISP || code[i].opcode == DSP ) {
-			for( size_t k=i+1; k<code.size() && code[k].opcode == code[i].opcode && code[k].label == 0; ++k ) {
-				code[k].opcode = NOP;
-				code[i].argument += code[k].argument;
-			}
+		// gather all space reservations into one big block.
+		if( code[i].opcode == RSRV ) {
+			++vars;
+			code[i].opcode = NOP;
 		}
 
 		// push ahead labels of NOPs
@@ -58,6 +57,9 @@ void Parser::second_pass(std::vector<codeline>& code) {
 			code[i].label = 0;
 		}
 	}
+
+	//put all reservations to the front:
+	code.insert(code.begin(), codeline(RSRV, vars));
 
 	// calculate real line numbers (not counting labelless NOPs)
 	for(size_t i=0, line=0; i<code.size(); ++i) {

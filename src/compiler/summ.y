@@ -12,8 +12,6 @@
 %type <stmt> statement
 %type <stmt> statements
 %type <stmt> proc_body
-%type <stmt> decl
-%type <stmt> declarations
 %type <stmt> exp_list
 %type <stmt> call_arguments
 
@@ -79,15 +77,15 @@ procedures:
 procedures procedure | procedure;
 
 procedure:
-K_PROCEDURE IDENTIFIER argument_list K_IS declarations proc_body IDENTIFIER SEMICOLON {
-	if(*$2 != *$7) {
+K_PROCEDURE IDENTIFIER argument_list K_IS proc_body IDENTIFIER SEMICOLON {
+	if(*$2 != *$6) {
 		std::stringstream ss;
-		ss << "Name mismatch. Procedure declared as '" << subprogram::normalize_name(*$2) << "' ends as '" << subprogram::normalize_name(*$7) << "'";
+		ss << "Name mismatch. Procedure declared as '" << subprogram::normalize_name(*$2) << "' ends as '" << subprogram::normalize_name(*$6) << "'";
 		error(ss.str().c_str());
 	}
 	else {
 
-		$5->code.insert( $5->code.end(), $6->code.begin(), $6->code.end() );
+		//$5->code.insert( $5->code.end(), $6->code.begin(), $6->code.end() );
 		$5->code.push_back( codeline(RET, 0) );
 
 		second_pass($5->code);
@@ -100,9 +98,9 @@ K_PROCEDURE IDENTIFIER argument_list K_IS declarations proc_body IDENTIFIER SEMI
 	}
 
 	delete $2;
+	//delete $5;
 	delete $5;
 	delete $6;
-	delete $7;
 };
 
 argument_list:
@@ -137,36 +135,6 @@ IDENTIFIER COLON type {
 	delete $3;
 };
 
-
-declarations:
-//epszilon
-	{
-		$$ = new statement();
-	}
-|
-declarations decl {
-	$$ = $1;
-	$$->code.insert( $$->code.end(), $2->code.begin(), $2->code.end() );
-	delete $2;
-	}
-;
-
-decl:
-IDENTIFIER COLON type SEMICOLON {
-	$$ = new statement();
-
-	if(symtab.count(*$1) > 0) { // does the var exist already?
-		std::stringstream ss;
-		ss << "Variable '" << *$1 << "' already declared (on line " << symtab.find(*$1)->second.decl << ")." << std::endl;
-		error(ss.str().c_str());
-	} else {
-		symtab.insert( make_pair(*$1, var( gen_varnum(), d_loc__.first_line, *$3)) );
-		$$->code.push_back( codeline(ISP, 1) );	// reserve a single space for the variable. Great Big Idea takes care of the rest.
-	}
-
-	delete $3;
-	delete $1;
-};
 
 proc_body:
 K_BEGIN statements K_END {
@@ -319,28 +287,19 @@ exp_list COMMA exp {
 
 assignment:
 IDENTIFIER OP_ASSIGNMENT exp {
-	if(symtab.count(*$1) > 0)  { //does the variable exist?
-		if(symtab.find(*$1)->second.typ == $3->typ ) { //type matches?
-			symtab.find(*$1)->second.writ = d_loc__.first_line; // mark as written into
-
-			$$ = new statement();
-			$$->code = $3->code;
-			$$->code.push_back( codeline(STORE_X, symtab.find(*$1)->second.num) );
-		}
-		else {
-			error("Type mismatch (both sides of the assignment must have the same type)");
-		}
+	std::map<std::string, var>::iterator varit = symtab.find(*$1);
+	if(varit == symtab.end()) {
+		varit = symtab.insert( std::make_pair(*$1, var( gen_varnum(), d_loc__.first_line, $3->typ) ) ).first;
 	}
-	else {
-		std::stringstream ss;
-		ss << "Variable '" << *$1 << "' undeclared." << std::endl;
-		error(ss.str().c_str());
-	}
+	else symtab.find(*$1)->second.writ = d_loc__.first_line; // mark as written into
+	$$ = new statement();
+	$$->code = $3->code;
+	$$->code.push_back( codeline(RSRV, 1) );
+	$$->code.push_back( codeline(STORE_X, symtab.find(*$1)->second.num) );
 
 	delete $1;
 	delete $3;
-}
-;
+};
 
 exp:
 IDENTIFIER {

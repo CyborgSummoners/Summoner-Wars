@@ -1,5 +1,4 @@
 procedure counting is
-	i: integer;
 begin
 	i:=0;
 	while i<10 loop
@@ -9,7 +8,6 @@ begin
 end counting;
 
 procedure countdown is
-	i: integer;
 begin
 	i:=10;
 	while i>0 loop

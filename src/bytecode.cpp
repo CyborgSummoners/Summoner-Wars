@@ -8,8 +8,7 @@ namespace bytecode {
 		switch(i) {
 			case PUSH:
 			case PSHB:
-			case ISP:
-			case DSP:
+			case RSRV:
 			case FETCH_X:
 			case STORE_X:
 			case JMP:

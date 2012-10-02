@@ -517,7 +517,7 @@ namespace sum {
 				case PSHB:    // 2
 					stack.push(new BooleanValue( programs[prog_id].get_int(pc) ));
 					break;
-				case ISP:     //10
+				case RSRV:     //10
 					stack.reserve( programs[prog_id].get_int(pc) );
 					break;
 				case FETCH_X: //23

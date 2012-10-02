@@ -1,11 +1,15 @@
 procedure this is
 	i: integer;
 begin
-	i:= 3;
-	do printit( i );
+	i:=10;
+	do print_three( 3, 5, i );
+	do print(i);
 end this;
 
-procedure printit(i: integer) is
+procedure print_three(x: integer; y: integer; z: integer) is
 begin
-	do print(i);
-end printit;
+	do print(x);
+	do print(y);
+	do print(z);
+	z := 100; -- observe the in mode
+end print_three;

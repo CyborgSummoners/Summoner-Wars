@@ -86,6 +86,8 @@ namespace sum {
 						if(stack[i]) delete stack[i];
 					}
 				}
+
+				void print(std::ostream& out) const;
 		};
 
 		Cell* Stack::pop() {
@@ -134,8 +136,9 @@ namespace sum {
 			dout << "reserving " << var_num << " spaces, total " << stack.size() << std::endl;
 		}
 
-
-
+		void Stack::print(std::ostream& out) const {
+			for(std::vector<Cell*>::const_reverse_iterator rit = stack.rbegin(); rit<stack.rend(); ++rit) (*rit)->print(out);
+		}
 
 //*******************
 //*** Interrupts ***
@@ -496,7 +499,8 @@ namespace sum {
 		size_t bp=0;	//base pointer.
 		Cell* r1;
 		ActivationRecord* ar;
-		size_t ri;
+		size_t rs;
+		int ri;
 
 		while(pc < programs[prog_id].len) {
 			byte opcode = programs[prog_id].get_byte(pc);
@@ -517,13 +521,16 @@ namespace sum {
 					stack.reserve( programs[prog_id].get_int(pc) );
 					break;
 				case FETCH_X: //23
-					stack.push( stack.var_at(bp + programs[prog_id].get_int(pc))->clone() );
+					ri = programs[prog_id].get_int(pc) - programs[prog_id].get_argc();
+					if(ri < 0) ri= -(programs[prog_id].get_argc()+ri) - 2; // ez kicsit gázos
+					stack.push( stack.var_at(bp + ri)->clone() );
 					break;
 				case STORE_X: //23
 					r1 = stack.pop();
-					stack.set_var_at(bp + programs[prog_id].get_int(pc), r1);
+					ri = programs[prog_id].get_int(pc) - programs[prog_id].get_argc();
+					if(ri < 0) ri= -(programs[prog_id].get_argc()+ri) - 2;
+					stack.set_var_at(bp + ri, r1);
 					break;
-
 				// control flow
 				case JMP:      //40
 					pc = programs[prog_id].get_int(pc);
@@ -546,8 +553,8 @@ namespace sum {
 					delete r1;
 					break;
 				case CALL:      //43
-					ri = get_program_id( programs[prog_id].get_string(pc) );	// get callee's id.
-					// parameters are on the top of the stack. callee will know how many
+					rs = get_program_id( programs[prog_id].get_string(pc) );	// get callee's id.
+					// parameters are on the top of the stack. callee knows how many
 
 					// reserve space for return value
 
@@ -555,26 +562,25 @@ namespace sum {
 					stack.push( new ActivationRecord(prog_id, pc, bp) );
 
 					bp = stack.get_stack_pointer(); // new 0 is the top of the stack.
-					prog_id = ri; // jump to new program
+					prog_id = rs; // jump to new program
 					pc = 0; // start at the beginning.
 					break;
 				case RET:		//44
 					if(bp == 0) break;	// ez kicsit hack.
-
 					stack.set_stack_pointer(bp); // rewind the stack all the way down to 0, to before the local vars
 					r1 = stack.pop(); // get back the activation record.
 					if((ar = dynamic_cast<ActivationRecord*>(r1))==0) throw stack_machine::except::corrupted_stack();
 					// pop retval to r1, if applicable.
-					prog_id = ar->prog;
-					pc = ar->pc;
+					stack.set_stack_pointer(stack.get_stack_pointer() - programs[prog_id].get_argc());	// consume the arguments, if any.
 					bp = ar->bp;
-					// don't forget to subtract the number of parameters from the bp!
+					pc = ar->pc;
+					prog_id = ar->prog;
 					delete ar;
 					break;
 				case INTERRUPT: //45
-					ri = programs[prog_id].get_int(pc);
-					if(ri < Interrupt::list.size()) {
-						(*Interrupt::list[ri])(stack);
+					rs = programs[prog_id].get_int(pc);
+					if(rs < Interrupt::list.size()) {
+						(*Interrupt::list[rs])(stack);
 					}
 
 					break;

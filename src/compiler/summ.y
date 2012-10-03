@@ -19,7 +19,6 @@
 %token <name> IDENTIFIER
 %token K_PROCEDURE
 %token K_IS
-%token K_BEGIN
 %token K_END
 %token K_IF
 %token K_THEN
@@ -77,10 +76,10 @@ procedures:
 procedures procedure | procedure;
 
 procedure:
-K_PROCEDURE IDENTIFIER argument_list K_IS proc_body IDENTIFIER SEMICOLON {
-	if(*$2 != *$6) {
+K_PROCEDURE IDENTIFIER argument_list K_IS proc_body K_END IDENTIFIER SEMICOLON {
+	if(*$2 != *$7) {
 		std::stringstream ss;
-		ss << "Name mismatch. Procedure declared as '" << subprogram::normalize_name(*$2) << "' ends as '" << subprogram::normalize_name(*$6) << "'";
+		ss << "Name mismatch. Procedure declared as '" << subprogram::normalize_name(*$2) << "' ends as '" << subprogram::normalize_name(*$7) << "'";
 		error(ss.str().c_str());
 	}
 	else {
@@ -100,7 +99,7 @@ K_PROCEDURE IDENTIFIER argument_list K_IS proc_body IDENTIFIER SEMICOLON {
 	delete $2;
 	//delete $5;
 	delete $5;
-	delete $6;
+	delete $7;
 };
 
 argument_list:
@@ -137,8 +136,8 @@ IDENTIFIER COLON type {
 
 
 proc_body:
-K_BEGIN statements K_END {
-	$$ = $2;
+statements {
+	$$ = $1;
 	}
 ;
 

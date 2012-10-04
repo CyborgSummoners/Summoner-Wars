@@ -217,8 +217,8 @@ K_IF exp K_THEN statements conditional_branches K_END K_IF {
 		// are there other branches at all?
 		if($5->code.size()>0) {
 			// replace placeholder JMP 0-s with JMP else_label
-			for(size_t i=0; i<$5->code.size(); ++i) {
-				if($5->code[i].opcode == JMP && $5->code[i].argument==0) $5->code[i].argument=end_label;
+			for(code_iterator it=$5->code.begin(); it!=$5->code.end(); ++it) {
+				if(it->opcode == JMP && it->argument==0) it->argument=end_label;
 			}
 
 			$$->code.push_back( codeline(JMPFALSE, else_label) );	               // if condition is NOT true, we jump to the next branch.
@@ -255,7 +255,7 @@ conditional_branches:
 	else {
 		uint32_t else_label = gen_label();
 
-		$$->code.insert( $$->code.begin(), $3->code.begin(), $3->code.end() ); // feltétel
+		$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() ); // feltétel
 		$$->code.push_back( codeline(JMPFALSE, else_label) );	               // if condition is NOT true, we jump to the next branch.
 		$$->code.insert( $$->code.end(), $5->code.begin(), $5->code.end() );   // this branch
 		// Hackery here: 0 is a placeholder which will be replaced when we actually know the end label:

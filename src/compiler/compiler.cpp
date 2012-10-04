@@ -39,22 +39,24 @@ size_t Parser::gen_varnum() {
 	return varnum++;
 }
 
-void Parser::second_pass(std::vector<codeline>& code) {
+void Parser::second_pass(codelines& code) {
 	if(code.size() < 1) return;
 
 	// fixes
 	size_t vars = 0;
-	for(size_t i=0; i<code.size(); ++i) {
+	for(code_iterator it=code.begin(), it2; it!=code.end(); ++it) {
 		// gather all space reservations into one big block.
-		if( code[i].opcode == RSRV ) {
+		if( it->opcode == RSRV ) {
 			++vars;
-			code[i].opcode = NOP;
+			it->opcode = NOP;
 		}
 
 		// push ahead labels of NOPs
-		if( code[i].opcode==NOP && code[i].label!=0 && i+1<code.size() && code[i+1].label==0 ) {
-			code[i+1].label = code[i].label;
-			code[i].label = 0;
+		it2 = it;
+		++it2;
+		if( it->opcode==NOP && it->label!=0 && (it+1)!=code.end() && (it+1)->label==0 ) {
+			(it+1)->label = it->label;
+			it->label = 0;
 		}
 	}
 
@@ -62,50 +64,52 @@ void Parser::second_pass(std::vector<codeline>& code) {
 	code.insert(code.begin(), codeline(RSRV, vars));
 
 	// calculate real line numbers (not counting labelless NOPs)
-	for(size_t i=0, line=0; i<code.size(); ++i) {
-		if( !(code[i].opcode==NOP && code[i].label==0) ) code[i].line_no = line++;
+	size_t line=0;
+	for(code_iterator it=code.begin(); it!=code.end(); ++it) {
+		if( !(it->opcode==NOP && it->label==0) ) it->line_no = line++;
 	}
 }
 
 
-void Parser::assemble(std::vector<codeline>& code, byte*& Result, size_t& length) {
+void Parser::assemble(codelines& code, byte*& Result, size_t& length) {
 	// count length (in bytes) and build labelmap
 	std::map<uint32_t, int> labelmap;
 	length = 0;
-	for(size_t i=0; i<code.size(); ++i) {
-		if(code[i].label != 0) labelmap.insert( std::make_pair(code[i].label, length) );
+	for(code_iterator it=code.begin(); it!=code.end(); ++it) {
+		if(it->label != 0) labelmap.insert( std::make_pair(it->label, length) );
 
-		if( !(code[i].opcode == NOP && code[i].label==0) ) {
+		if( !(it->opcode == NOP && it->label==0) ) {
 			++length;
-			if( has_argument(code[i].opcode) ) length+=4;
-			if( has_followup(code[i].opcode) ) length+=code[i].followup.length()+1;
+			if( has_argument(it->opcode) ) length+=4;
+			if( has_followup(it->opcode) ) length+=it->followup.length()+1;
 		}
 	}
 
 	// replace jump <label>s with jump <program_counter>s
-	for(size_t i=0; i<code.size(); ++i) {
-		if(code[i].opcode >= JMP && code[i].opcode <=JMPFALSE) {
-			code[i].argument = labelmap[static_cast<uint32_t>(code[i].argument)];
+	for(code_iterator it=code.begin(); it!=code.end(); ++it) {
+		if(it->opcode >= JMP && it->opcode <=JMPFALSE) {
+			it->argument = labelmap[static_cast<uint32_t>(it->argument)];
 		}
 	}
 
 	Result = new byte[length];
-	for(size_t i=0, len=0; i<code.size(); ++i) {
-		if( code[i].opcode == NOP && code[i].label==0 ) continue;	//cull labelless NOPs
+	size_t len=0;
+	for(code_iterator it=code.begin(); it!=code.end(); ++it) {
+		if( it->opcode == NOP && it->label==0 ) continue;	//cull labelless NOPs
 
-		Result[len] = code[i].opcode;
+		Result[len] = it->opcode;
 		++len;
 
-		if( has_argument(code[i].opcode) ) {
+		if( has_argument(it->opcode) ) {
 			for(size_t k=0; k<4; ++k) {
-				Result[len+3-k] = (code[i].argument >> (8*k));	// bigendian
+				Result[len+3-k] = (it->argument >> (8*k));	// bigendian
 			}
 			len+=4;
 		}
 
-		if( has_followup(code[i].opcode) ) {
-			for(size_t k=0; k<code[i].followup.length(); ++k, ++len) {
-				Result[len] = code[i].followup[k];
+		if( has_followup(it->opcode) ) {
+			for(size_t k=0; k<it->followup.length(); ++k, ++len) {
+				Result[len] = it->followup[k];
 			}
 			Result[len] = 0;
 			++len;

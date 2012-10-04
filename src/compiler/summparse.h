@@ -37,8 +37,8 @@ class Parser: public ParserBase {
     public:
         int parse();	// starts the parsing
 
-		static void second_pass(std::vector<codeline>& code);	// cleanup & optimize code a bit.
-		static void assemble(std::vector<codeline>& code, byte*& Result, size_t& length);	// assemble code into actual bytecode.
+		static void second_pass(codelines& code);	// cleanup & optimize code a bit.
+		static void assemble(codelines& code, byte*& Result, size_t& length);	// assemble code into actual bytecode.
 
     private:
         void error(char const *msg);    // called on (syntax) errors

@@ -48,6 +48,7 @@
 
 %left OP_PLUS OP_MINUS
 %left OP_MULTIPLY OP_DIV OP_MOD
+%left OP_UNARY_MINUS
 
 %token<name> L_INTEGER
 
@@ -359,6 +360,14 @@ IDENTIFIER {
 | constant {
 	$$ = $1;
 	}
+| OP_MINUS exp %prec OP_UNARY_MINUS {
+	$$ = $2;
+	if($2->typ == integer) {
+		$$->code.push_back( codeline(NEG, 0) );
+	} else {
+		error("Type mismatch (operand must be integer)\n");
+	}
+}
 | exp OP_PLUS exp {
 		//both operands must be integers
 		if($1->typ == $3->typ && $1->typ == integer) {
@@ -517,7 +526,7 @@ IDENTIFIER {
 	}
 | OP_NOT exp {
 	$$ = $2;
-	$$->code.push_back( codeline(NOT, 0) );
+	$$->code.push_back( codeline(NEG, 0) );
 	}
 | exp OP_EQUALITY exp {
 

@@ -49,7 +49,7 @@ namespace bytecode {
 		MODI,
 		AND,
 		OR,
-		NOT,
+		NEG,
 
 		// meta
 		DELAY = 200,   // X, the interpreter releases the puppet for a delay of X ticks.

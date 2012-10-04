@@ -393,8 +393,8 @@ namespace sum {
 				}
 			};
 
-			// operator !
-			struct lnot : public Interrupt  {
+			// negation: logical negation and unary minus
+			struct neg : public Interrupt  {
 				const char* get_name() const {
 					return "";
 				}
@@ -403,6 +403,10 @@ namespace sum {
 					Cell* r1 = stack.pop();
 					if( r1->tag == boolean ) {
 						stack.push( new BooleanValue( !(static_cast<BooleanValue*>(r1)->value) ) );
+						done=true;
+					}
+					else if( r1->tag == integer ) {
+						stack.push( new IntegerValue( -(static_cast<IntegerValue*>(r1)->value) ) );
 						done=true;
 					}
 					delete r1;
@@ -442,7 +446,7 @@ namespace sum {
 			new interrupt::mod(),
 			new interrupt::land(),
 			new interrupt::lor(),
-			new interrupt::lnot()
+			new interrupt::neg()
 		};
 		const Interrupt* Interrupt::comparisons[] = {
 			new interrupt::eq(),
@@ -599,7 +603,7 @@ namespace sum {
 				case MODI:
 				case AND:
 				case OR:
-				case NOT:
+				case NEG:
 					(*Interrupt::operators[opcode - ADDI])(stack);
 					break;
 

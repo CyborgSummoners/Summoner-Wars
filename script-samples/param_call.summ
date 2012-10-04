@@ -1,12 +1,14 @@
 procedure main is
 	i:=10;
-	do print_three( 3, 5, i );
+	do print_three_and_sum( 3, 5, i );
 	do print(i);
 end main;
 
-procedure print_three(x: integer; y: integer; z: integer) is
+procedure print_three_and_sum(x, y, z) is
+	i := x+y+z;
 	do print(x);
 	do print(y);
 	do print(z);
+	do print(i);
 	z := 100; -- observe the in mode
-end print_three;
+end print_three_and_sum;

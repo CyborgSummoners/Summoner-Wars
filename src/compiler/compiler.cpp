@@ -126,3 +126,13 @@ void Parser::reset() {
 	varnum = 0;
 	symtab.clear();
 }
+
+bool var::is(type typ) const {
+	if(typ == any || this->typ == typ) return true;
+	return (this->typ == any);
+}
+
+bool expression::is(type typ) const {
+	if(typ == any || this->typ == typ) return true;
+	return (this->typ == any);
+}

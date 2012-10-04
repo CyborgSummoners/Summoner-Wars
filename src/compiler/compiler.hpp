@@ -45,6 +45,8 @@ struct var {
 	type typ;
 
 	var(unsigned int num, unsigned int decl=0, type typ = integer) : decl(decl), writ(0), read(0), num(num), typ(typ) {}
+
+	bool is(type typ) const;
 };
 
 struct expression {
@@ -52,6 +54,8 @@ struct expression {
 	codelines code;
 
 	expression(type typ) : typ(typ) {}
+
+	bool is(type typ) const;
 };
 
 struct statement {

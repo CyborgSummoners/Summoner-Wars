@@ -7,7 +7,7 @@
 #include <map>
 
 namespace bytecode {
-	enum type{ none, meta, boolean, integer };
+	enum type{ meta, none, any, boolean, integer };
 
 	typedef unsigned char byte;
 	typedef char signed_byte;

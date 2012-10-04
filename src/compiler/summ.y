@@ -1,7 +1,6 @@
 %lsp-needed
 %baseclass-preinclude "compiler.hpp"
 
-%type <typ> type
 %type <exp> constant
 %type <exp> exp
 
@@ -28,8 +27,6 @@
 %token K_WHILE
 %token K_LOOP
 %token K_DO
-
-%token T_INTEGER T_BOOLEAN
 
 %token OP_ASSIGNMENT
 
@@ -118,23 +115,22 @@ arguments:
 argument {
 	$$ = 1;
 }
-| arguments SEMICOLON argument {
+| arguments COMMA argument {
 	$$ = $1 + 1;
 };
 
 argument:
-IDENTIFIER COLON type {
+IDENTIFIER {
 	if(symtab.count(*$1) > 0) { // a var with this name exist already?
 		std::stringstream ss;
 		ss << "Variable '" << *$1 << "' already declared (on line " << symtab.find(*$1)->second.decl << ")." << std::endl;
 		error(ss.str().c_str());
 	}
 	else {
-		symtab.insert( make_pair(*$1, var( gen_varnum(), d_loc__.first_line, *$3)) );
+		symtab.insert( make_pair(*$1, var( gen_varnum(), d_loc__.first_line, any)) );
 	}
 
 	delete $1;
-	delete $3;
 };
 
 
@@ -182,7 +178,7 @@ loop:
 K_WHILE exp K_LOOP statements K_END K_LOOP {
 	$$ = new statement();
 
-	if($2->typ != boolean) {
+	if( !($2->is(boolean)) ) {
 		error("The condition must be a boolean expression");
 	}
 	else {
@@ -206,7 +202,7 @@ conditional:
 K_IF exp K_THEN statements conditional_branches K_END K_IF {
 	$$ = new statement();
 
-	if($2->typ != boolean) {
+	if( !($2->is(boolean)) ) {
 		error("The condition must be a boolean expression");
 	}
 	else {
@@ -250,7 +246,7 @@ conditional_branches:
 }
 | conditional_branches K_ELSIF exp K_THEN statements {
 	$$ = $1;
-	if($3->typ != boolean) {
+	if( !($3->is(boolean)) ) {
 		error("The condition must be a boolean expression");
 	}
 	else {
@@ -362,7 +358,7 @@ IDENTIFIER {
 	}
 | OP_MINUS exp %prec OP_UNARY_MINUS {
 	$$ = $2;
-	if($2->typ == integer) {
+	if( $2->is(integer) ) {
 		$$->code.push_back( codeline(NEG, 0) );
 	} else {
 		error("Type mismatch (operand must be integer)\n");
@@ -370,7 +366,7 @@ IDENTIFIER {
 }
 | exp OP_PLUS exp {
 		//both operands must be integers
-		if($1->typ == $3->typ && $1->typ == integer) {
+		if( $1->is(integer) && $3->is(integer) ) {
 			$$ = new expression($1->typ);
 
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
@@ -392,7 +388,7 @@ IDENTIFIER {
 | exp OP_MINUS exp {
 
 		//both operands must be integers
-		if($1->typ == $3->typ && $1->typ == integer) {
+		if( $1->is(integer) && $3->is(integer) ) {
 			$$ = new expression($1->typ);
 
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
@@ -414,7 +410,7 @@ IDENTIFIER {
 | exp OP_DIV exp {
 
 		//both operands must be integers
-		if($1->typ == $3->typ && $1->typ == integer) {
+		if( $1->is(integer) && $3->is(integer) ) {
 			$$ = new expression($1->typ);
 
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
@@ -436,7 +432,7 @@ IDENTIFIER {
 | exp OP_MOD exp {
 
 		//both operands must be integers
-		if($1->typ == $3->typ && $1->typ == integer) {
+		if( $1->is(integer) && $3->is(integer) ) {
 
 			$$ = new expression($1->typ);
 
@@ -459,7 +455,7 @@ IDENTIFIER {
 | exp OP_MULTIPLY exp {
 
 		//both operands must be integers
-		if($1->typ == $3->typ && $1->typ == integer) {
+		if( $1->is(integer) && $3->is(integer) ) {
 			$$ = new expression($1->typ);
 
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
@@ -481,7 +477,7 @@ IDENTIFIER {
 | exp OP_AND exp {
 
 		//both operands must be booleans
-		if($1->typ == $3->typ && $1->typ == boolean) {
+		if( $1->is(boolean) && $3->is(boolean) ) {
 
 			$$ = new expression($1->typ);
 
@@ -504,7 +500,7 @@ IDENTIFIER {
 | exp OP_OR exp {
 
 		//both operands must be booleans
-		if($1->typ == $3->typ && $1->typ == boolean) {
+		if( $1->is(boolean) && $3->is(boolean) ) {
 
 			$$ = new expression($1->typ);
 
@@ -531,7 +527,7 @@ IDENTIFIER {
 | exp OP_EQUALITY exp {
 
 		//operands must be of the same type
-		if($1->typ == $3->typ) {
+		if( $1->is($3->typ) ) {
 
 			$$ = new expression(boolean);
 
@@ -554,7 +550,7 @@ IDENTIFIER {
 | exp OP_LESS_THAN exp {
 
 		//both operands must be integers
-		if($1->typ == $3->typ && $1->typ == integer) {
+		if( $1->is(integer) && $3->is(integer) ) {
 			$$ = new expression(boolean);
 
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
@@ -576,7 +572,7 @@ IDENTIFIER {
 | exp OP_GREATER_THAN exp {
 
 		//both operands must be integers
-		if($1->typ == $3->typ && $1->typ == integer) {
+		if( $1->is(integer) && $3->is(integer) ) {
 			$$ = new expression(boolean);
 
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
@@ -610,14 +606,5 @@ L_TRUE {
 	$$ = new expression(integer);
 	$$->code.push_back( codeline(PUSH, get_value(*$1)) );
 	delete $1;
-	}
-;
-
-type:
-T_INTEGER {
-	$$ = new type(integer);
-	}
-| T_BOOLEAN {
-	$$ = new type(boolean);
 	}
 ;

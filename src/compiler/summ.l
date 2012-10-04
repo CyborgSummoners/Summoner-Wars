@@ -14,9 +14,6 @@ is                      return Parser::K_IS;
 end                     return Parser::K_END;
 null                    return Parser::K_NULL;
 
-integer                 return Parser::T_INTEGER;
-boolean                 return Parser::T_BOOLEAN;
-
 if                      return Parser::K_IF;
 then                    return Parser::K_THEN;
 else                    return Parser::K_ELSE;

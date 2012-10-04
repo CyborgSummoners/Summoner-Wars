@@ -1,17 +1,15 @@
 procedure counting is
-begin
-	i:=0;
+	i:=-5;
 	while i<10 loop
-		do print(i);
+		if i = 5 then
+			do print(true);
+		elsif i = 7 then
+			do print(true);
+		elsif i = 6 then
+			do print(false);
+		else
+			do print(i);
+		end if;
 		i := i+1;
 	end loop;
 end counting;
-
-procedure countdown is
-begin
-	i:=10;
-	while i>0 loop
-		do print(i);
-		i := i-1;
-	end loop;
-end countdown;

@@ -1,18 +1,16 @@
-procedure counting is
-begin
+procedure fizzbuzz is
 	i:=0;
 	while i<100 loop
-		if i mod 3 = 0 or i mod 5 = 0 then
-			if i mod 3 = 0 then
-				do print(false);
-			end if;
-			if i mod 5 = 0 then
-				do print(true);
-			end if;
+		if i mod 3 = 0 and i mod 5 = 0 then
+			do print(true); --fizz
+			do print(false); -- buzz
+		elsif i mod 3 = 0 then
+			do print(true);	-- fizz
+		elsif i mod 5 = 0 then
+			do print(false); -- buzz
 		else
 			do print(i);
 		end if;
 		i := i+1;
 	end loop;
-end counting;
-
+end fizzbuzz;

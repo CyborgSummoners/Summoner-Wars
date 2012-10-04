@@ -1,5 +1,4 @@
 procedure this is
-begin
 	i:= 3;
 	do print( i );
 	do that;
@@ -7,7 +6,6 @@ begin
 end this;
 
 procedure that is
-begin
 	i:=5;
 	do print( i);
 end that;

@@ -1,13 +1,10 @@
-procedure this is
-	i: integer;
-begin
+procedure main is
 	i:=10;
 	do print_three( 3, 5, i );
 	do print(i);
-end this;
+end main;
 
 procedure print_three(x: integer; y: integer; z: integer) is
-begin
 	do print(x);
 	do print(y);
 	do print(z);

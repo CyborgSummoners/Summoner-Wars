@@ -519,19 +519,19 @@ namespace sum {
 					stack.push(new IntegerValue( programs[prog_id].get_int(pc) ));
 					break;
 				case PSHB:    // 2
-					stack.push(new BooleanValue( programs[prog_id].get_int(pc) ));
+					stack.push(new BooleanValue( programs[prog_id].get_byte(pc) ));
 					break;
 				case RSRV:     //10
-					stack.reserve( programs[prog_id].get_int(pc) );
+					stack.reserve( programs[prog_id].get_byte(pc) );
 					break;
 				case FETCH_X: //23
-					ri = programs[prog_id].get_int(pc) - programs[prog_id].get_argc();
+					ri = programs[prog_id].get_byte(pc) - programs[prog_id].get_argc();
 					if(ri < 0) ri= -(programs[prog_id].get_argc()+ri) - 2; // ez kicsit gázos
 					stack.push( stack.var_at(bp + ri)->clone() );
 					break;
 				case STORE_X: //23
 					r1 = stack.pop();
-					ri = programs[prog_id].get_int(pc) - programs[prog_id].get_argc();
+					ri = programs[prog_id].get_byte(pc) - programs[prog_id].get_argc();
 					if(ri < 0) ri= -(programs[prog_id].get_argc()+ri) - 2;
 					stack.set_var_at(bp + ri, r1);
 					break;

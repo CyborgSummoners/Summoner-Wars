@@ -80,7 +80,7 @@ void Parser::assemble(codelines& code, byte*& Result, size_t& length) {
 
 		if( !(it->opcode == NOP && it->label==0) ) {
 			++length;
-			if( has_argument(it->opcode) ) length+=4;
+			length+=arglen(it->opcode);
 			if( has_followup(it->opcode) ) length+=it->followup.length()+1;
 		}
 	}
@@ -100,12 +100,17 @@ void Parser::assemble(codelines& code, byte*& Result, size_t& length) {
 		Result[len] = it->opcode;
 		++len;
 
-		if( has_argument(it->opcode) ) {
+		if(arglen(it->opcode) == 4) {
 			for(size_t k=0; k<4; ++k) {
 				Result[len+3-k] = (it->argument >> (8*k));	// bigendian
 			}
 			len+=4;
 		}
+		else if(arglen(it->opcode) == 1) {
+			Result[len] = static_cast<byte>(it->argument);
+			++len;
+		}
+		// itt dobhatna kivételt, ha olyannal találkozik, amit nem ismer
 
 		if( has_followup(it->opcode) ) {
 			for(size_t k=0; k<it->followup.length(); ++k, ++len) {

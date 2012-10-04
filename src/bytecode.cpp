@@ -22,15 +22,32 @@ namespace bytecode {
 		}
 	}
 
+	size_t arglen(Instruction i) {
+		switch(i) {
+			case PUSH:
+			case JMP:
+			case JMPTRUE:
+			case JMPFALSE:
+			case INTERRUPT:
+			case DELAY:
+				return 4;
+			case FETCH_X:
+			case STORE_X:
+			case PSHB:
+			case RSRV:
+				return 1;
+			default:
+				return 0;
+		}
+	}
+
 	bool has_followup(Instruction i) {
 		return i==CALL;
 	}
 
-
 	int get_interrupt_id(const std::string& str) {
 		return sum::Interpreter::get_interrupt_id(str);
 	}
-
 
  	std::string subprogram::normalize_name(std::string str) {
 		if( str.size() > 15 ) str.resize(15);
@@ -59,6 +76,7 @@ namespace bytecode {
 	byte subprogram::get_byte(size_t& program_counter) const {
 		return code[program_counter++];
 	}
+
 
 	std::string subprogram::get_string(size_t& program_counter) const {
 		std::string Result;
@@ -94,9 +112,13 @@ namespace bytecode {
 			opcode = static_cast<Instruction>(get_byte(pc));
 			out << std::setw(4) << line << std::setw(6) << static_cast<int>(opcode) << std::setw(10);
 
-			if(has_argument(opcode)) {
+			if(arglen(opcode) == 4) {
 				out << get_int(pc);
-			} else out << " ";
+			}
+			else if(arglen(opcode) == 1) {
+				out << (int)get_byte(pc);
+			}
+			else out << " ";
 
 			if(has_followup(opcode)) {
 				out << " " << get_string(pc);

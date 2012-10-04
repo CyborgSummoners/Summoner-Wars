@@ -52,7 +52,7 @@ void Parser::second_pass(std::vector<codeline>& code) {
 		}
 
 		// push ahead labels of NOPs
-		if( code[i].opcode==NOP && code[i].label!=0 && i+1<code.size()) {
+		if( code[i].opcode==NOP && code[i].label!=0 && i+1<code.size() && code[i+1].label==0 ) {
 			code[i+1].label = code[i].label;
 			code[i].label = 0;
 		}

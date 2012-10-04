@@ -7,6 +7,7 @@
 
 %type <stmt> assignment
 %type <stmt> conditional
+%type <stmt> conditional_branches
 %type <stmt> loop
 %type <stmt> proc_call
 %type <stmt> statement
@@ -23,6 +24,7 @@
 %token K_IF
 %token K_THEN
 %token K_ELSE
+%token K_ELSIF
 %token K_WHILE
 %token K_LOOP
 %token K_DO
@@ -200,25 +202,7 @@ K_WHILE exp K_LOOP statements K_END K_LOOP {
 ;
 
 conditional:
-K_IF exp K_THEN statements K_END K_IF {
-	$$ = new statement();
-
-	if($2->typ != boolean) {
-		error("The condition must be a boolean expression");
-	}
-	else {
-		uint32_t label = gen_label();
-
-		$$->code.insert( $$->code.begin(), $2->code.begin(), $2->code.end() );	//feltétel
-		$$->code.push_back( codeline(JMPFALSE, label) );	// if condition is NOT true, we jump to the end.
-		$$->code.insert( $$->code.end(), $4->code.begin(), $4->code.end() );
-		$$->code.push_back( codeline(NOP, 0, label) );
-	}
-
-	delete $2;
-	delete $4;
-	}
-| K_IF exp K_THEN statements K_ELSE statements K_END K_IF {
+K_IF exp K_THEN statements conditional_branches K_END K_IF {
 	$$ = new statement();
 
 	if($2->typ != boolean) {
@@ -228,19 +212,67 @@ K_IF exp K_THEN statements K_END K_IF {
 		uint32_t else_label = gen_label();
 		uint32_t end_label = gen_label();
 
-		$$->code.insert( $$->code.begin(), $2->code.begin(), $2->code.end() );	//feltétel
-		$$->code.push_back( codeline(JMPFALSE, else_label) );	// if condition is NOT true, we jump to the else branch.
-		$$->code.insert( $$->code.end(), $4->code.begin(), $4->code.end() ); // true branch
-		$$->code.push_back( codeline(JMP, end_label) );	//when finished with the branch, we jump to the end.
-		$$->code.push_back( codeline(NOP, 0, else_label) );
-		$$->code.insert( $$->code.end(), $6->code.begin(), $6->code.end() );
-		$$->code.push_back( codeline(NOP, 0, end_label) );
+		$$->code.insert( $$->code.begin(), $2->code.begin(), $2->code.end() ); //feltétel
+
+		// are there other branches at all?
+		if($5->code.size()>0) {
+			// replace placeholder JMP 0-s with JMP else_label
+			for(size_t i=0; i<$5->code.size(); ++i) {
+				if($5->code[i].opcode == JMP && $5->code[i].argument==0) $5->code[i].argument=end_label;
+			}
+
+			$$->code.push_back( codeline(JMPFALSE, else_label) );	               // if condition is NOT true, we jump to the next branch.
+			$$->code.insert( $$->code.end(), $4->code.begin(), $4->code.end() );   // true branch
+			$$->code.push_back( codeline(JMP, end_label) );	                       //when finished with the branch, we jump to the end.
+
+			$$->code.push_back( codeline(NOP, 0, else_label) );                    // other branches start here
+			$$->code.insert( $$->code.end(), $5->code.begin(), $5->code.end() );
+
+			$$->code.push_back( codeline(NOP, 0, end_label) );                     // end
+		}
+		else { // otherwise it's just
+			$$->code.push_back( codeline(JMPFALSE, end_label) );	               // if condition is NOT true, we jump to the end.
+			$$->code.insert( $$->code.end(), $4->code.begin(), $4->code.end() );   // true branch
+			$$->code.push_back( codeline(NOP, 0, end_label) );                     // end
+		}
 	}
 
 	delete $2;
 	delete $4;
-	delete $6;
+	delete $5;
 };
+
+
+conditional_branches:
+/* epszilon */ {
+	$$ = new statement();
+}
+| conditional_branches K_ELSIF exp K_THEN statements {
+	$$ = $1;
+	if($3->typ != boolean) {
+		error("The condition must be a boolean expression");
+	}
+	else {
+		uint32_t else_label = gen_label();
+
+		$$->code.insert( $$->code.begin(), $3->code.begin(), $3->code.end() ); // feltétel
+		$$->code.push_back( codeline(JMPFALSE, else_label) );	               // if condition is NOT true, we jump to the next branch.
+		$$->code.insert( $$->code.end(), $5->code.begin(), $5->code.end() );   // this branch
+		// Hackery here: 0 is a placeholder which will be replaced when we actually know the end label:
+		$$->code.push_back( codeline(JMP, 0) );                                // when finished with the branch, we jump to the end.
+		$$->code.push_back( codeline(NOP, 0, else_label) );                    // other branches will start here
+	}
+
+	delete $3;
+	delete $5;
+}
+| conditional_branches K_ELSE statements {
+	$$ = $1;
+	$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );
+
+	delete $3;
+};
+
 
 proc_call:
 	K_DO IDENTIFIER call_arguments {

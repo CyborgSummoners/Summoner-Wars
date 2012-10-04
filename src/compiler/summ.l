@@ -20,6 +20,7 @@ boolean                 return Parser::T_BOOLEAN;
 if                      return Parser::K_IF;
 then                    return Parser::K_THEN;
 else                    return Parser::K_ELSE;
+elsif                   return Parser::K_ELSIF;
 
 while                   return Parser::K_WHILE;
 loop                    return Parser::K_LOOP;

@@ -493,6 +493,11 @@ namespace sum {
 	}
 
 
+	unsigned int Interpreter::step() {
+		return 100;
+	}
+
+
 	void Interpreter::execute(const std::string& program) const {
 		using namespace stack_machine;
 		using namespace bytecode;
@@ -613,4 +618,19 @@ namespace sum {
 			} //switch
 		} // while
 	} // Interpreter::execute
+
+
+	bool Interpreter::register_puppet(Puppet& puppet) {
+		return true;
+	}
+	bool Interpreter::unregister_puppet(Puppet& puppet) {
+		return true;
+	}
+	bool Interpreter::set_behaviour(Puppet& puppet, const std::string& behaviour) {
+		return true;
+	}
+
+	std::string Interpreter::get_behaviour(Puppet& puppet) const {
+		return "Hát, valami";
+	}
 }

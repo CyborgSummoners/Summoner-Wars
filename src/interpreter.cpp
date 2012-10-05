@@ -21,6 +21,18 @@ namespace sum {
 			virtual Cell* clone() const = 0;
 		};
 
+		struct NullValue : public Cell {
+			NullValue() {
+				this->tag = none;
+			}
+			virtual void print(std::ostream& out) const {
+				out << "Null" << std::endl;
+			}
+			virtual NullValue* clone() const {
+				return new NullValue();
+			}
+		};
+
 		struct BooleanValue : public Cell {
 			const bool value;
 			BooleanValue(bool val) : value(val) {
@@ -120,7 +132,7 @@ namespace sum {
 		}
 		void Stack::set_stack_pointer(size_t sp) {
 			if(sp > stack.size()) {
-				stack.resize(sp, 0); //~ stack.reserve(stack.size() - loc);
+				stack.reserve(stack.size() - sp);
 				return;
 			}
 			else if( sp == stack.size() ) return;
@@ -131,9 +143,12 @@ namespace sum {
 			stack.resize(sp);
 		}
 
-		void Stack::reserve(size_t var_num) {
-			stack.resize(stack.size()+var_num, 0);
-			dout << "reserving " << var_num << " spaces, total " << stack.size() << std::endl;
+		void Stack::reserve(size_t num) {
+			size_t currsiz = stack.size();
+			stack.resize(stack.size()+num, 0);
+			for(size_t i=currsiz; i<num; ++i) stack[i] = new NullValue();
+
+			dout << "reserving " << num << " spaces, total " << stack.size() << std::endl;
 		}
 
 		void Stack::print(std::ostream& out) const {

@@ -331,16 +331,17 @@ IDENTIFIER OP_ASSIGNMENT exp {
 
 exp:
 IDENTIFIER {
+		$$ = new expression(any);
 		if(symtab.count(*$1) > 0) { //does it exist?
 			if(symtab.find(*$1)->second.read == 0) { //is it read for the first time?
 				symtab.find(*$1)->second.read = d_loc__.first_line;
 				if(symtab.find(*$1)->second.read < symtab.find(*$1)->second.writ) { //was it written?
 					std::stringstream ss;
 					ss << "variable " << *$1 << " doesn't seem to be initialized when first read";
-					warning(ss.str().c_str());
+					error(ss.str().c_str());
 				}
 			}
-			$$ = new expression(symtab.find(*$1)->second.typ);
+			$$->typ = symtab.find(*$1)->second.typ;
 			$$->code.push_back( codeline(FETCH_X, symtab.find(*$1)->second.num) );
 		}
 		else {

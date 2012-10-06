@@ -7,7 +7,7 @@
 #include <map>
 
 namespace bytecode {
-	enum type{ meta, none, any, boolean, integer };
+	enum type{ meta, none, any, boolean, integer, string };
 
 	typedef unsigned char byte;
 	typedef char signed_byte;
@@ -19,6 +19,7 @@ namespace bytecode {
 		// stack ops  //
 		PUSH = 1,     // 4               pushes an integer value onto the stack
 		PSHB,         // 1               pushes a boolean value onto the stack
+		PSHS,         //        CSTR     pushes a string literal onto the stack, given by the followup, a nullterminated string.
 //		DROP,         //                 pops a value and discards it
 //		SWAP,         //                 exchanges two top values
 //		DUP,          //                 duplicates top value.

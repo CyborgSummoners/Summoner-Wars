@@ -2,12 +2,11 @@ procedure fizzbuzz is
 	i:=0;
 	while i<100 loop
 		if i mod 3 = 0 and i mod 5 = 0 then
-			do print(true); --fizz
-			do print(false); -- buzz
+			do print("fizzbuzz");
 		elsif i mod 3 = 0 then
-			do print(true);	-- fizz
+			do print("fizz");
 		elsif i mod 5 = 0 then
-			do print(false); -- buzz
+			do print("buzz");
 		else
 			do print(i);
 		end if;

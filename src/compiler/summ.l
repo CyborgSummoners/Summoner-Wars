@@ -5,7 +5,11 @@
 %}
 
 
+%x STR
 %%
+
+		char str_buf[2048];
+		char* str_buf_ptr;
 
 
 --.*                    // comment
@@ -47,6 +51,29 @@ div                     return Parser::OP_DIV;
 mod                     return Parser::OP_MOD;
 &                       return Parser::OP_CONCAT;
 
+\"                      {	// new string. pointer points at the start of the buffer.
+                            BEGIN(STR);
+                            str_buf_ptr = str_buf;
+                        }
+<STR>{
+    \"                  {	// end of string, go back to initial state
+                            BEGIN(INITIAL);
+                            *str_buf_ptr = 0;
+                            d_val->str = new std::string(str_buf);
+                            return Parser::L_STRING;
+                        }
+    \n                  {
+                            BEGIN(INITIAL);
+                            std::cerr << lineno() << "Unterminated string literal";
+                            return Parser::LEXICAL_ERROR;
+						}
+    "\\n"                   *str_buf_ptr++ = '\n';
+    [^\\\n\"]+          {
+                            char* yyptr = yytext;
+                            while(*yyptr) *str_buf_ptr++ = *yyptr++;
+                        }
+}
+
 [a-zA-Z][a-zA-Z0-9_]*   {
                         d_val->str = new std::string(YYText());
                         return Parser::IDENTIFIER;
@@ -59,9 +86,9 @@ mod                     return Parser::OP_MOD;
 
 [ \n\t]
 
-.                       {
-	std::cerr << lineno()<<": lexical error: invalid character ('" << YYText() << "')." << std::endl;
-	exit(1);
-						}
+.                       {	//unknown character.
+                        std::cerr << lineno()<<": lexical error: invalid character ('" << YYText() << "')." << std::endl;
+                        return Parser::LEXICAL_ERROR;
+                        }
 
 %%

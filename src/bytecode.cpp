@@ -42,7 +42,7 @@ namespace bytecode {
 	}
 
 	bool has_followup(Instruction i) {
-		return i==CALL;
+		return (i==CALL || i==PSHS);
 	}
 
 	int get_interrupt_id(const std::string& str) {

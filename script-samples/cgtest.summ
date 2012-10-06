@@ -2,11 +2,11 @@ procedure counting is
 	i:=-5;
 	while i<10 loop
 		if i = 5 then
-			do print(true);
+			do print("five");
 		elsif i = 7 then
-			do print(true);
+			do print("seven");
 		elsif i = 6 then
-			do print(false);
+			do print("six");
 		else
 			do print(i);
 		end if;

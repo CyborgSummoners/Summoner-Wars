@@ -60,6 +60,20 @@ namespace sum {
 			}
 		};
 
+		struct StringValue : public Cell {
+			const std::string value;
+
+			StringValue(std::string val) : value(val) {
+				this->tag = string;
+			}
+			virtual void print(std::ostream& out) const {
+				out << value << std::endl;
+			}
+			virtual StringValue* clone() const {
+				return new StringValue(this->value);
+			}
+		};
+
 		struct ActivationRecord : public Cell {
 			const size_t prog;
 			const size_t pc;
@@ -540,6 +554,9 @@ namespace sum {
 					break;
 				case PSHB:    // 2
 					stack.push(new BooleanValue( programs[prog_id].get_byte(pc) ));
+					break;
+				case PSHS:    // 2
+					stack.push(new StringValue( programs[prog_id].get_string(pc) ));
 					break;
 				case RSRV:     //10
 					stack.reserve( programs[prog_id].get_byte(pc) );

@@ -1,6 +1,8 @@
 %lsp-needed
 %baseclass-preinclude "compiler.hpp"
 
+%token LEXICAL_ERROR
+
 %type <exp> constant
 %type <exp> exp
 
@@ -48,6 +50,7 @@
 %left OP_UNARY_MINUS
 
 %token<str> L_INTEGER
+%token<str> L_STRING
 
 %token K_NULL
 
@@ -608,4 +611,8 @@ L_TRUE {
 	$$->code.push_back( codeline(PUSH, get_value(*$1)) );
 	delete $1;
 	}
-;
+| L_STRING {
+	$$ = new expression(string);
+	$$->code.push_back( codeline(PSHS, 0, 0, *$1) );
+	delete $1;
+};

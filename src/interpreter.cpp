@@ -526,6 +526,9 @@ namespace sum {
 		return 100;
 	}
 
+	bool Interpreter::step(unsigned int ticks) {
+		return true;
+	}
 
 	void Interpreter::execute(const std::string& program) const {
 		using namespace stack_machine;

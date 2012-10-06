@@ -5,10 +5,9 @@
 #include <vector>
 #include <string>
 #include "bytecode.hpp"
+#include "puppet.hpp"
 
 namespace sum {
-
-	class Puppet;
 
 	class Interpreter {
 		public:
@@ -25,6 +24,10 @@ namespace sum {
 			// visszaadja, mennyi tick idő telt el a legutóbbi állapot óta (jelenleg konstans 100)
 			unsigned int step();
 
+			// esetleg:
+			//advance simulation by ticks many ticks, return true if anything meaningful happened, false otherwise.
+			bool step(unsigned int ticks);
+
 			bool register_subprogram(const bytecode::subprogram& prog);
 			void execute(const std::string& program) const;
 
@@ -33,7 +36,7 @@ namespace sum {
 			bool register_puppet(Puppet& puppet);
 
 			// Puppet kivétele a végrehajtási sorból.
-			// Nem feltétlen kell jelentse a puppet halálát (paralízis, stb)
+			// True, ha sikeres, False ha a puppet már nem volt benne a végrehajtási sorban.
 			bool unregister_puppet(Puppet& puppet);
 
 			// Puppet viselkedésének beállítása.

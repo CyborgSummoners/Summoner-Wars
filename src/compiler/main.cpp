@@ -3,7 +3,6 @@
 #include <cstring>
 #include <fstream>
 #include <sstream>
-#include <FlexLexer.h>
 #include "summparse.h"
 #include "../interpreter.hpp"
 
@@ -60,11 +59,9 @@ int main(int argc, char** argv) {
 
 	if(error) return error;
 
-	yyFlexLexer* lexer = new yyFlexLexer(&source, &std::cout);
-	Parser parser(lexer, act);
+	Parser parser(source, std::cout, act);
 	error=parser.parse();
 	source.close();
-	delete lexer;
 
 	if(error) return error;
 	if(act != Parser::FULL) return 0;

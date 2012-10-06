@@ -1,4 +1,4 @@
-%option noyywrap c++ yylineno
+%option noyywrap yylineno c++ yyclass="Lexer"
 
 %{
 #include "summparse.h"
@@ -47,9 +47,15 @@ div                     return Parser::OP_DIV;
 mod                     return Parser::OP_MOD;
 &                       return Parser::OP_CONCAT;
 
-[a-zA-Z][a-zA-Z0-9_]*   return Parser::IDENTIFIER;
+[a-zA-Z][a-zA-Z0-9_]*   {
+                        d_val->str = new std::string(YYText());
+                        return Parser::IDENTIFIER;
+                        }
 
-[0-9]+                  return Parser::L_INTEGER;
+[0-9]+                  {
+                        d_val->str = new std::string(YYText());
+                        return Parser::L_INTEGER;
+                        }
 
 [ \n\t]
 

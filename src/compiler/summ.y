@@ -16,7 +16,7 @@
 %type <stmt> call_arguments
 
 %type <count> argument_list arguments
-%token <name> IDENTIFIER
+%token <str> IDENTIFIER
 %token K_PROCEDURE
 %token K_IS
 %token K_END
@@ -47,13 +47,13 @@
 %left OP_MULTIPLY OP_DIV OP_MOD
 %left OP_UNARY_MINUS
 
-%token<name> L_INTEGER
+%token<str> L_INTEGER
 
 %token K_NULL
 
 %union {
 	size_t count;
-	std::string* name;
+	std::string* str;
 	type* typ;
 	expression* exp;
 	statement* stmt;

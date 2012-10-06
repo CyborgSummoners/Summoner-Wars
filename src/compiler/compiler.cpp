@@ -1,12 +1,21 @@
-#include <FlexLexer.h>
 #include "../bytecode.hpp"
 #include "summparse.h"
 
+Parser::Parser(std::istream& in, std::ostream& out, action act) : act(act), lexer( new Lexer(in, out) ), varnum(0) {
+}
+Parser::~Parser() {
+	delete lexer;
+}
 
 int Parser::lex() {
-	int ret = lexer->yylex();
-	d_loc__.first_line = lexer->lineno();
-	d_val__.name = new std::string(lexer->YYText());
+	return lexer->yylex(&d_val__, &d_loc__);
+}
+
+int Lexer::yylex(Parser::STYPE__* d_val, Parser::LTYPE__* d_loc) {
+	this->d_val = d_val;
+	this->d_loc = d_loc;
+	int ret = yylex();
+	d_loc->first_line = lineno();
 	return ret;
 }
 

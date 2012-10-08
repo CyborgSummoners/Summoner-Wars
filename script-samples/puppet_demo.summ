@@ -1,0 +1,12 @@
+procedure demo is
+	do print("I am a puppet");
+	do print("I'm a puppet on a string");
+	do print("My program calls another procedure:");
+	do that;
+	do print("My life is bleak, there is no hope");
+	do print("I am in a big loop");
+end demo;
+
+procedure that is
+	do print("It's doing that now. Returning to main.");
+end that;

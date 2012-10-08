@@ -493,6 +493,17 @@ namespace sum {
 //*******************
 //*** Interpreter ***
 //*******************
+	Interpreter::puppet_brain::puppet_brain(Puppet& puppet) : puppet(puppet), program(0), program_counter(0), base_pointer(0), delay(0) {
+		stack = new stack_machine::Stack();
+	}
+	Interpreter::puppet_brain::~puppet_brain() {
+		delete stack;
+	}
+
+	Interpreter::Interpreter() {
+		programs.push_back(subprogram("NOP", 0, 0, 0));	// hackish
+	}
+
 	int Interpreter::get_interrupt_id(const std::string& name) {
 		std::map<std::string, size_t>::const_iterator it = stack_machine::Interrupt::mapping.find(name);
 		if(it == stack_machine::Interrupt::mapping.end()) return -1;
@@ -527,30 +538,33 @@ namespace sum {
 	}
 
 	bool Interpreter::step(unsigned int ticks) {
-		return true;
-	}
-
-	void Interpreter::execute(const std::string& program) const {
 		using namespace stack_machine;
 		using namespace bytecode;
 
-		size_t prog_id = get_program_id(program);
-		Stack stack;
-		size_t pc=0;	//program counter.
-		size_t bp=0;	//base pointer.
+		//find the next puppet with a delay < ticks
+		std::list<puppet_brain*>::iterator it = puppets.begin();
+		if( it==puppets.end() || (*it)->delay > ticks ) return false;
+
+		puppet_brain* puppet = *it;
+
+		// hanyagság és olvashatóság
+		size_t& prog_id = puppet->program;
+		Stack& stack = *(puppet->stack);
+		size_t& pc = puppet->program_counter;
+		size_t& bp = puppet->base_pointer;
+
+		// segédregiszterek (kiemelni objektumváltozókká?)
 		Cell* r1;
 		ActivationRecord* ar;
 		size_t rs;
 		int ri;
+		byte opcode;
 
-		while(pc < programs[prog_id].len) {
-			byte opcode = programs[prog_id].get_byte(pc);
-
-			dout << "#" << pc << " Opcode: " << (int)opcode <<std::endl;
+//		while(puppet->delay < ticks) {
+			opcode = programs[prog_id].get_byte(pc);
 			switch(opcode) {
 				case NOP:	// 0
 					break;
-
 				// stack
 				case PUSH:    // 1
 					stack.push(new IntegerValue( programs[prog_id].get_int(pc) ));
@@ -651,17 +665,38 @@ namespace sum {
 					std::cerr << "unknown opcode " << (int)opcode << std::endl;
 					break;
 			} //switch
-		} // while
+//		} // while
+		if(pc == programs[prog_id].len) pc=0;
+
+		return true;
 	} // Interpreter::execute
 
 
+	void Interpreter::execute(const std::string& program) const {
+	}
+
 	bool Interpreter::register_puppet(Puppet& puppet) {
+		for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+			if( (*it)->puppet == puppet) return false;
+		}
+		puppets.push_front( new puppet_brain(puppet) );
 		return true;
 	}
 	bool Interpreter::unregister_puppet(Puppet& puppet) {
 		return true;
 	}
 	bool Interpreter::set_behaviour(Puppet& puppet, const std::string& behaviour) {
+		try {
+			for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+				if( (*it)->puppet == puppet ) {
+					(*it)->overrides[0] = get_program_id(behaviour);
+					if( (*it)->program == 0 )  (*it)->program = (*it)->overrides[0];
+					return true;
+				}
+			}
+		} catch(stack_machine::except::subprogram_does_not_exist& e) {
+			return false;
+		}
 		return true;
 	}
 

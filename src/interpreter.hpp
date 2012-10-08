@@ -3,23 +3,45 @@
 
 #include <map>
 #include <vector>
+#include <list>
 #include <string>
 #include "bytecode.hpp"
 #include "puppet.hpp"
 
 namespace sum {
 
+	namespace stack_machine{
+		class Stack;
+	}
+
 	class Interpreter {
+		private:
+			struct puppet_brain {
+				Puppet& puppet;
+				size_t program;
+				size_t program_counter;
+				size_t base_pointer;
+				size_t delay;
+				stack_machine::Stack* stack;
+				std::map<size_t, size_t> overrides;
+
+				puppet_brain(Puppet& puppet);
+				~puppet_brain();
+			};
+
 		public:
 			static int get_interrupt_id(const std::string& name);
 
 		private:
 			std::vector<bytecode::subprogram> programs;
 			std::map<std::string, size_t> program_map;
+			std::list<puppet_brain*> puppets;
 
 			size_t get_program_id(const std::string& str) const;
 
 		public:
+			Interpreter();
+
 			// Interpreter lép egyet, végrehajtja a következő utasításblokkot.
 			// visszaadja, mennyi tick idő telt el a legutóbbi állapot óta (jelenleg konstans 100)
 			unsigned int step();
@@ -44,6 +66,9 @@ namespace sum {
 			bool set_behaviour(Puppet& puppet, const std::string& behaviour);
 
 			std::string get_behaviour(Puppet& puppet) const;
+
+		private:
+			void execute_step(puppet_brain* puppet);
 	};
 }
 

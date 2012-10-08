@@ -23,11 +23,11 @@ PROG = sumwar
 $(PROG): $(OBJECTS)
 	$(CC) -o $(PROG) $(OBJECTS) $(LIBS)
 
-obj/%.o: src/%.cpp | obj obj/compiler
-	$(CC) $(CFLAGS) -c -o $@ $< $(LIBS)
+obj/%.o: src/%.cpp | obj obj/compiler src/compiler/parse.cc
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 obj/%.occ: src/%.cc | obj obj/compiler
-	$(CC) $(CFLAGS) -c -o $@ $< $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 obj/compiler/compiler.o: src/compiler/parse.cc
 
@@ -40,7 +40,7 @@ obj:
 obj/compiler:
 	mkdir -p obj/compiler
 
-compiler-demo: $(COMPILER_OBJECTS)
+compiler-demo: $(COMPILER_OBJECTS) src/compiler/parse.cc
 	$(CC) -Wall $(COMPILER_OBJECTS) -o compiler-demo
 
 src/compiler/summ.yy.cc: src/compiler/summ.l

@@ -501,7 +501,13 @@ namespace sum {
 	}
 
 	Interpreter::Interpreter() {
-		programs.push_back(subprogram("NOP", 0, 0, 0));	// hackish
+		// default behaviour: delay 100;
+		bytecode::byte* code = new bytecode::byte[6];
+		code[0] = bytecode::NOP;
+		code[1] = bytecode::DELAY;
+		code[2] = code[3] = code[4] = 0;
+		code[5] = 100;
+		programs.push_back(bytecode::subprogram("NOP", 0, code, 5));
 	}
 
 	int Interpreter::get_interrupt_id(const std::string& name) {
@@ -670,7 +676,8 @@ namespace sum {
 			case NEG:
 				(*Interrupt::operators[opcode - ADDI])(stack);
 				break;
-
+			case DELAY:
+				return programs[program_id].get_int(pc);
 			default:
 				std::cerr << "unknown opcode " << (int)opcode << std::endl;
 				break;

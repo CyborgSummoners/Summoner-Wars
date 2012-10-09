@@ -533,146 +533,149 @@ namespace sum {
 	}
 
 
-	unsigned int Interpreter::step() {
-		return 100;
-	}
-
 	bool Interpreter::step(unsigned int ticks) {
-		using namespace stack_machine;
-		using namespace bytecode;
-
 		//find the next puppet with a delay < ticks
 		std::list<puppet_brain*>::iterator it = puppets.begin();
 		if( it==puppets.end() || (*it)->delay > ticks ) return false;
 
 		puppet_brain* puppet = *it;
 
-		// hanyagság és olvashatóság
-		size_t& prog_id = puppet->program;
-		Stack& stack = *(puppet->stack);
-		size_t& pc = puppet->program_counter;
-		size_t& bp = puppet->base_pointer;
+//		while(puppet->delay < ticks) {
+			if(puppet->program_counter >= programs[ puppet->program ].len) puppet->program_counter=0;
+			execute_instruction(puppet->program, *(puppet->stack), puppet->program_counter, puppet->base_pointer);
+//		}
+
+		return true;
+	}
+
+
+	void Interpreter::execute(const std::string& program) const {
+		size_t prog_id = get_program_id(program);
+		stack_machine::Stack stack;
+		size_t pc=0;
+		size_t bp=0;
+
+		while(pc < programs[prog_id].len) {
+			execute_instruction(prog_id, stack, pc, bp);
+		}
+	}
+
+
+	size_t Interpreter::execute_instruction(size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const {
+		using namespace stack_machine;
+		using namespace bytecode;
 
 		// segédregiszterek (kiemelni objektumváltozókká?)
 		Cell* r1;
 		ActivationRecord* ar;
 		size_t rs;
 		int ri;
-		byte opcode;
 
-//		while(puppet->delay < ticks) {
-			opcode = programs[prog_id].get_byte(pc);
-			switch(opcode) {
-				case NOP:	// 0
-					break;
-				// stack
-				case PUSH:    // 1
-					stack.push(new IntegerValue( programs[prog_id].get_int(pc) ));
-					break;
-				case PSHB:    // 2
-					stack.push(new BooleanValue( programs[prog_id].get_byte(pc) ));
-					break;
-				case PSHS:    // 2
-					stack.push(new StringValue( programs[prog_id].get_string(pc) ));
-					break;
-				case RSRV:     //10
-					stack.reserve( programs[prog_id].get_byte(pc) );
-					break;
-				case FETCH_X: //23
-					ri = programs[prog_id].get_byte(pc) - programs[prog_id].get_argc();
-					if(ri < 0) ri= -(programs[prog_id].get_argc()+ri) - 2; // ez kicsit gázos
-					stack.push( stack.var_at(bp + ri)->clone() );
-					break;
-				case STORE_X: //23
-					r1 = stack.pop();
-					ri = programs[prog_id].get_byte(pc) - programs[prog_id].get_argc();
-					if(ri < 0) ri= -(programs[prog_id].get_argc()+ri) - 2;
-					stack.set_var_at(bp + ri, r1);
-					break;
-				// control flow
-				case JMP:      //40
-					pc = programs[prog_id].get_int(pc);
+		byte opcode = programs[program_id].get_byte(pc);
+		switch(opcode) {
+			case NOP:	// 0
+				break;
+			// stack
+			case PUSH:    // 1
+				stack.push(new IntegerValue( programs[program_id].get_int(pc) ));
+				break;
+			case PSHB:    // 2
+				stack.push(new BooleanValue( programs[program_id].get_byte(pc) ));
+				break;
+			case PSHS:    // 2
+				stack.push(new StringValue( programs[program_id].get_string(pc) ));
+				break;
+			case RSRV:     //10
+				stack.reserve( programs[program_id].get_byte(pc) );
+				break;
+			case FETCH_X: //23
+				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
+				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // ez kicsit gázos
+				stack.push( stack.var_at(bp + ri)->clone() );
+				break;
+			case STORE_X: //23
+				r1 = stack.pop();
+				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
+				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2;
+				stack.set_var_at(bp + ri, r1);
+				break;
+			// control flow
+			case JMP:      //40
+				pc = programs[program_id].get_int(pc);
+				dout << "jumping to " << pc <<std::endl;
+				break;
+			case JMPTRUE:  //41
+				r1 = stack.pop();
+				if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == true) {
+					pc = programs[program_id].get_int(pc);
 					dout << "jumping to " << pc <<std::endl;
-					break;
-				case JMPTRUE:  //41
-					r1 = stack.pop();
-					if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == true) {
-						pc = programs[prog_id].get_int(pc);
-						dout << "jumping to " << pc <<std::endl;
-					} else programs[prog_id].get_int(pc);	//mindenképp be kell olvasni
-					delete r1;
-					break;
-				case JMPFALSE: //42
-					r1 = stack.pop();
-					if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == false) {
-						pc = programs[prog_id].get_int(pc);
-						dout << "jumping to " << pc <<std::endl;
-					} else programs[prog_id].get_int(pc);
-					delete r1;
-					break;
-				case CALL:      //43
-					rs = get_program_id( programs[prog_id].get_string(pc) );	// get callee's id.
-					// parameters are on the top of the stack. callee knows how many
+				} else programs[program_id].get_int(pc);	//mindenképp be kell olvasni
+				delete r1;
+				break;
+			case JMPFALSE: //42
+				r1 = stack.pop();
+				if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == false) {
+					pc = programs[program_id].get_int(pc);
+					dout << "jumping to " << pc <<std::endl;
+				} else programs[program_id].get_int(pc);
+				delete r1;
+				break;
+			case CALL:      //43
+				rs = get_program_id( programs[program_id].get_string(pc) );	// get callee's id.
+				// parameters are on the top of the stack. callee knows how many
 
-					// reserve space for return value
+				// reserve space for return value
 
-					// return to which program, at which point, and what was the base pointer?
-					stack.push( new ActivationRecord(prog_id, pc, bp) );
+				// return to which program, at which point, and what was the base pointer?
+				stack.push( new ActivationRecord(program_id, pc, bp) );
 
-					bp = stack.get_stack_pointer(); // new 0 is the top of the stack.
-					prog_id = rs; // jump to new program
-					pc = 0; // start at the beginning.
-					break;
-				case RET:		//44
-					if(bp == 0) break;	// ez kicsit hack.
-					stack.set_stack_pointer(bp); // rewind the stack all the way down to 0, to before the local vars
-					r1 = stack.pop(); // get back the activation record.
-					if((ar = dynamic_cast<ActivationRecord*>(r1))==0) throw stack_machine::except::corrupted_stack();
-					// pop retval to r1, if applicable.
-					stack.set_stack_pointer(stack.get_stack_pointer() - programs[prog_id].get_argc());	// consume the arguments, if any.
-					bp = ar->bp;
-					pc = ar->pc;
-					prog_id = ar->prog;
-					delete ar;
-					break;
-				case INTERRUPT: //45
-					rs = programs[prog_id].get_int(pc);
-					if(rs < Interrupt::list.size()) {
-						(*Interrupt::list[rs])(stack);
-					}
+				bp = stack.get_stack_pointer(); // new 0 is the top of the stack.
+				program_id = rs; // jump to new program
+				pc = 0; // start at the beginning.
+				break;
+			case RET:		//44
+				if(bp == 0) break;	// ez kicsit hack.
+				stack.set_stack_pointer(bp); // rewind the stack all the way down to 0, to before the local vars
+				r1 = stack.pop(); // get back the activation record.
+				if((ar = dynamic_cast<ActivationRecord*>(r1))==0) throw stack_machine::except::corrupted_stack();
+				// pop retval to r1, if applicable.
+				stack.set_stack_pointer(stack.get_stack_pointer() - programs[program_id].get_argc());	// consume the arguments, if any.
+				bp = ar->bp;
+				pc = ar->pc;
+				program_id = ar->prog;
+				delete ar;
+				break;
+			case INTERRUPT: //45
+				rs = programs[program_id].get_int(pc);
+				if(rs < Interrupt::list.size()) {
+					(*Interrupt::list[rs])(stack);
+				}
 
-					break;
-				// comparisons
-				case EQ:
-				case NEQ:
-				case LESS:
-				case GREATER:
-					(*Interrupt::comparisons[opcode - EQ])(stack);
-					break;
-				// operations
-				case ADDI:    //60
-				case SUBI:
-				case MULI:
-				case DIVI:
-				case MODI:
-				case AND:
-				case OR:
-				case NEG:
-					(*Interrupt::operators[opcode - ADDI])(stack);
-					break;
+				break;
+			// comparisons
+			case EQ:
+			case NEQ:
+			case LESS:
+			case GREATER:
+				(*Interrupt::comparisons[opcode - EQ])(stack);
+				break;
+			// operations
+			case ADDI:    //60
+			case SUBI:
+			case MULI:
+			case DIVI:
+			case MODI:
+			case AND:
+			case OR:
+			case NEG:
+				(*Interrupt::operators[opcode - ADDI])(stack);
+				break;
 
-				default:
-					std::cerr << "unknown opcode " << (int)opcode << std::endl;
-					break;
-			} //switch
-//		} // while
-		if(pc == programs[prog_id].len) pc=0;
-
-		return true;
-	} // Interpreter::execute
-
-
-	void Interpreter::execute(const std::string& program) const {
+			default:
+				std::cerr << "unknown opcode " << (int)opcode << std::endl;
+				break;
+		}
+		return 100;
 	}
 
 	bool Interpreter::register_puppet(Puppet& puppet) {
@@ -697,7 +700,7 @@ namespace sum {
 		} catch(stack_machine::except::subprogram_does_not_exist& e) {
 			return false;
 		}
-		return true;
+		return false;
 	}
 
 	std::string Interpreter::get_behaviour(Puppet& puppet) const {

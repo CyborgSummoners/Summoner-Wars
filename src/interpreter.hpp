@@ -42,11 +42,6 @@ namespace sum {
 		public:
 			Interpreter();
 
-			// Interpreter lép egyet, végrehajtja a következő utasításblokkot.
-			// visszaadja, mennyi tick idő telt el a legutóbbi állapot óta (jelenleg konstans 100)
-			unsigned int step();
-
-			// esetleg:
 			//advance simulation by ticks many ticks, return true if anything meaningful happened, false otherwise.
 			bool step(unsigned int ticks);
 
@@ -68,7 +63,8 @@ namespace sum {
 			std::string get_behaviour(Puppet& puppet) const;
 
 		private:
-			void execute_step(puppet_brain* puppet);
+			// executes the instruction in program at program_counter, using the specified stack, with given base pointer
+			size_t execute_instruction(size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const;
 	};
 }
 

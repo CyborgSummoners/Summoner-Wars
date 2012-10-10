@@ -2,13 +2,13 @@ procedure counting is
 	i:=-5;
 	while i<10 loop
 		if i = 5 then
-			do print("five");
+			print("five");
 		elsif i = 7 then
-			do print("seven");
+			print("seven");
 		elsif i = 6 then
-			do print("six");
+			print("six");
 		else
-			do print(i);
+			print(i);
 		end if;
 		i := i+1;
 	end loop;

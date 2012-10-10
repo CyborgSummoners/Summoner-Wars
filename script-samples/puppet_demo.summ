@@ -1,10 +1,15 @@
 procedure demo is
 	print("I am a puppet");
 	print("I am a puppet on a string");
-	print("Now I think I will be moved:");
-	Self.move;
+	print("Now I'm moved around a bit:");
+	i := 0;
+	while i < 8 loop
+		Self.turn_left;
+		Self.move;
+		i:=i+1;
+	end loop;
 	print("My life is bleak, there is no hope");
-	print("Oh God, I'm in a really big loop");
+	print("Oh God, it'll never end, I'm in a really big loop");
 end demo;
 
 procedure that is

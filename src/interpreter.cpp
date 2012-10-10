@@ -484,12 +484,35 @@ namespace sum {
 					delete r1;
 				}
 			};
-
+			struct self_turn_left : public Interrupt  {
+				const char* get_name() const {
+					return "SELF::TURN_LEFT";
+				}
+				void operator()(Stack& stack) const {
+					Cell* r1 = stack.pop(); //supposed to be self. need to check.
+					if(r1->tag != puppet) throw except::incompatible_types();
+					static_cast<PuppetValue*>(r1)->value.turn_left();
+					delete r1;
+				}
+			};
+			struct self_turn_right : public Interrupt  {
+				const char* get_name() const {
+					return "SELF::TURN_RIGHT";
+				}
+				void operator()(Stack& stack) const {
+					Cell* r1 = stack.pop(); //supposed to be self. need to check.
+					if(r1->tag != puppet) throw except::incompatible_types();
+					static_cast<PuppetValue*>(r1)->value.turn_right();
+					delete r1;
+				}
+			};
 
 			const std::vector<Interrupt*> list_init() {
 				std::vector<Interrupt*> Result;
 				Result.push_back( new interrupt::print() );
 				Result.push_back( new interrupt::self_move() );
+				Result.push_back( new interrupt::self_turn_left() );
+				Result.push_back( new interrupt::self_turn_right() );
 				return Result;
 			}
 			const std::map<std::string, size_t> mapping_init() {

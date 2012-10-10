@@ -29,6 +29,8 @@
 %token K_WHILE
 %token K_LOOP
 
+%token K_SELF
+
 %token OP_ASSIGNMENT
 
 %token COLON SEMICOLON COMMA
@@ -36,6 +38,9 @@
 %token T_OPEN T_CLOSE
 
 %token L_TRUE L_FALSE
+
+
+%left OP_MEMBER
 
 %left OP_AND OP_OR
 %right OP_NOT
@@ -289,7 +294,21 @@ proc_call:
 
 		delete $1;
 	}
-;
+| K_SELF OP_MEMBER IDENTIFIER call_arguments {
+	std::string norm="SELF::"+subprogram::normalize_name(*$3);
+	int intrpt = get_interrupt_id(norm);
+	if( intrpt >= 0 ) { // does such a method exist?
+		$$ = $4;
+		$$->code.push_back( codeline(PUSH_SELF) );
+		$$->code.push_back( codeline(INTERRUPT, intrpt) );
+	}
+	else {
+		$$ = new statement();
+		std::stringstream ss;
+		ss << "SELF does not have a method called '" << subprogram::normalize_name(*$3) << "'" << std::endl;
+		error(ss.str().c_str());
+	}
+};
 
 call_arguments:
 	//epszilon

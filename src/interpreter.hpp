@@ -64,7 +64,7 @@ namespace sum {
 
 		private:
 			// executes the instruction in program at program_counter, using the specified stack, with given base pointer
-			size_t execute_instruction(size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const;
+			size_t execute_instruction(Puppet& self, size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const;
 	};
 }
 

@@ -1,12 +1,12 @@
 procedure demo is
 	print("I am a puppet");
-	print("I'm a puppet on a string");
-	print("My program calls another procedure:");
-	that;
+	print("I am a puppet on a string");
+	print("Now I think I will be moved:");
+	Self.move;
 	print("My life is bleak, there is no hope");
-	print("I am in a big loop");
+	print("Oh God, I'm in a really big loop");
 end demo;
 
 procedure that is
-	print("It's doing that now. Returning to main.");
+	print("It's doing THAT now. Returning to main.");
 end that;

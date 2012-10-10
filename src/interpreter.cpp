@@ -33,6 +33,19 @@ namespace sum {
 			}
 		};
 
+		struct PuppetValue : public Cell {
+			Puppet& value;
+			PuppetValue(Puppet& value) : value(value) {
+				this->tag = puppet;
+			}
+			virtual void print(std::ostream& out) const {
+				out << "Puppet '" << value.get_name() << "'" << std::endl;
+			}
+			virtual NullValue* clone() const {
+				return new NullValue();
+			}
+		};
+
 		struct BooleanValue : public Cell {
 			const bool value;
 			BooleanValue(bool val) : value(val) {
@@ -443,7 +456,9 @@ namespace sum {
 				}
 			};
 
-			// builtin: print
+			//****************************
+			//*** Built-in subroutines ***
+			//****************************
 			struct print : public Interrupt  {
 				const char* get_name() const {
 					return "PRINT";
@@ -455,9 +470,26 @@ namespace sum {
 				}
 			};
 
+			//***************
+			//*** Methods ***
+			//***************
+			struct self_move : public Interrupt  {
+				const char* get_name() const {
+					return "SELF::MOVE";
+				}
+				void operator()(Stack& stack) const {
+					Cell* r1 = stack.pop(); //supposed to be self. need to check.
+					if(r1->tag != puppet) throw except::incompatible_types();
+					static_cast<PuppetValue*>(r1)->value.move();
+					delete r1;
+				}
+			};
+
+
 			const std::vector<Interrupt*> list_init() {
 				std::vector<Interrupt*> Result;
 				Result.push_back( new interrupt::print() );
+				Result.push_back( new interrupt::self_move() );
 				return Result;
 			}
 			const std::map<std::string, size_t> mapping_init() {
@@ -548,7 +580,7 @@ namespace sum {
 
 //		while(puppet->delay < ticks) {
 			if(puppet->program_counter >= programs[ puppet->program ].len) puppet->program_counter=0;
-			execute_instruction(puppet->program, *(puppet->stack), puppet->program_counter, puppet->base_pointer);
+			execute_instruction(puppet->puppet, puppet->program, *(puppet->stack), puppet->program_counter, puppet->base_pointer);
 //		}
 
 		return true;
@@ -556,18 +588,19 @@ namespace sum {
 
 
 	void Interpreter::execute(const std::string& program) const {
+		Puppet p("Hamis Baba");
 		size_t prog_id = get_program_id(program);
 		stack_machine::Stack stack;
 		size_t pc=0;
 		size_t bp=0;
 
 		while(pc < programs[prog_id].len) {
-			execute_instruction(prog_id, stack, pc, bp);
+			execute_instruction(p, prog_id, stack, pc, bp);
 		}
 	}
 
 
-	size_t Interpreter::execute_instruction(size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const {
+	size_t Interpreter::execute_instruction(Puppet& self, size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const {
 		using namespace stack_machine;
 		using namespace bytecode;
 
@@ -588,8 +621,11 @@ namespace sum {
 			case PSHB:    // 2
 				stack.push(new BooleanValue( programs[program_id].get_byte(pc) ));
 				break;
-			case PSHS:    // 2
+			case PSHS:    // 3
 				stack.push(new StringValue( programs[program_id].get_string(pc) ));
+				break;
+			case PUSH_SELF:    // 4
+				stack.push( new PuppetValue(self) );
 				break;
 			case RSRV:     //10
 				stack.reserve( programs[program_id].get_byte(pc) );

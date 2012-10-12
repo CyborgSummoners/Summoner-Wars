@@ -33,6 +33,19 @@ namespace sum {
 			}
 		};
 
+		struct PuppetValue : public Cell {
+			Puppet& value;
+			PuppetValue(Puppet& value) : value(value) {
+				this->tag = puppet;
+			}
+			virtual void print(std::ostream& out) const {
+				out << "Puppet '" << value.get_name() << "'" << std::endl;
+			}
+			virtual NullValue* clone() const {
+				return new NullValue();
+			}
+		};
+
 		struct BooleanValue : public Cell {
 			const bool value;
 			BooleanValue(bool val) : value(val) {
@@ -443,7 +456,9 @@ namespace sum {
 				}
 			};
 
-			// builtin: print
+			//****************************
+			//*** Built-in subroutines ***
+			//****************************
 			struct print : public Interrupt  {
 				const char* get_name() const {
 					return "PRINT";
@@ -455,9 +470,49 @@ namespace sum {
 				}
 			};
 
+			//***************
+			//*** Methods ***
+			//***************
+			struct self_move : public Interrupt  {
+				const char* get_name() const {
+					return "SELF::MOVE";
+				}
+				void operator()(Stack& stack) const {
+					Cell* r1 = stack.pop(); //supposed to be self. need to check.
+					if(r1->tag != puppet) throw except::incompatible_types();
+					static_cast<PuppetValue*>(r1)->value.move();
+					delete r1;
+				}
+			};
+			struct self_turn_left : public Interrupt  {
+				const char* get_name() const {
+					return "SELF::TURN_LEFT";
+				}
+				void operator()(Stack& stack) const {
+					Cell* r1 = stack.pop(); //supposed to be self. need to check.
+					if(r1->tag != puppet) throw except::incompatible_types();
+					static_cast<PuppetValue*>(r1)->value.turn_left();
+					delete r1;
+				}
+			};
+			struct self_turn_right : public Interrupt  {
+				const char* get_name() const {
+					return "SELF::TURN_RIGHT";
+				}
+				void operator()(Stack& stack) const {
+					Cell* r1 = stack.pop(); //supposed to be self. need to check.
+					if(r1->tag != puppet) throw except::incompatible_types();
+					static_cast<PuppetValue*>(r1)->value.turn_right();
+					delete r1;
+				}
+			};
+
 			const std::vector<Interrupt*> list_init() {
 				std::vector<Interrupt*> Result;
 				Result.push_back( new interrupt::print() );
+				Result.push_back( new interrupt::self_move() );
+				Result.push_back( new interrupt::self_turn_left() );
+				Result.push_back( new interrupt::self_turn_right() );
 				return Result;
 			}
 			const std::map<std::string, size_t> mapping_init() {
@@ -493,6 +548,23 @@ namespace sum {
 //*******************
 //*** Interpreter ***
 //*******************
+	Interpreter::puppet_brain::puppet_brain(Puppet& puppet) : puppet(puppet), program(0), program_counter(0), base_pointer(0), delay(0) {
+		stack = new stack_machine::Stack();
+	}
+	Interpreter::puppet_brain::~puppet_brain() {
+		delete stack;
+	}
+
+	Interpreter::Interpreter() {
+		// default behaviour: delay 100;
+		bytecode::byte* code = new bytecode::byte[6];
+		code[0] = bytecode::NOP;
+		code[1] = bytecode::DELAY;
+		code[2] = code[3] = code[4] = 0;
+		code[5] = 100;
+		programs.push_back(bytecode::subprogram("NOP", 0, code, 5));
+	}
+
 	int Interpreter::get_interrupt_id(const std::string& name) {
 		std::map<std::string, size_t>::const_iterator it = stack_machine::Interrupt::mapping.find(name);
 		if(it == stack_machine::Interrupt::mapping.end()) return -1;
@@ -522,144 +594,179 @@ namespace sum {
 	}
 
 
-	unsigned int Interpreter::step() {
-		return 100;
+	bool Interpreter::step(unsigned int ticks) {
+		//find the next puppet with a delay < ticks
+		std::list<puppet_brain*>::iterator it = puppets.begin();
+		if( it==puppets.end() || (*it)->delay > ticks ) return false;
+
+		puppet_brain* puppet = *it;
+
+//		while(puppet->delay < ticks) {
+			if(puppet->program_counter >= programs[ puppet->program ].len) puppet->program_counter=0;
+			execute_instruction(puppet->puppet, puppet->program, *(puppet->stack), puppet->program_counter, puppet->base_pointer);
+//		}
+
+		return true;
 	}
 
 
 	void Interpreter::execute(const std::string& program) const {
+		Puppet p("Hamis Baba");
+		size_t prog_id = get_program_id(program);
+		stack_machine::Stack stack;
+		size_t pc=0;
+		size_t bp=0;
+
+		while(pc < programs[prog_id].len) {
+			execute_instruction(p, prog_id, stack, pc, bp);
+		}
+	}
+
+
+	size_t Interpreter::execute_instruction(Puppet& self, size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const {
 		using namespace stack_machine;
 		using namespace bytecode;
 
-		size_t prog_id = get_program_id(program);
-		Stack stack;
-		size_t pc=0;	//program counter.
-		size_t bp=0;	//base pointer.
+		// segédregiszterek (kiemelni objektumváltozókká?)
 		Cell* r1;
 		ActivationRecord* ar;
 		size_t rs;
 		int ri;
 
-		while(pc < programs[prog_id].len) {
-			byte opcode = programs[prog_id].get_byte(pc);
-
-			dout << "#" << pc << " Opcode: " << (int)opcode <<std::endl;
-			switch(opcode) {
-				case NOP:	// 0
-					break;
-
-				// stack
-				case PUSH:    // 1
-					stack.push(new IntegerValue( programs[prog_id].get_int(pc) ));
-					break;
-				case PSHB:    // 2
-					stack.push(new BooleanValue( programs[prog_id].get_byte(pc) ));
-					break;
-				case PSHS:    // 2
-					stack.push(new StringValue( programs[prog_id].get_string(pc) ));
-					break;
-				case RSRV:     //10
-					stack.reserve( programs[prog_id].get_byte(pc) );
-					break;
-				case FETCH_X: //23
-					ri = programs[prog_id].get_byte(pc) - programs[prog_id].get_argc();
-					if(ri < 0) ri= -(programs[prog_id].get_argc()+ri) - 2; // ez kicsit gázos
-					stack.push( stack.var_at(bp + ri)->clone() );
-					break;
-				case STORE_X: //23
-					r1 = stack.pop();
-					ri = programs[prog_id].get_byte(pc) - programs[prog_id].get_argc();
-					if(ri < 0) ri= -(programs[prog_id].get_argc()+ri) - 2;
-					stack.set_var_at(bp + ri, r1);
-					break;
-				// control flow
-				case JMP:      //40
-					pc = programs[prog_id].get_int(pc);
+		byte opcode = programs[program_id].get_byte(pc);
+		switch(opcode) {
+			case NOP:	// 0
+				break;
+			// stack
+			case PUSH:    // 1
+				stack.push(new IntegerValue( programs[program_id].get_int(pc) ));
+				break;
+			case PSHB:    // 2
+				stack.push(new BooleanValue( programs[program_id].get_byte(pc) ));
+				break;
+			case PSHS:    // 3
+				stack.push(new StringValue( programs[program_id].get_string(pc) ));
+				break;
+			case PUSH_SELF:    // 4
+				stack.push( new PuppetValue(self) );
+				break;
+			case RSRV:     //10
+				stack.reserve( programs[program_id].get_byte(pc) );
+				break;
+			case FETCH_X: //23
+				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
+				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // ez kicsit gázos
+				stack.push( stack.var_at(bp + ri)->clone() );
+				break;
+			case STORE_X: //23
+				r1 = stack.pop();
+				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
+				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2;
+				stack.set_var_at(bp + ri, r1);
+				break;
+			// control flow
+			case JMP:      //40
+				pc = programs[program_id].get_int(pc);
+				dout << "jumping to " << pc <<std::endl;
+				break;
+			case JMPTRUE:  //41
+				r1 = stack.pop();
+				if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == true) {
+					pc = programs[program_id].get_int(pc);
 					dout << "jumping to " << pc <<std::endl;
-					break;
-				case JMPTRUE:  //41
-					r1 = stack.pop();
-					if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == true) {
-						pc = programs[prog_id].get_int(pc);
-						dout << "jumping to " << pc <<std::endl;
-					} else programs[prog_id].get_int(pc);	//mindenképp be kell olvasni
-					delete r1;
-					break;
-				case JMPFALSE: //42
-					r1 = stack.pop();
-					if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == false) {
-						pc = programs[prog_id].get_int(pc);
-						dout << "jumping to " << pc <<std::endl;
-					} else programs[prog_id].get_int(pc);
-					delete r1;
-					break;
-				case CALL:      //43
-					rs = get_program_id( programs[prog_id].get_string(pc) );	// get callee's id.
-					// parameters are on the top of the stack. callee knows how many
+				} else programs[program_id].get_int(pc);	//mindenképp be kell olvasni
+				delete r1;
+				break;
+			case JMPFALSE: //42
+				r1 = stack.pop();
+				if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == false) {
+					pc = programs[program_id].get_int(pc);
+					dout << "jumping to " << pc <<std::endl;
+				} else programs[program_id].get_int(pc);
+				delete r1;
+				break;
+			case CALL:      //43
+				rs = get_program_id( programs[program_id].get_string(pc) );	// get callee's id.
+				// parameters are on the top of the stack. callee knows how many
 
-					// reserve space for return value
+				// reserve space for return value
 
-					// return to which program, at which point, and what was the base pointer?
-					stack.push( new ActivationRecord(prog_id, pc, bp) );
+				// return to which program, at which point, and what was the base pointer?
+				stack.push( new ActivationRecord(program_id, pc, bp) );
 
-					bp = stack.get_stack_pointer(); // new 0 is the top of the stack.
-					prog_id = rs; // jump to new program
-					pc = 0; // start at the beginning.
-					break;
-				case RET:		//44
-					if(bp == 0) break;	// ez kicsit hack.
-					stack.set_stack_pointer(bp); // rewind the stack all the way down to 0, to before the local vars
-					r1 = stack.pop(); // get back the activation record.
-					if((ar = dynamic_cast<ActivationRecord*>(r1))==0) throw stack_machine::except::corrupted_stack();
-					// pop retval to r1, if applicable.
-					stack.set_stack_pointer(stack.get_stack_pointer() - programs[prog_id].get_argc());	// consume the arguments, if any.
-					bp = ar->bp;
-					pc = ar->pc;
-					prog_id = ar->prog;
-					delete ar;
-					break;
-				case INTERRUPT: //45
-					rs = programs[prog_id].get_int(pc);
-					if(rs < Interrupt::list.size()) {
-						(*Interrupt::list[rs])(stack);
-					}
+				bp = stack.get_stack_pointer(); // new 0 is the top of the stack.
+				program_id = rs; // jump to new program
+				pc = 0; // start at the beginning.
+				break;
+			case RET:		//44
+				if(bp == 0) break;	// ez kicsit hack.
+				stack.set_stack_pointer(bp); // rewind the stack all the way down to 0, to before the local vars
+				r1 = stack.pop(); // get back the activation record.
+				if((ar = dynamic_cast<ActivationRecord*>(r1))==0) throw stack_machine::except::corrupted_stack();
+				// pop retval to r1, if applicable.
+				stack.set_stack_pointer(stack.get_stack_pointer() - programs[program_id].get_argc());	// consume the arguments, if any.
+				bp = ar->bp;
+				pc = ar->pc;
+				program_id = ar->prog;
+				delete ar;
+				break;
+			case INTERRUPT: //45
+				rs = programs[program_id].get_int(pc);
+				if(rs < Interrupt::list.size()) {
+					(*Interrupt::list[rs])(stack);
+				}
 
-					break;
-				// comparisons
-				case EQ:
-				case NEQ:
-				case LESS:
-				case GREATER:
-					(*Interrupt::comparisons[opcode - EQ])(stack);
-					break;
-				// operations
-				case ADDI:    //60
-				case SUBI:
-				case MULI:
-				case DIVI:
-				case MODI:
-				case AND:
-				case OR:
-				case NEG:
-					(*Interrupt::operators[opcode - ADDI])(stack);
-					break;
-
-				default:
-					std::cerr << "unknown opcode " << (int)opcode << std::endl;
-					break;
-			} //switch
-		} // while
-	} // Interpreter::execute
-
+				break;
+			// comparisons
+			case EQ:
+			case NEQ:
+			case LESS:
+			case GREATER:
+				(*Interrupt::comparisons[opcode - EQ])(stack);
+				break;
+			// operations
+			case ADDI:    //60
+			case SUBI:
+			case MULI:
+			case DIVI:
+			case MODI:
+			case AND:
+			case OR:
+			case NEG:
+				(*Interrupt::operators[opcode - ADDI])(stack);
+				break;
+			case DELAY:
+				return programs[program_id].get_int(pc);
+			default:
+				std::cerr << "unknown opcode " << (int)opcode << std::endl;
+				break;
+		}
+		return 100;
+	}
 
 	bool Interpreter::register_puppet(Puppet& puppet) {
+		for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+			if( (*it)->puppet == puppet) return false;
+		}
+		puppets.push_front( new puppet_brain(puppet) );
 		return true;
 	}
 	bool Interpreter::unregister_puppet(Puppet& puppet) {
 		return true;
 	}
 	bool Interpreter::set_behaviour(Puppet& puppet, const std::string& behaviour) {
-		return true;
+		try {
+			for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+				if( (*it)->puppet == puppet ) {
+					(*it)->overrides[0] = get_program_id(behaviour);
+					if( (*it)->program == 0 )  (*it)->program = (*it)->overrides[0];
+					return true;
+				}
+			}
+		} catch(stack_machine::except::subprogram_does_not_exist& e) {
+			return false;
+		}
+		return false;
 	}
 
 	std::string Interpreter::get_behaviour(Puppet& puppet) const {

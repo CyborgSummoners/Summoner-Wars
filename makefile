@@ -10,35 +10,47 @@ LIBS = -lsfml-graphics -lsfml-window -lsfml-system
 
 RM = /bin/rm -f
 
-SOURCES := $(wildcard src/*.cpp)
-HEADERS := $(wildcard src/*.hpp)
+SOURCES := $(wildcard src/*.cpp) $(wildcard src/compiler/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc
 OBJECTS := $(patsubst src/%.cpp,obj/%.o,$(SOURCES))
-COMPILER_SOURCES := $(wildcard src/compiler/*.cpp) src/bytecode.cpp
-
-IDEMO_SOURCES := $(COMPILER_SOURCES) src/interpreter.cpp
+OBJECTS := $(patsubst src/%.cc,obj/%.occ,$(OBJECTS))
+COMPILER_SOURCES := $(wildcard src/compiler/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc src/bytecode.cpp src/interpreter.cpp
+COMPILER_OBJECTS := $(patsubst src/%.cpp,obj/%.o,$(COMPILER_SOURCES))
+COMPILER_OBJECTS := $(patsubst src/%.cc,obj/%.occ,$(COMPILER_OBJECTS))
+COMPILER_OBJECTS := $(filter-out obj/main.o,$(COMPILER_OBJECTS)) obj/compiler/main-compiler.o
 
 PROG = sumwar
 
 $(PROG): $(OBJECTS)
 	$(CC) -o $(PROG) $(OBJECTS) $(LIBS)
 
-obj/%.o: src/%.cpp
-	$(CC) $(CFLAGS) -c -o $@ $< $(LIBS)
+obj/%.o: src/%.cpp | obj obj/compiler src/compiler/parse.cc
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
-compiler-demo: src/compiler/summ.yy.cc src/compiler/parse.cc $(IDEMO_SOURCES)
-	$(CC) -Wall $(IDEMO_SOURCES) src/compiler/parse.cc src/compiler/summ.yy.cc -o compiler-demo
+obj/%.occ: src/%.cc | obj obj/compiler
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
-compiler-demo-debug: src/compiler/summ.yy.cc src/compiler/parse.cc $(IDEMO_SOURCES)
-	$(CC) -Wall $(IDEMO_SOURCES) src/compiler/parse.cc src/compiler/summ.yy.cc -DDEBUG_MACROS_ENABLED -o compiler-demo
+obj/compiler/compiler.o: src/compiler/parse.cc
+
+obj/compiler/main-compiler.o: src/main.cpp
+	$(CC) $(CFLAGS) -o obj/compiler/main-compiler.o -DINTERPRETER_DEMO src/main.cpp
+
+obj:
+	mkdir -p obj
+
+obj/compiler:
+	mkdir -p obj/compiler
+
+compiler-demo: $(COMPILER_OBJECTS) src/compiler/parse.cc
+	$(CC) -Wall $(COMPILER_OBJECTS) -o compiler-demo
 
 src/compiler/summ.yy.cc: src/compiler/summ.l
 	flex -i -o src/compiler/summ.yy.cc src/compiler/summ.l
 
-src/compiler/parse.cc: src/compiler/summ.y
+src/compiler/parse.cc: src/compiler/summ.y src/compiler/summ.yy.cc
 	cd src/compiler && bisonc++ --filenames=summparse summ.y
 
 all:
 	$(PROG)
 
 clean:
-	$(RM) $(PROG) compiler-demo $(OBJECTS) src/compiler/*.o src/compiler/summparsebase.h src/compiler/summparse.ih src/compiler/parse.cc src/compiler/summ.yy.cc
+	$(RM) $(sort $(PROG) compiler-demo $(OBJECTS) $(COMPILER_OBJECTS) src/compiler/summparsebase.h src/compiler/summparse.ih src/compiler/parse.cc src/compiler/summ.yy.cc)

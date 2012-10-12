@@ -18,6 +18,8 @@ is                      return Parser::K_IS;
 end                     return Parser::K_END;
 null                    return Parser::K_NULL;
 
+self                    return Parser::K_SELF;
+
 if                      return Parser::K_IF;
 then                    return Parser::K_THEN;
 else                    return Parser::K_ELSE;
@@ -33,8 +35,7 @@ and                     return Parser::OP_AND;
 or                      return Parser::OP_OR;
 not                     return Parser::OP_NOT;
 
-do                      return Parser::K_DO;
-
+\.                      return Parser::OP_MEMBER;
 ;                       return Parser::SEMICOLON;
 :                       return Parser::COLON;
 ,                       return Parser::COMMA;

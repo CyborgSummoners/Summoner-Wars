@@ -28,7 +28,8 @@
 %token K_ELSIF
 %token K_WHILE
 %token K_LOOP
-%token K_DO
+
+%token K_SELF
 
 %token OP_ASSIGNMENT
 
@@ -37,6 +38,9 @@
 %token T_OPEN T_CLOSE
 
 %token L_TRUE L_FALSE
+
+
+%left OP_MEMBER
 
 %left OP_AND OP_OR
 %right OP_NOT
@@ -275,11 +279,11 @@ conditional_branches:
 
 
 proc_call:
-	K_DO IDENTIFIER call_arguments {
-		$$ = $3;
+	IDENTIFIER call_arguments {
+		$$ = $2;
 
 		// is it an interrupt?
-		std::string norm=subprogram::normalize_name(*$2);
+		std::string norm=subprogram::normalize_name(*$1);
 		int intrpt = get_interrupt_id(norm);
 		if( intrpt >= 0 ) {
 			$$->code.push_back( codeline(INTERRUPT, intrpt) );
@@ -288,9 +292,23 @@ proc_call:
 			$$->code.push_back( codeline(CALL, 0, 0, norm ) );
 		}
 
-		delete $2;
+		delete $1;
 	}
-;
+| K_SELF OP_MEMBER IDENTIFIER call_arguments {
+	std::string norm="SELF::"+subprogram::normalize_name(*$3);
+	int intrpt = get_interrupt_id(norm);
+	if( intrpt >= 0 ) { // does such a method exist?
+		$$ = $4;
+		$$->code.push_back( codeline(PUSH_SELF) );
+		$$->code.push_back( codeline(INTERRUPT, intrpt) );
+	}
+	else {
+		$$ = new statement();
+		std::stringstream ss;
+		ss << "SELF does not have a method called '" << subprogram::normalize_name(*$3) << "'" << std::endl;
+		error(ss.str().c_str());
+	}
+};
 
 call_arguments:
 	//epszilon

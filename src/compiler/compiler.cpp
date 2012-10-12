@@ -137,7 +137,8 @@ void Parser::reset() {
 }
 
 bool var::is(type typ) const {
-	if(typ == any || this->typ == typ) return true;
+	if(typ == any || this->typ == typ) return true; // any is the top type, everything is a subtype to it
+	if(typ == puppet && this->typ == self) return true; // self is a subtype of puppet
 	return (this->typ == any);
 }
 

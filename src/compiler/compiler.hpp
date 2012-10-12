@@ -18,7 +18,7 @@ struct codeline {
 	std::string followup;
 	int line_no;
 
-	codeline(Instruction opcode, uint32_t argument, uint32_t label=0, std::string followup="")
+	codeline(Instruction opcode, uint32_t argument=0, uint32_t label=0, std::string followup="")
 		: label(label), opcode(opcode), argument(argument), followup(followup), line_no(-1) {}
 
 	void print() {

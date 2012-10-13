@@ -164,7 +164,7 @@ namespace sum {
 			}
 			else if( sp == stack.size() ) return;
 
-			for(size_t i=stack.size()-1; sp <= i; --i) {
+			for(size_t i=stack.size(); i-->sp; ) {
 				delete stack[i];
 			}
 			stack.resize(sp);

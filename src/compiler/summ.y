@@ -336,14 +336,16 @@ exp_list COMMA exp {
 
 assignment:
 IDENTIFIER OP_ASSIGNMENT exp {
-	std::map<std::string, var>::iterator varit = symtab.find(*$1);
-	if(varit == symtab.end()) {
-		varit = symtab.insert( std::make_pair(*$1, var( gen_varnum(), d_loc__.first_line, $3->typ) ) ).first;
-	}
-	else symtab.find(*$1)->second.writ = d_loc__.first_line; // mark as written into
 	$$ = new statement();
 	$$->code = $3->code;
-	$$->code.push_back( codeline(RSRV, 1) );
+
+	std::map<std::string, var>::iterator varit = symtab.find(*$1);
+	if(varit == symtab.end()) {	// if the variable isn't yet known, insert it into the symbol table, and reserve space for it.
+		varit = symtab.insert( std::make_pair(*$1, var( gen_varnum(), d_loc__.first_line, $3->typ) ) ).first;
+		$$->code.push_back( codeline(RSRV, 1) );
+	}
+	else symtab.find(*$1)->second.writ = d_loc__.first_line; // mark as written into
+
 	$$->code.push_back( codeline(STORE_X, symtab.find(*$1)->second.num) );
 
 	delete $1;

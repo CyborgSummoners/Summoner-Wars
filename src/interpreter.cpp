@@ -629,6 +629,7 @@ namespace sum {
 
 		// segédregiszterek (kiemelni objektumváltozókká?)
 		Cell* r1;
+		Cell* retval;
 		ActivationRecord* ar;
 		size_t rs;
 		int ri;
@@ -689,8 +690,6 @@ namespace sum {
 				rs = get_program_id( programs[program_id].get_string(pc) );	// get callee's id.
 				// parameters are on the top of the stack. callee knows how many
 
-				// reserve space for return value
-
 				// return to which program, at which point, and what was the base pointer?
 				stack.push( new ActivationRecord(program_id, pc, bp) );
 
@@ -703,14 +702,28 @@ namespace sum {
 				stack.set_stack_pointer(bp); // rewind the stack all the way down to 0, to before the local vars
 				r1 = stack.pop(); // get back the activation record.
 				if((ar = dynamic_cast<ActivationRecord*>(r1))==0) throw stack_machine::except::corrupted_stack();
-				// pop retval to r1, if applicable.
 				stack.set_stack_pointer(stack.get_stack_pointer() - programs[program_id].get_argc());	// consume the arguments, if any.
 				bp = ar->bp;
 				pc = ar->pc;
 				program_id = ar->prog;
 				delete ar;
 				break;
-			case INTERRUPT: //45
+			case RETV:      //45
+				if(bp == 0) break; // igen, ezt majd a kezdeti activation recorddal.
+				retval = stack.pop();
+
+				stack.set_stack_pointer(bp); // rewind the stack
+				r1 = stack.pop(); // get back the activation record.
+				if((ar = dynamic_cast<ActivationRecord*>(r1))==0) throw stack_machine::except::corrupted_stack();
+				stack.set_stack_pointer(stack.get_stack_pointer() - programs[program_id].get_argc());	// consume the arguments, if any.
+				bp = ar->bp;
+				pc = ar->pc;
+				program_id = ar->prog;
+				delete ar;
+
+				stack.push(retval);
+				break;
+			case INTERRUPT: //46
 				rs = programs[program_id].get_int(pc);
 				if(rs < Interrupt::list.size()) {
 					(*Interrupt::list[rs])(stack);

@@ -435,8 +435,10 @@ IDENTIFIER {
 	}
 }
 | exp OP_PLUS exp {
-		//both operands must be integers
-		if( $1->is(integer) && $3->is(integer) ) {
+		//both operands must be integers or strings
+		if(
+			($1->is(integer) && $3->is(integer)) || ($1->is(string) && $3->is(string))
+		) {
 			$$ = new expression($1->typ);
 
 			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus

@@ -305,6 +305,10 @@ namespace sum {
 						stack.push( new IntegerValue( static_cast<IntegerValue*>(r2)->value + static_cast<IntegerValue*>(r1)->value ) );
 						done=true;
 					}
+					else if( r1->tag == string && r2->tag == string ) {
+						stack.push( new StringValue( static_cast<StringValue*>(r2)->value + static_cast<StringValue*>(r1)->value ) );
+						done=true;
+					}
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();

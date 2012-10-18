@@ -2,6 +2,7 @@
 #include "util/debug.hpp"
 #include "bytecode.hpp"
 #include <ostream>
+#include <sstream>
 #include <stdexcept>
 
 namespace sum {
@@ -17,7 +18,7 @@ namespace sum {
 
 		struct Cell {
 			type tag;
-			virtual void print(std::ostream& out) const = 0;
+			virtual std::string to_str() const = 0;
 			virtual Cell* clone() const = 0;
 		};
 
@@ -25,8 +26,8 @@ namespace sum {
 			NullValue() {
 				this->tag = none;
 			}
-			virtual void print(std::ostream& out) const {
-				out << "Null" << std::endl;
+			virtual std::string to_str() const {
+				return "Null";
 			}
 			virtual NullValue* clone() const {
 				return new NullValue();
@@ -38,8 +39,8 @@ namespace sum {
 			PuppetValue(Puppet& value) : value(value) {
 				this->tag = puppet;
 			}
-			virtual void print(std::ostream& out) const {
-				out << "Puppet '" << value.get_name() << "'" << std::endl;
+			virtual std::string to_str() const {
+				return "Puppet '" + value.get_name() + "'";
 			}
 			virtual NullValue* clone() const {
 				return new NullValue();
@@ -51,8 +52,8 @@ namespace sum {
 			BooleanValue(bool val) : value(val) {
 				this->tag = boolean;
 			}
-			virtual void print(std::ostream& out) const {
-				out << (this->value? "true" : "false") << std::endl;
+			virtual std::string to_str() const {
+				return (this->value? "true" : "false");
 			}
 			virtual BooleanValue* clone() const {
 				return new BooleanValue(this->value);
@@ -65,8 +66,10 @@ namespace sum {
 			IntegerValue(int val) : value(val) {
 				this->tag = integer;
 			}
-			virtual void print(std::ostream& out) const {
-				out << value << std::endl;
+			virtual std::string to_str() const {
+				std::ostringstream n;
+				n << value;
+				return n.str();
 			}
 			virtual IntegerValue* clone() const {
 				return new IntegerValue(this->value);
@@ -79,8 +82,8 @@ namespace sum {
 			StringValue(std::string val) : value(val) {
 				this->tag = string;
 			}
-			virtual void print(std::ostream& out) const {
-				out << value << std::endl;
+			virtual std::string to_str() const {
+				return value;
 			}
 			virtual StringValue* clone() const {
 				return new StringValue(this->value);
@@ -95,8 +98,10 @@ namespace sum {
 			ActivationRecord(size_t prog, size_t pc, size_t bp) : prog(prog), pc(pc), bp(bp) {
 				this->tag = none;
 			}
-			virtual void print(std::ostream& out) const {
-				out << "Activation record\n" << " \tprog: " << prog << "\n\tpc: " << pc << "\n\tbp: " << bp << std::endl;
+			virtual std::string to_str() const {
+				std::ostringstream out;
+				out << "Activation record\n" << " \tprog: " << prog << "\n\tpc: " << pc << "\n\tbp: " << bp;
+				return out.str();
 			}
 			virtual ActivationRecord* clone() const {
 				return new ActivationRecord(this->prog, this->pc, this->bp);
@@ -139,8 +144,6 @@ namespace sum {
 		}
 		void  Stack::push(Cell* cell) {
 			stack.push_back(cell);
-			dout << "pushed ";
-			cell->print(dout);
 		}
 
 		const Cell* Stack::var_at(size_t loc) const {
@@ -150,8 +153,6 @@ namespace sum {
 		void Stack::set_var_at(size_t loc, Cell* cell) {
 			delete stack[loc];
 			stack[loc] = cell;
-			dout << "into "<< loc << " stored " << std::endl;
-			stack[loc]->print(dout);
 		}
 
 		size_t Stack::get_stack_pointer() const {
@@ -179,7 +180,7 @@ namespace sum {
 		}
 
 		void Stack::print(std::ostream& out) const {
-			for(std::vector<Cell*>::const_reverse_iterator rit = stack.rbegin(); rit<stack.rend(); ++rit) (*rit)->print(out);
+			for(std::vector<Cell*>::const_reverse_iterator rit = stack.rbegin(); rit<stack.rend(); ++rit) out << (*rit)->to_str() << std::endl;
 		}
 
 //*******************
@@ -469,7 +470,7 @@ namespace sum {
 				}
 				void operator()(Stack& stack) const {
 					Cell* r1 = stack.pop();
-					r1->print(std::cout);
+					std::cout << r1->to_str() << std::endl;
 					delete r1;
 				}
 			};

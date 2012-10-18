@@ -11,7 +11,7 @@
 %type <stmt> conditional_branches
 %type <stmt> loop
 %type <stmt> proc_call
-%type <stmt> ret_value
+%type <stmt> ret ret_value
 %type <stmt> statement
 %type <stmt> statements
 %type <stmt> proc_body
@@ -189,6 +189,9 @@ loop {
 	$$ = new statement();
 	$$->code.push_back( codeline(NOP, 0) );
 	}
+| ret {
+	$$ = $1;
+}
 | ret_value {
 	$$ = $1;
 };
@@ -368,6 +371,12 @@ IDENTIFIER OP_ASSIGNMENT exp {
 
 	delete $1;
 	delete $3;
+};
+
+
+ret: K_RETURN {
+	$$ = new statement();
+	$$->code.push_back( codeline(RET) );
 };
 
 ret_value:

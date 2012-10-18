@@ -475,6 +475,17 @@ namespace sum {
 				}
 			};
 
+			struct tostring : public Interrupt  {
+				const char* get_name() const {
+					return "STRING";
+				}
+				void operator()(Stack& stack) const {
+					Cell* r1 = stack.pop();
+					stack.push( new StringValue(r1->to_str()) );
+					delete r1;
+				}
+			};
+
 			//***************
 			//*** Methods ***
 			//***************
@@ -515,6 +526,7 @@ namespace sum {
 			const std::vector<Interrupt*> list_init() {
 				std::vector<Interrupt*> Result;
 				Result.push_back( new interrupt::print() );
+				Result.push_back( new interrupt::tostring() );
 				Result.push_back( new interrupt::self_move() );
 				Result.push_back( new interrupt::self_turn_left() );
 				Result.push_back( new interrupt::self_turn_right() );

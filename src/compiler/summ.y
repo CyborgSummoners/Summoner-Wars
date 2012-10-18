@@ -412,10 +412,16 @@ IDENTIFIER {
 | IDENTIFIER T_OPEN exp_epsilon_list T_CLOSE {
 	$$ = new expression(any);
 	$$->code.insert($$->code.begin(), $3->code.begin(), $3->code.end());
-	// and suppose it's a function indeed
-	std::string norm=subprogram::normalize_name(*$1);
 
-	$$->code.push_back( codeline(CALL, 0, 0, norm ) );
+	std::string norm=subprogram::normalize_name(*$1);
+	// interrupt or userland?
+	int intrpt = get_interrupt_id(norm);
+	if( intrpt >= 0 ) {
+		$$->code.push_back( codeline(INTERRUPT, intrpt) );
+	}
+	else {
+		$$->code.push_back( codeline(CALL, 0, 0, norm ) );
+	}
 
 	delete $1;
 	delete $3;

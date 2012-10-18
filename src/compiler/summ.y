@@ -426,6 +426,16 @@ IDENTIFIER {
 	delete $1;
 	delete $3;
 }
+| K_FUNCTION T_OPEN exp T_CLOSE T_OPEN exp_epsilon_list T_CLOSE {
+	$$ = new expression(any);
+	if(! $3->is(string) ) error("Type mismatch (operand of FUNCTION must be a string)");
+	$$->code.insert($$->code.begin(), $6->code.begin(), $6->code.end());
+	$$->code.insert($$->code.begin(), $3->code.begin(), $3->code.end());
+	$$->code.push_back( codeline(APPLY) );
+
+	delete $3;
+	delete $6;
+}
 | T_OPEN exp T_CLOSE {
 	$$ = $2;
 	}

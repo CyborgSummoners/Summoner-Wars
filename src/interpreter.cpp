@@ -745,7 +745,15 @@ namespace sum {
 				if(rs < Interrupt::list.size()) {
 					(*Interrupt::list[rs])(stack);
 				}
-
+				break;
+			case APPLY: //47
+				r1 = stack.pop();
+				rs = get_program_id( subprogram::normalize_name(r1->to_str()) );
+				stack.push( new ActivationRecord(program_id, pc, bp) );
+				bp = stack.get_stack_pointer();
+				program_id = rs;
+				pc = 0; // start at the beginning.
+				delete r1;
 				break;
 			// comparisons
 			case EQ:

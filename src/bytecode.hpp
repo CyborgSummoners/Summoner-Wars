@@ -39,6 +39,7 @@ namespace bytecode {
 		RET,          //                 RETurn. Rewinds the stack to before all agruments. Pushes no value.
 		RETV,         //                 RETurn Value. Pops a value from the stack, rewinds the stack to before all arguments, then pushes the value.
 		INTERRUPT,    // 4               passes control to interrupt #arg.
+		APPLY,        //                 Pops a string value, then CALLs the function specified by that value.
 
 		// comparisons. These MUST be continuous, their order MUST NOT change.
 		EQ = 50,      //                 pops two values, pushes true if they're equal, false otherwise

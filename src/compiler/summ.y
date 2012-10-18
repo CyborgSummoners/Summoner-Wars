@@ -11,23 +11,17 @@
 %type <stmt> conditional_branches
 %type <stmt> loop
 %type <stmt> proc_call
+%type <stmt> ret_value
 %type <stmt> statement
 %type <stmt> statements
 %type <stmt> proc_body
-%type <stmt> exp_list
+%type <stmt> exp_list exp_epsilon_list
 %type <stmt> call_arguments
 
 %type <count> argument_list arguments
 %token <str> IDENTIFIER
-%token K_PROCEDURE
-%token K_IS
-%token K_END
-%token K_IF
-%token K_THEN
-%token K_ELSE
-%token K_ELSIF
-%token K_WHILE
-%token K_LOOP
+%token K_PROCEDURE K_FUNCTION
+%token K_IS K_END K_IF K_THEN K_ELSE K_ELSIF K_WHILE K_LOOP K_RETURN
 
 %token K_SELF
 
@@ -70,7 +64,7 @@
 %%
 
 start:
-procedures {
+subprograms {
 	if(act == BYTECODE) {
 		for(size_t i=0; i<subprograms.size(); ++i) subprograms[i].print_bytecode(std::cout);
 	}
@@ -79,10 +73,9 @@ procedures {
 	}
 };
 
-procedures:
-procedures procedure | procedure;
+subprograms: subprograms subprogram | subprogram;
 
-procedure:
+subprogram:
 K_PROCEDURE IDENTIFIER argument_list K_IS proc_body K_END IDENTIFIER SEMICOLON {
 	if(*$2 != *$7) {
 		std::stringstream ss;
@@ -90,8 +83,6 @@ K_PROCEDURE IDENTIFIER argument_list K_IS proc_body K_END IDENTIFIER SEMICOLON {
 		error(ss.str().c_str());
 	}
 	else {
-
-		//$5->code.insert( $5->code.end(), $6->code.begin(), $6->code.end() );
 		$5->code.push_back( codeline(RET, 0) );
 
 		second_pass($5->code);
@@ -104,7 +95,26 @@ K_PROCEDURE IDENTIFIER argument_list K_IS proc_body K_END IDENTIFIER SEMICOLON {
 	}
 
 	delete $2;
-	//delete $5;
+	delete $5;
+	delete $7;
+}
+| K_FUNCTION IDENTIFIER argument_list K_IS proc_body K_END IDENTIFIER SEMICOLON {
+	if(*$2 != *$7) {
+		std::stringstream ss;
+		ss << "Name mismatch. Function declared as '" << subprogram::normalize_name(*$2) << "' ends as '" << subprogram::normalize_name(*$7) << "'";
+		error(ss.str().c_str());
+	}
+	else {
+		$5->code.push_back( codeline(RET, 0) );	// ensure end of subroutine. It will (most likely) cause some sort of stack underflow, so make sure there's a RETV before this.
+		second_pass($5->code);
+		byte* code = 0;
+		size_t length = 0;
+		assemble($5->code, code, length);
+		subprograms.push_back( subprogram(*$2, $3, code, length, true) );
+		reset();
+	}
+
+	delete $2;
 	delete $5;
 	delete $7;
 };
@@ -179,7 +189,9 @@ loop {
 	$$ = new statement();
 	$$->code.push_back( codeline(NOP, 0) );
 	}
-;
+| ret_value {
+	$$ = $1;
+};
 
 loop:
 K_WHILE exp K_LOOP statements K_END K_LOOP {
@@ -318,8 +330,7 @@ call_arguments:
 | T_OPEN exp_list T_CLOSE {
 	$$ = new statement();
 	$$->code.insert($$->code.begin(), $2->code.begin(), $2->code.end());
-}
-;
+};
 
 exp_list:
 exp_list COMMA exp {
@@ -331,8 +342,15 @@ exp_list COMMA exp {
 	$$ = new statement();
 	$$->code = $1->code;
 	delete $1;
-	}
-;
+};
+
+exp_epsilon_list:
+exp_list {
+	$$ = $1;
+}
+| /*epszilon*/ {
+	$$ = new statement();
+};
 
 assignment:
 IDENTIFIER OP_ASSIGNMENT exp {
@@ -350,6 +368,14 @@ IDENTIFIER OP_ASSIGNMENT exp {
 
 	delete $1;
 	delete $3;
+};
+
+ret_value:
+K_RETURN exp {
+	$$ = new statement();
+	$$->code = $2->code;
+	$$->code.push_back( codeline(RETV) );
+	delete $2;
 };
 
 exp:
@@ -374,6 +400,17 @@ IDENTIFIER {
 		}
 		delete $1;
 	}
+| IDENTIFIER T_OPEN exp_epsilon_list T_CLOSE {
+	$$ = new expression(any);
+	$$->code.insert($$->code.begin(), $3->code.begin(), $3->code.end());
+	// and suppose it's a function indeed
+	std::string norm=subprogram::normalize_name(*$1);
+
+	$$->code.push_back( codeline(CALL, 0, 0, norm ) );
+
+	delete $1;
+	delete $3;
+}
 | T_OPEN exp T_CLOSE {
 	$$ = $2;
 	}

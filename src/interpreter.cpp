@@ -562,7 +562,7 @@ namespace sum {
 		code[1] = bytecode::DELAY;
 		code[2] = code[3] = code[4] = 0;
 		code[5] = 100;
-		programs.push_back(bytecode::subprogram("NOP", 0, code, 5));
+		programs.push_back(bytecode::subprogram("NOP", 0, code, 5, false));
 	}
 
 	int Interpreter::get_interrupt_id(const std::string& name) {

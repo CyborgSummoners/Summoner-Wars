@@ -70,7 +70,7 @@ void Parser::second_pass(codelines& code) {
 	}
 
 	//put all reservations to the front:
-	code.insert(code.begin(), codeline(RSRV, vars));
+	if(vars > 0) code.insert(code.begin(), codeline(RSRV, vars));
 
 	// calculate real line numbers (not counting labelless NOPs)
 	size_t line=0;

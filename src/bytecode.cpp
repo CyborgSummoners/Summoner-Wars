@@ -4,6 +4,16 @@
 #include <iostream>
 
 namespace bytecode {
+
+	bool subtypeof(type super, type sub) {
+		return (
+			   (super == sub)                     // everything qualifies as a subtype of itself.
+			|| (super == any)                     // everything is a subtype to any.
+			|| (super == list   && sub == string) // string is a list
+			|| (super == puppet && sub == self)   // self is a puppet
+		);
+	}
+
 	bool has_argument(Instruction i) {
 		switch(i) {
 			case PUSH:
@@ -14,6 +24,7 @@ namespace bytecode {
 			case JMP:
 			case JMPTRUE:
 			case JMPFALSE:
+			case LIST:
 			case DELAY:
 			case INTERRUPT:
 				return true;
@@ -28,6 +39,7 @@ namespace bytecode {
 			case JMP:
 			case JMPTRUE:
 			case JMPFALSE:
+			case LIST:
 			case INTERRUPT:
 			case DELAY:
 				return 4;

@@ -15,8 +15,8 @@
 %type <stmt> statement
 %type <stmt> statements
 %type <stmt> proc_body
-%type <stmt> exp_list exp_epsilon_list
 %type <stmt> call_arguments
+%type <exp_list_stmt> exp_list exp_epsilon_list
 
 %type <count> argument_list arguments
 %token <str> IDENTIFIER
@@ -29,7 +29,7 @@
 
 %token COLON SEMICOLON COMMA
 
-%token T_OPEN T_CLOSE
+%token T_OPEN T_CLOSE T_BRACKET_OPEN T_BRACKET_CLOSE
 
 %token L_TRUE L_FALSE
 
@@ -58,6 +58,7 @@
 	type* typ;
 	expression* exp;
 	statement* stmt;
+	expression_list* exp_list_stmt;
 }
 
 
@@ -339,11 +340,13 @@ exp_list:
 exp_list COMMA exp {
 	$$ = $1;
 	$$->code.insert($$->code.begin(), $3->code.begin(), $3->code.end());
+	++($$->element_count);
 	delete $3;
 	}
 | exp {
-	$$ = new statement();
+	$$ = new expression_list();
 	$$->code = $1->code;
+	$$->element_count = 1;
 	delete $1;
 };
 
@@ -352,7 +355,8 @@ exp_list {
 	$$ = $1;
 }
 | /*epszilon*/ {
-	$$ = new statement();
+	$$ = new expression_list();
+	$$->element_count = 0;
 };
 
 assignment:
@@ -699,4 +703,10 @@ L_TRUE {
 	$$ = new expression(string);
 	$$->code.push_back( codeline(PSHS, 0, 0, *$1) );
 	delete $1;
+}
+| T_BRACKET_OPEN exp_epsilon_list T_BRACKET_CLOSE {	//list literal
+	$$ = new expression(any);
+	$$->code = $2->code;
+	$$->code.push_back( codeline(LIST, $2->element_count) );
+	delete $2;
 };

@@ -62,4 +62,8 @@ struct statement {
 	codelines code;
 };
 
+struct expression_list : public statement {
+	size_t element_count;
+};
+
 #endif

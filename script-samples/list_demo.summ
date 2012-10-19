@@ -1,0 +1,4 @@
+procedure list_demo is
+	i := "hello, world";
+	l := [0, 1, 2, i, true];
+end list_demo;

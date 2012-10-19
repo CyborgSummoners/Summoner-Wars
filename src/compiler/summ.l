@@ -43,6 +43,8 @@ not                     return Parser::OP_NOT;
 ,                       return Parser::COMMA;
 \(                      return Parser::T_OPEN;
 \)                      return Parser::T_CLOSE;
+\[                      return Parser::T_BRACKET_OPEN;
+\]                      return Parser::T_BRACKET_CLOSE;
 :=                      return Parser::OP_ASSIGNMENT;
 =                       return Parser::OP_EQUALITY;
 \<                      return Parser::OP_LESS_THAN;

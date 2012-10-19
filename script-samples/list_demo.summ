@@ -1,4 +1,5 @@
 procedure list_demo is
-	i := "hello, world";
-	l := [0, 1, 2, i, true];
+	i := "hello world";
+	l := [0, 1, 2, i, true, "edömér", 20, 1032];
+	print(l);
 end list_demo;

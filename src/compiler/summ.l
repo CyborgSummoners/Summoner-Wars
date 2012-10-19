@@ -14,8 +14,10 @@
 
 --.*                    // comment
 procedure               return Parser::K_PROCEDURE;
+function                return Parser::K_FUNCTION;
 is                      return Parser::K_IS;
 end                     return Parser::K_END;
+return                  return Parser::K_RETURN;
 null                    return Parser::K_NULL;
 
 self                    return Parser::K_SELF;

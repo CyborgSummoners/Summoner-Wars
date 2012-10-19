@@ -36,8 +36,10 @@ namespace bytecode {
 		JMPTRUE,      // 4               jump if true. pops a value. If it's != false, then jumps to arg
 		JMPFALSE,     // 4               jump if false. pops a value. if it's = true, then jumps to arg
 		CALL,         //        CSN      passes control to the procedure specified by the followup string.
-		RET,          //                 returns control to the calling procedure, if any. If there's none, the program terminates.
+		RET,          //                 RETurn. Rewinds the stack to before all agruments. Pushes no value.
+		RETV,         //                 RETurn Value. Pops a value from the stack, rewinds the stack to before all arguments, then pushes the value.
 		INTERRUPT,    // 4               passes control to interrupt #arg.
+		APPLY,        //                 Pops a string value, then CALLs the function specified by that value.
 
 		// comparisons. These MUST be continuous, their order MUST NOT change.
 		EQ = 50,      //                 pops two values, pushes true if they're equal, false otherwise
@@ -74,6 +76,7 @@ namespace bytecode {
 		private:
 			std::string name;
 			byte argc;
+			bool retval;
 
 		public:
 			byte const* code;
@@ -82,7 +85,7 @@ namespace bytecode {
 		void set_name(const std::string& str);
 
 		public:
-			subprogram(std::string name, byte argc, byte* code, size_t len);
+			subprogram(std::string name, byte argc, byte* code, size_t len, bool retval = false);
 
 			const std::string& get_name() const;
 			byte get_argc() const;

@@ -2,6 +2,7 @@
 #include "util/debug.hpp"
 #include "bytecode.hpp"
 #include <ostream>
+#include <sstream>
 #include <stdexcept>
 
 namespace sum {
@@ -17,7 +18,7 @@ namespace sum {
 
 		struct Cell {
 			type tag;
-			virtual void print(std::ostream& out) const = 0;
+			virtual std::string to_str() const = 0;
 			virtual Cell* clone() const = 0;
 		};
 
@@ -25,8 +26,8 @@ namespace sum {
 			NullValue() {
 				this->tag = none;
 			}
-			virtual void print(std::ostream& out) const {
-				out << "Null" << std::endl;
+			virtual std::string to_str() const {
+				return "Null";
 			}
 			virtual NullValue* clone() const {
 				return new NullValue();
@@ -38,8 +39,8 @@ namespace sum {
 			PuppetValue(Puppet& value) : value(value) {
 				this->tag = puppet;
 			}
-			virtual void print(std::ostream& out) const {
-				out << "Puppet '" << value.get_name() << "'" << std::endl;
+			virtual std::string to_str() const {
+				return "Puppet '" + value.get_name() + "'";
 			}
 			virtual NullValue* clone() const {
 				return new NullValue();
@@ -51,8 +52,8 @@ namespace sum {
 			BooleanValue(bool val) : value(val) {
 				this->tag = boolean;
 			}
-			virtual void print(std::ostream& out) const {
-				out << (this->value? "true" : "false") << std::endl;
+			virtual std::string to_str() const {
+				return (this->value? "true" : "false");
 			}
 			virtual BooleanValue* clone() const {
 				return new BooleanValue(this->value);
@@ -65,8 +66,10 @@ namespace sum {
 			IntegerValue(int val) : value(val) {
 				this->tag = integer;
 			}
-			virtual void print(std::ostream& out) const {
-				out << value << std::endl;
+			virtual std::string to_str() const {
+				std::ostringstream n;
+				n << value;
+				return n.str();
 			}
 			virtual IntegerValue* clone() const {
 				return new IntegerValue(this->value);
@@ -79,8 +82,8 @@ namespace sum {
 			StringValue(std::string val) : value(val) {
 				this->tag = string;
 			}
-			virtual void print(std::ostream& out) const {
-				out << value << std::endl;
+			virtual std::string to_str() const {
+				return value;
 			}
 			virtual StringValue* clone() const {
 				return new StringValue(this->value);
@@ -95,8 +98,10 @@ namespace sum {
 			ActivationRecord(size_t prog, size_t pc, size_t bp) : prog(prog), pc(pc), bp(bp) {
 				this->tag = none;
 			}
-			virtual void print(std::ostream& out) const {
-				out << "Activation record\n" << " \tprog: " << prog << "\n\tpc: " << pc << "\n\tbp: " << bp << std::endl;
+			virtual std::string to_str() const {
+				std::ostringstream out;
+				out << "Activation record\n" << " \tprog: " << prog << "\n\tpc: " << pc << "\n\tbp: " << bp;
+				return out.str();
 			}
 			virtual ActivationRecord* clone() const {
 				return new ActivationRecord(this->prog, this->pc, this->bp);
@@ -139,8 +144,6 @@ namespace sum {
 		}
 		void  Stack::push(Cell* cell) {
 			stack.push_back(cell);
-			dout << "pushed ";
-			cell->print(dout);
 		}
 
 		const Cell* Stack::var_at(size_t loc) const {
@@ -150,8 +153,6 @@ namespace sum {
 		void Stack::set_var_at(size_t loc, Cell* cell) {
 			delete stack[loc];
 			stack[loc] = cell;
-			dout << "into "<< loc << " stored " << std::endl;
-			stack[loc]->print(dout);
 		}
 
 		size_t Stack::get_stack_pointer() const {
@@ -164,7 +165,7 @@ namespace sum {
 			}
 			else if( sp == stack.size() ) return;
 
-			for(size_t i=stack.size()-1; sp <= i; --i) {
+			for(size_t i=stack.size(); i-->sp; ) {
 				delete stack[i];
 			}
 			stack.resize(sp);
@@ -179,7 +180,7 @@ namespace sum {
 		}
 
 		void Stack::print(std::ostream& out) const {
-			for(std::vector<Cell*>::const_reverse_iterator rit = stack.rbegin(); rit<stack.rend(); ++rit) (*rit)->print(out);
+			for(std::vector<Cell*>::const_reverse_iterator rit = stack.rbegin(); rit<stack.rend(); ++rit) out << (*rit)->to_str() << std::endl;
 		}
 
 //*******************
@@ -303,6 +304,10 @@ namespace sum {
 					Cell* r2 = stack.pop();
 					if( r1->tag == integer && r2->tag == integer ) {
 						stack.push( new IntegerValue( static_cast<IntegerValue*>(r2)->value + static_cast<IntegerValue*>(r1)->value ) );
+						done=true;
+					}
+					else if( r1->tag == string && r2->tag == string ) {
+						stack.push( new StringValue( static_cast<StringValue*>(r2)->value + static_cast<StringValue*>(r1)->value ) );
 						done=true;
 					}
 					delete r1;
@@ -465,7 +470,18 @@ namespace sum {
 				}
 				void operator()(Stack& stack) const {
 					Cell* r1 = stack.pop();
-					r1->print(std::cout);
+					std::cout << r1->to_str() << std::endl;
+					delete r1;
+				}
+			};
+
+			struct tostring : public Interrupt  {
+				const char* get_name() const {
+					return "STRING";
+				}
+				void operator()(Stack& stack) const {
+					Cell* r1 = stack.pop();
+					stack.push( new StringValue(r1->to_str()) );
 					delete r1;
 				}
 			};
@@ -510,6 +526,7 @@ namespace sum {
 			const std::vector<Interrupt*> list_init() {
 				std::vector<Interrupt*> Result;
 				Result.push_back( new interrupt::print() );
+				Result.push_back( new interrupt::tostring() );
 				Result.push_back( new interrupt::self_move() );
 				Result.push_back( new interrupt::self_turn_left() );
 				Result.push_back( new interrupt::self_turn_right() );
@@ -562,7 +579,7 @@ namespace sum {
 		code[1] = bytecode::DELAY;
 		code[2] = code[3] = code[4] = 0;
 		code[5] = 100;
-		programs.push_back(bytecode::subprogram("NOP", 0, code, 5));
+		programs.push_back(bytecode::subprogram("NOP", 0, code, 5, false));
 	}
 
 	int Interpreter::get_interrupt_id(const std::string& name) {
@@ -629,6 +646,7 @@ namespace sum {
 
 		// segédregiszterek (kiemelni objektumváltozókká?)
 		Cell* r1;
+		Cell* retval;
 		ActivationRecord* ar;
 		size_t rs;
 		int ri;
@@ -689,8 +707,6 @@ namespace sum {
 				rs = get_program_id( programs[program_id].get_string(pc) );	// get callee's id.
 				// parameters are on the top of the stack. callee knows how many
 
-				// reserve space for return value
-
 				// return to which program, at which point, and what was the base pointer?
 				stack.push( new ActivationRecord(program_id, pc, bp) );
 
@@ -703,19 +719,41 @@ namespace sum {
 				stack.set_stack_pointer(bp); // rewind the stack all the way down to 0, to before the local vars
 				r1 = stack.pop(); // get back the activation record.
 				if((ar = dynamic_cast<ActivationRecord*>(r1))==0) throw stack_machine::except::corrupted_stack();
-				// pop retval to r1, if applicable.
 				stack.set_stack_pointer(stack.get_stack_pointer() - programs[program_id].get_argc());	// consume the arguments, if any.
 				bp = ar->bp;
 				pc = ar->pc;
 				program_id = ar->prog;
 				delete ar;
 				break;
-			case INTERRUPT: //45
+			case RETV:      //45
+				if(bp == 0) break; // igen, ezt majd a kezdeti activation recorddal.
+				retval = stack.pop();
+
+				stack.set_stack_pointer(bp); // rewind the stack
+				r1 = stack.pop(); // get back the activation record.
+				if((ar = dynamic_cast<ActivationRecord*>(r1))==0) throw stack_machine::except::corrupted_stack();
+				stack.set_stack_pointer(stack.get_stack_pointer() - programs[program_id].get_argc());	// consume the arguments, if any.
+				bp = ar->bp;
+				pc = ar->pc;
+				program_id = ar->prog;
+				delete ar;
+
+				stack.push(retval);
+				break;
+			case INTERRUPT: //46
 				rs = programs[program_id].get_int(pc);
 				if(rs < Interrupt::list.size()) {
 					(*Interrupt::list[rs])(stack);
 				}
-
+				break;
+			case APPLY: //47
+				r1 = stack.pop();
+				rs = get_program_id( subprogram::normalize_name(r1->to_str()) );
+				stack.push( new ActivationRecord(program_id, pc, bp) );
+				bp = stack.get_stack_pointer();
+				program_id = rs;
+				pc = 0; // start at the beginning.
+				delete r1;
 				break;
 			// comparisons
 			case EQ:

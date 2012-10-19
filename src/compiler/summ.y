@@ -321,6 +321,7 @@ proc_call:
 		$$ = new statement();
 		std::stringstream ss;
 		ss << "SELF does not have a method called '" << subprogram::normalize_name(*$3) << "'" << std::endl;
+		delete $4;
 		error(ss.str().c_str());
 	}
 };
@@ -333,6 +334,7 @@ call_arguments:
 | T_OPEN exp_list T_CLOSE {
 	$$ = new statement();
 	$$->code.insert($$->code.begin(), $2->code.begin(), $2->code.end());
+	delete $2;
 };
 
 exp_list:

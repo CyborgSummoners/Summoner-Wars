@@ -23,6 +23,11 @@ namespace sum {
 			virtual ~Cell() {};
 		};
 
+		struct Reference : public Cell {
+			virtual Reference* deep_copy() const = 0;
+			virtual ~Reference() {};
+		};
+
 		struct NullValue : public Cell {
 			NullValue() {
 				this->tag = none;
@@ -77,14 +82,13 @@ namespace sum {
 			}
 		};
 
-		struct ListValue : public Cell {
+		struct ListValue {
 			size_t len;
 			std::vector<Cell*> value;
+			size_t refcount;
 
-			ListValue(const std::vector<Cell*>& val) : value(val) {
-				this->tag = list;
-			}
-			ListValue(Cell** cells, size_t len) : len(len), value(len) {
+			ListValue(const std::vector<Cell*>& val) : value(val), refcount(0) {}
+			ListValue(Cell** cells, size_t len) : len(len), value(len), refcount(0) {
 				for(size_t i=0; i<len; ++i) value[i] = cells[i];
 			}
 
@@ -110,6 +114,35 @@ namespace sum {
 			}
 			virtual ~ListValue() {
 				for(size_t i=0; i<value.size(); ++i) delete value[i];
+			}
+
+			void addref() {
+				++refcount;
+			}
+			void delref() {
+				--refcount;
+				if(refcount == 0) delete this;
+			}
+		};
+
+		struct ListRef : public Reference {
+			ListValue* value;
+
+			ListRef(ListValue* value) : value(value) {
+				this->tag = list;
+				value->addref();
+			}
+			virtual std::string to_str() const {
+				return value->to_str();
+			}
+			virtual ListRef* clone() const {
+				return new ListRef(value);
+			}
+			virtual ListRef* deep_copy() const {
+				return new ListRef(value->clone());
+			}
+			virtual ~ListRef() {
+				value->delref();
 			}
 		};
 
@@ -817,7 +850,7 @@ namespace sum {
 				while(rs-->0) {
 					rarr[rs] = stack.pop();
 				}
-				stack.push( new ListValue(rarr, ri) );
+				stack.push( new ListRef(new ListValue(rarr, ri)) );
 				delete[] rarr;
 				break;
 			case DELAY:

@@ -7,7 +7,8 @@
 #include <map>
 
 namespace bytecode {
-	enum type{ meta, none, any, boolean, integer, string, puppet, self };
+	enum type{ meta, none, any, boolean, integer, list, string, puppet, self };
+	bool subtypeof(type super, type sub);
 
 	typedef unsigned char byte;
 	typedef char signed_byte;
@@ -56,6 +57,9 @@ namespace bytecode {
 		AND,          //
 		OR,           //
 		NEG,          //
+
+		// list ops.
+		LIST = 80,    // 4               pops arg values, builds a list out of them, and pushes the list.
 
 		// meta
 		DELAY = 200,   // 4              the interpreter releases the puppet for a delay of X ticks.

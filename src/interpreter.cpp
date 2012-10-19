@@ -20,6 +20,7 @@ namespace sum {
 			type tag;
 			virtual std::string to_str() const = 0;
 			virtual Cell* clone() const = 0;
+			virtual ~Cell() {};
 		};
 
 		struct NullValue : public Cell {
@@ -73,6 +74,42 @@ namespace sum {
 			}
 			virtual IntegerValue* clone() const {
 				return new IntegerValue(this->value);
+			}
+		};
+
+		struct ListValue : public Cell {
+			size_t len;
+			std::vector<Cell*> value;
+
+			ListValue(const std::vector<Cell*>& val) : value(val) {
+				this->tag = list;
+			}
+			ListValue(Cell** cells, size_t len) : len(len), value(len) {
+				for(size_t i=0; i<len; ++i) value[i] = cells[i];
+			}
+
+			virtual std::string to_str() const {
+				std::ostringstream s;
+				s << "[";
+				for(size_t i=0; i<value.size(); ++i) {
+					if(i!=0) s << ",";
+					s << value[i]->to_str();
+				}
+				s << "]";
+				return s.str();
+			}
+			virtual ListValue* clone() const {
+				//deep copy
+				Cell** ncells = new Cell*[len];
+				for(size_t i=0; i<len; ++i) {
+					ncells[i] = value[i]->clone();
+				}
+				ListValue* result = new ListValue(ncells, len);
+				delete[] ncells;
+				return result;
+			}
+			virtual ~ListValue() {
+				for(size_t i=0; i<value.size(); ++i) delete value[i];
 			}
 		};
 
@@ -647,6 +684,7 @@ namespace sum {
 		// segédregiszterek (kiemelni objektumváltozókká?)
 		Cell* r1;
 		Cell* retval;
+		Cell** rarr;
 		ActivationRecord* ar;
 		size_t rs;
 		int ri;
@@ -772,6 +810,15 @@ namespace sum {
 			case OR:
 			case NEG:
 				(*Interrupt::operators[opcode - ADDI])(stack);
+				break;
+			case LIST:
+				rs = ri = programs[program_id].get_int(pc);
+				rarr = new Cell*[ rs ];
+				while(rs-->0) {
+					rarr[rs] = stack.pop();
+				}
+				stack.push( new ListValue(rarr, ri) );
+				delete[] rarr;
 				break;
 			case DELAY:
 				return programs[program_id].get_int(pc);

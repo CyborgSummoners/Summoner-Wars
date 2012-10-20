@@ -14,6 +14,7 @@ namespace sum {
 			struct incompatible_types : public std::exception {};
 			struct division_by_zero : public std::exception {};
 			struct subprogram_does_not_exist : public std::exception {};
+			struct index_out_of_range : public std::exception {};
 		}
 
 		struct Cell {
@@ -160,8 +161,11 @@ namespace sum {
 					index = static_cast<IntegerValue*>(idx)->value;
 				else throw stack_machine::except::incompatible_types();
 
-				if(index < 0) index = 0;
-				else if(static_cast<size_t>(index) >= value->len) index = value->len-1;
+				if(index < 0) {
+					index = value->len+index;
+					if(index<0) throw except::index_out_of_range();
+				}
+				if(static_cast<size_t>(index) >= value->len) throw except::index_out_of_range();
 
 				delete value->value[index];
 				value->value[index] = elem;
@@ -173,8 +177,11 @@ namespace sum {
 					index = static_cast<IntegerValue*>(idx)->value;
 				else throw stack_machine::except::incompatible_types();
 
-				if(index < 0) index = 0;
-				else if(static_cast<size_t>(index) >= value->len) index = value->len-1;
+				if(index < 0) {
+					index = value->len+index;
+					if(index<0) throw except::index_out_of_range();
+				}
+				if(static_cast<size_t>(index) >= value->len) throw except::index_out_of_range();
 
 				return value->value[index];
 			}

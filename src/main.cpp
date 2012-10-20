@@ -105,9 +105,13 @@ int main()
 	interpreter.register_puppet(puppet);
 	interpreter.set_behaviour(puppet, "DEMO");
 
+	sum::Puppet p2("Red Circle");
+	interpreter.register_puppet(p2);
+	interpreter.set_behaviour(p2, "DEMO");
+
 	while(true) {
-		interpreter.step(100);
-		sf::Sleep(0.5f);
+		interpreter.step(10);
+		sf::Sleep(0.2f);
 	}
 
     //sum::Game::Start();

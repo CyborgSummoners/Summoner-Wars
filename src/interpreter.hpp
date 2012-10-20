@@ -33,9 +33,15 @@ namespace sum {
 			static int get_interrupt_id(const std::string& name);
 
 		private:
+			unsigned int clock;
+			std::list<puppet_brain*> puppets;
+			void enqueue_puppet(puppet_brain* puppet);
+			puppet_brain* dequeue_puppet();
+
+//			void adjust_priorities();
+		private:
 			std::vector<bytecode::subprogram> programs;
 			std::map<std::string, size_t> program_map;
-			std::list<puppet_brain*> puppets;
 
 			size_t get_program_id(const std::string& str) const;
 
@@ -64,7 +70,7 @@ namespace sum {
 
 		private:
 			// executes the instruction in program at program_counter, using the specified stack, with given base pointer
-			size_t execute_instruction(Puppet& self, size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const;
+			unsigned int execute_instruction(Puppet& self, size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const;
 	};
 }
 

@@ -14,22 +14,25 @@ namespace sum {
 		public:
 			Puppet(const std::string& name) : direction(0), x(0), y(0), name(name) {};
 
-			void turn_left() {
+			unsigned int turn_left() {
 				direction = (direction-1) % 8;
 				std::cout << "Puppet '"<< name <<"': " << "I turned to the left, now facing " << direction << std::endl;
+				return 20;
 			}
-			void turn_right() {
+			unsigned int turn_right() {
 				direction = (direction+1) % 8;
 				std::cout << "Puppet '"<< name <<"': " << "I turned to the right, now facing " << direction << std::endl;
+				return 20;
 			}
 
-			void move() {
+			unsigned int move() {
 				int xchange=0, ychange=0;
 				if(direction<2 || direction>6) ychange = 1; else if(direction>2 && direction<6) ychange = -1;
 				if(direction<4 && direction>0) xchange = 1; else if(direction>4) xchange = -1;
 				y+=ychange;
 				x+=xchange;
 				std::cout << "Puppet '"<< name <<"': " << "I move forward to (" << x << "," << y << ")" << std::endl;
+				return 50;
 			}
 
 			std::string get_name() const {

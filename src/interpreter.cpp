@@ -778,25 +778,6 @@ namespace sum {
 				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2;
 				stack.set_var_at(bp + ri, r1);
 				break;
-			case FETCH_IDX:
-				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
-				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // borzasztó
-
-				if( stack.var_at(bp+ri)->tag == list ) {
-					r1 = stack.pop();
-					stack.push( static_cast<ListRef*>( stack.var_at(bp+ri) )->get_element( r1 )->clone() );
-				} else throw stack_machine::except::incompatible_types();
-				break;
-			case STORE_IDX:
-				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
-				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // egyre szörnyűbb
-
-				if( stack.var_at(bp+ri)->tag == list ) {
-					r1 = stack.pop();
-					r2 = stack.pop();
-					static_cast<ListRef*>( stack.var_at(bp+ri) )->set_element(r1, r2);
-				} else throw stack_machine::except::incompatible_types();
-				break;
 			// control flow
 			case JMP:      //40
 				pc = programs[program_id].get_int(pc);
@@ -895,6 +876,19 @@ namespace sum {
 				while(rj < ri) rarr[rj++] = stack.pop();
 				stack.push( new ListRef(new ListValue(rarr, ri)) );
 				delete[] rarr;
+				break;
+			case FETCH_IDX:
+				r1 = stack.pop();
+				if(r1->tag == list) {
+					stack.push( static_cast<ListRef*>(r1)->get_element( stack.pop() )->clone() );
+				} else throw stack_machine::except::incompatible_types();
+				break;
+			case STORE_IDX:
+				r1 = stack.pop(); //listref
+				if(r1->tag == list) {
+					r2 = stack.pop(); //index
+					static_cast<ListRef*>( r1 )->set_element(r2, stack.pop());
+				} else throw stack_machine::except::incompatible_types();
 				break;
 			case DELAY:
 				return programs[program_id].get_int(pc);

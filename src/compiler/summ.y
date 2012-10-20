@@ -16,7 +16,8 @@
 %type <stmt> statements
 %type <stmt> proc_body
 %type <stmt> call_arguments
-%type <exp_list_stmt> exp_list exp_epsilon_list
+%type <stmt> elem_access
+%type <exp_list_stmt> exp_list exp_epsilon_list elem_access_list
 
 %type <count> argument_list arguments
 %token <str> IDENTIFIER
@@ -376,13 +377,13 @@ IDENTIFIER OP_ASSIGNMENT exp {
 	delete $1;
 	delete $3;
 }
-| IDENTIFIER T_BRACKET_OPEN exp T_BRACKET_CLOSE OP_ASSIGNMENT exp {
+| IDENTIFIER elem_access_list OP_ASSIGNMENT exp {
 	$$ = new statement();
 
 	bool err = false;
 	std::map<std::string, var>::iterator varit = symtab.find(*$1);
 	if(varit == symtab.end()) {
-		// if the variable doesn't exist, we cry havoc. maybe we should instead create a new list silently?
+		// if the variable doesn't exist, we cry havoc.
 		std::stringstream ss;
 		ss << "List variable '" << *$1 << "' undeclared.";
 		error(ss.str().c_str());
@@ -394,21 +395,46 @@ IDENTIFIER OP_ASSIGNMENT exp {
 		error(ss.str().c_str());
 		err = true;
 	}
-	if(!$3->is(integer)) {
-		error("Type mismatch: index must be an integer");
-		err = true;
-	}
 
 	if(!err) {
-		$$->code.insert( $$->code.end(), $6->code.begin(), $6->code.end() );	// value
-		$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// index
-		$$->code.push_back( codeline(STORE_IDX, varit->second.num) );
+		$$->code = $2->code;
+		$$->code.insert($$->code.begin(), $4->code.begin(), $4->code.end());
+		$$->code.push_back( codeline(FETCH_X, varit->second.num) );
+
+		while($2->element_count-->1) $$->code.push_back( codeline(FETCH_IDX) );
+
+		$$->code.push_back( codeline(STORE_IDX) );
 	}
 
 	delete $1;
-	delete $3;
-	delete $6;
+	delete $2;
+	delete $4;
 };
+
+
+elem_access_list:
+elem_access_list elem_access {
+	$$=$1;
+	$$->code.insert($$->code.begin(), $2->code.begin(), $2->code.end());
+	++($$->element_count);
+	delete $2;
+}
+| elem_access {
+	$$=new expression_list();
+	$$->element_count = 1;
+	$$->code = $1->code;
+};
+
+elem_access:
+T_BRACKET_OPEN exp T_BRACKET_CLOSE {
+	$$ = new statement();
+
+	if(!$2->is(integer)) error("Type mismatch: index must be an integer");
+	else $$->code = $2->code;
+
+	delete $2;
+};
+
 
 
 ret: K_RETURN {
@@ -485,20 +511,13 @@ IDENTIFIER {
 	$$->code.push_back( codeline(LIST, $2->element_count) );
 	delete $2;
 }
-| IDENTIFIER T_BRACKET_OPEN exp T_BRACKET_CLOSE { // list element access
+| exp T_BRACKET_OPEN exp T_BRACKET_CLOSE { // list element access
 	$$ = new expression(any);	// we don't know about the type of the element.
 
 	bool err = false;
-	std::map<std::string, var>::iterator varit = symtab.find(*$1);
-	if(varit == symtab.end()) {
+	if(!$1->is(list)) {
 		std::stringstream ss;
-		ss << "List variable '" << *$1 << "' undeclared.";
-		error(ss.str().c_str());
-		err = true;
-	}
-	else if(!varit->second.is(list)) {
-		std::stringstream ss;
-		ss << "Type mismatch: variable '" << *$1 << "' isn't a list.";
+		ss << "Type mismatch: can only access elements of lists.";
 		error(ss.str().c_str());
 		err = true;
 	}
@@ -508,7 +527,8 @@ IDENTIFIER {
 	}
 
 	$$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
-	$$->code.push_back( codeline(FETCH_IDX, varit->second.num) );
+	$$->code.insert($$->code.end(), $1->code.begin(), $1->code.end());
+	$$->code.push_back( codeline(FETCH_IDX) );
 
 	delete $1;
 	delete $3;

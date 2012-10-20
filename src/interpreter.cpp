@@ -720,7 +720,7 @@ namespace sum {
 		Cell** rarr;
 		ActivationRecord* ar;
 		size_t rs;
-		int ri;
+		int ri, rj;
 
 		byte opcode = programs[program_id].get_byte(pc);
 		switch(opcode) {
@@ -845,11 +845,10 @@ namespace sum {
 				(*Interrupt::operators[opcode - ADDI])(stack);
 				break;
 			case LIST:
-				rs = ri = programs[program_id].get_int(pc);
-				rarr = new Cell*[ rs ];
-				while(rs-->0) {
-					rarr[rs] = stack.pop();
-				}
+				ri = programs[program_id].get_int(pc);
+				rarr = new Cell*[ ri ];
+				rj = 0;
+				while(rj < ri) rarr[rj++] = stack.pop();
 				stack.push( new ListRef(new ListValue(rarr, ri)) );
 				delete[] rarr;
 				break;

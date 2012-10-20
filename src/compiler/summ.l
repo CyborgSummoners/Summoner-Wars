@@ -37,6 +37,8 @@ and                     return Parser::OP_AND;
 or                      return Parser::OP_OR;
 not                     return Parser::OP_NOT;
 
+copy                    return Parser::OP_COPY;
+
 \.                      return Parser::OP_MEMBER;
 ;                       return Parser::SEMICOLON;
 :                       return Parser::COLON;

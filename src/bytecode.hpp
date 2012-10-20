@@ -22,17 +22,16 @@ namespace bytecode {
 		PSHB,         // 1               pushes a boolean value onto the stack
 		PSHS,         //        CSTR     pushes a string literal onto the stack, given by the followup, a nullterminated string.
 		PUSH_SELF,    //                 pushes a reference to Self, the puppet who runs the program
+		COPY,         //                 pops a value from the stack, copies it, and pushes the copy.
+		DCOPY,        //                 pops a value from the stack, performs deep copy on it, and pushes the copy.
 //		DROP,         //                 pops a value and discards it
 //		SWAP,         //                 exchanges two top values
 //		DUP,          //                 duplicates top value.
 
-		RSRV = 10,    // 1               reserve space for arg local variables.
-
 		// mem ops
+		RSRV = 20,    // 1               reserve space for arg local variables.
 		FETCH_X = 22, // 1               an address, pushes the value of local variable or parameter @arg
 		STORE_X,      // 1               pops a value, and stores it @arg (local variable or parameter)
-		FETCH_IDX,    // 1               pops a value V1, then pushes the value of @arg[V1]
-		STORE_IDX,    // 1               pops a value V1, then another V2, and stores V2 @arg[V1].
 
 		// control flow
 		JMP = 40,     // 4               jumps to arg (byte number in bytecode)
@@ -62,6 +61,8 @@ namespace bytecode {
 
 		// list ops.
 		LIST = 80,    // 4               pops arg values, builds a list out of them, and pushes the list.
+		FETCH_IDX,    //                 pops a value V1, then another V2, then pushes the value of V1[V2]
+		STORE_IDX,    //                 pops a value V1, then two others V2 and V3, and stores V3 @V1[V2].
 
 		// meta
 		DELAY = 200,   // 4              the interpreter releases the puppet for a delay of X ticks.

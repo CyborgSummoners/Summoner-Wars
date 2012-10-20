@@ -14,17 +14,19 @@ namespace sum {
 			struct incompatible_types : public std::exception {};
 			struct division_by_zero : public std::exception {};
 			struct subprogram_does_not_exist : public std::exception {};
+			struct index_out_of_range : public std::exception {};
 		}
 
 		struct Cell {
 			type tag;
 			virtual std::string to_str() const = 0;
 			virtual Cell* clone() const = 0;
+			virtual Cell* copy() const = 0;
 			virtual ~Cell() {};
 		};
 
 		struct Reference : public Cell {
-			virtual Reference* deep_copy() const = 0;
+			virtual Reference* copy() const = 0;
 			virtual ~Reference() {};
 		};
 
@@ -38,6 +40,9 @@ namespace sum {
 			virtual NullValue* clone() const {
 				return new NullValue();
 			}
+			virtual NullValue* copy() const {
+				return new NullValue();
+			}
 		};
 
 		struct PuppetValue : public Cell {
@@ -48,8 +53,11 @@ namespace sum {
 			virtual std::string to_str() const {
 				return "Puppet '" + value.get_name() + "'";
 			}
-			virtual NullValue* clone() const {
-				return new NullValue();
+			virtual PuppetValue* clone() const {
+				return new PuppetValue(value);
+			}
+			virtual PuppetValue* copy() const {
+				return new PuppetValue(value);
 			}
 		};
 
@@ -62,6 +70,9 @@ namespace sum {
 				return (this->value? "true" : "false");
 			}
 			virtual BooleanValue* clone() const {
+				return new BooleanValue(this->value);
+			}
+			virtual BooleanValue* copy() const {
 				return new BooleanValue(this->value);
 			}
 		};
@@ -78,6 +89,9 @@ namespace sum {
 				return n.str();
 			}
 			virtual IntegerValue* clone() const {
+				return new IntegerValue(this->value);
+			}
+			virtual IntegerValue* copy() const {
 				return new IntegerValue(this->value);
 			}
 		};
@@ -103,7 +117,6 @@ namespace sum {
 				return s.str();
 			}
 			virtual ListValue* clone() const {
-				//deep copy
 				Cell** ncells = new Cell*[len];
 				for(size_t i=0; i<len; ++i) {
 					ncells[i] = value[i]->clone();
@@ -112,6 +125,7 @@ namespace sum {
 				delete[] ncells;
 				return result;
 			}
+
 			virtual ~ListValue() {
 				for(size_t i=0; i<value.size(); ++i) delete value[i];
 			}
@@ -138,7 +152,7 @@ namespace sum {
 			virtual ListRef* clone() const {
 				return new ListRef(value);
 			}
-			virtual ListRef* deep_copy() const {
+			virtual ListRef* copy() const {
 				return new ListRef(value->clone());
 			}
 			virtual void set_element(Cell* idx, Cell* elem) {
@@ -147,8 +161,11 @@ namespace sum {
 					index = static_cast<IntegerValue*>(idx)->value;
 				else throw stack_machine::except::incompatible_types();
 
-				if(index < 0) index = 0;
-				else if(static_cast<size_t>(index) >= value->len) index = value->len-1;
+				if(index < 0) {
+					index = value->len+index;
+					if(index<0) throw except::index_out_of_range();
+				}
+				if(static_cast<size_t>(index) >= value->len) throw except::index_out_of_range();
 
 				delete value->value[index];
 				value->value[index] = elem;
@@ -160,8 +177,11 @@ namespace sum {
 					index = static_cast<IntegerValue*>(idx)->value;
 				else throw stack_machine::except::incompatible_types();
 
-				if(index < 0) index = 0;
-				else if(static_cast<size_t>(index) >= value->len) index = value->len-1;
+				if(index < 0) {
+					index = value->len+index;
+					if(index<0) throw except::index_out_of_range();
+				}
+				if(static_cast<size_t>(index) >= value->len) throw except::index_out_of_range();
 
 				return value->value[index];
 			}
@@ -182,6 +202,9 @@ namespace sum {
 			virtual StringValue* clone() const {
 				return new StringValue(this->value);
 			}
+			virtual StringValue* copy() const {
+				return new StringValue(this->value);
+			}
 		};
 
 		struct ActivationRecord : public Cell {
@@ -198,6 +221,9 @@ namespace sum {
 				return out.str();
 			}
 			virtual ActivationRecord* clone() const {
+				return new ActivationRecord(this->prog, this->pc, this->bp);
+			}
+			virtual ActivationRecord* copy() const {
 				return new ActivationRecord(this->prog, this->pc, this->bp);
 			}
 		};
@@ -764,6 +790,11 @@ namespace sum {
 			case PUSH_SELF:    // 4
 				stack.push( new PuppetValue(self) );
 				break;
+			case COPY:
+				r1 = stack.pop();
+				stack.push( r1->copy() );
+				delete r1;
+				break;
 			case RSRV:     //10
 				stack.reserve( programs[program_id].get_byte(pc) );
 				break;
@@ -777,25 +808,6 @@ namespace sum {
 				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
 				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2;
 				stack.set_var_at(bp + ri, r1);
-				break;
-			case FETCH_IDX:
-				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
-				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // borzasztó
-
-				if( stack.var_at(bp+ri)->tag == list ) {
-					r1 = stack.pop();
-					stack.push( static_cast<ListRef*>( stack.var_at(bp+ri) )->get_element( r1 )->clone() );
-				} else throw stack_machine::except::incompatible_types();
-				break;
-			case STORE_IDX:
-				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
-				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // egyre szörnyűbb
-
-				if( stack.var_at(bp+ri)->tag == list ) {
-					r1 = stack.pop();
-					r2 = stack.pop();
-					static_cast<ListRef*>( stack.var_at(bp+ri) )->set_element(r1, r2);
-				} else throw stack_machine::except::incompatible_types();
 				break;
 			// control flow
 			case JMP:      //40
@@ -895,6 +907,19 @@ namespace sum {
 				while(rj < ri) rarr[rj++] = stack.pop();
 				stack.push( new ListRef(new ListValue(rarr, ri)) );
 				delete[] rarr;
+				break;
+			case FETCH_IDX:
+				r1 = stack.pop();
+				if(r1->tag == list) {
+					stack.push( static_cast<ListRef*>(r1)->get_element( stack.pop() )->clone() );
+				} else throw stack_machine::except::incompatible_types();
+				break;
+			case STORE_IDX:
+				r1 = stack.pop(); //listref
+				if(r1->tag == list) {
+					r2 = stack.pop(); //index
+					static_cast<ListRef*>( r1 )->set_element(r2, stack.pop());
+				} else throw stack_machine::except::incompatible_types();
 				break;
 			case DELAY:
 				return programs[program_id].get_int(pc);

@@ -1,5 +1,13 @@
 procedure list_demo is
-	i := "hello world";
-	l := [0, 1, 2, i, true, "edömér", 20, 1032];
-	print(l);
+	assignment_demo;
 end list_demo;
+
+procedure assignment_demo is
+	print("Assignment demo:");
+	i := "hello world";
+	l := ["kutya", 1, 2, i, true, "teve"]; -- making a list
+	b := l;
+	l[0] := "krokodil"; -- element assignment
+	print(l);
+	print(b); -- observe assignment by reference;
+end assignment_demo;

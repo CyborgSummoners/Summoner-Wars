@@ -375,6 +375,39 @@ IDENTIFIER OP_ASSIGNMENT exp {
 
 	delete $1;
 	delete $3;
+}
+| IDENTIFIER T_BRACKET_OPEN exp T_BRACKET_CLOSE OP_ASSIGNMENT exp {
+	$$ = new statement();
+
+	bool err = false;
+	std::map<std::string, var>::iterator varit = symtab.find(*$1);
+	if(varit == symtab.end()) {
+		// if the variable doesn't exist, we cry havoc. maybe we should instead create a new list silently?
+		std::stringstream ss;
+		ss << "List variable '" << *$1 << "' undeclared.";
+		error(ss.str().c_str());
+		err = true;
+	}
+	else if(!varit->second.is(list)) {
+		std::stringstream ss;
+		ss << "Variable '" << *$1 << "' isn't a list.";
+		error(ss.str().c_str());
+		err = true;
+	}
+	if(!$3->is(integer)) {
+		error("Type mismatch: index must be an integer");
+		err = true;
+	}
+
+	if(!err) {
+		$$->code.insert( $$->code.end(), $6->code.begin(), $6->code.end() );	// value
+		$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// index
+		$$->code.push_back( codeline(STORE_IDX, symtab.find(*$1)->second.num) );
+	}
+
+	delete $1;
+	delete $3;
+	delete $6;
 };
 
 

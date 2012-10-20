@@ -31,6 +31,7 @@ namespace bytecode {
 		// mem ops
 		FETCH_X = 22, // 1               an address, pushes the value of local variable or parameter @arg
 		STORE_X,      // 1               pops a value, and stores it @arg (local variable or parameter)
+		STORE_IDX,    // 1               pops a value V1, then another V2, and stores V2 @arg[V1].
 
 		// control flow
 		JMP = 40,     // 4               jumps to arg (byte number in bytecode)

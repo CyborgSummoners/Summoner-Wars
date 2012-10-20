@@ -87,7 +87,7 @@ namespace sum {
 			std::vector<Cell*> value;
 			size_t refcount;
 
-			ListValue(const std::vector<Cell*>& val) : value(val), refcount(0) {}
+			ListValue(const std::vector<Cell*>& val) : len(val.size()), value(val), refcount(0) {}
 			ListValue(Cell** cells, size_t len) : len(len), value(len), refcount(0) {
 				for(size_t i=0; i<len; ++i) value[i] = cells[i];
 			}
@@ -141,6 +141,18 @@ namespace sum {
 			virtual ListRef* deep_copy() const {
 				return new ListRef(value->clone());
 			}
+			virtual void set_element(Cell* idx, Cell* elem) {
+				int index;
+				if(idx->tag == integer)
+					index = static_cast<IntegerValue*>(idx)->value;
+				else throw stack_machine::except::incompatible_types();
+
+				if(index < 0) index = 0;
+				else if(static_cast<size_t>(index) >= value->len) index = value->len-1;
+
+				delete value->value[index];
+				value->value[index] = elem;
+			}
 			virtual ~ListRef() {
 				value->delref();
 			}
@@ -188,7 +200,7 @@ namespace sum {
 				Cell* top();
 				void  push(Cell* cell);
 
-				const Cell* var_at(size_t loc) const;
+				Cell* var_at(size_t loc) const;
 				void set_var_at(size_t loc, Cell* cell);
 				size_t get_stack_pointer() const;
 				void set_stack_pointer(size_t sp);
@@ -216,7 +228,7 @@ namespace sum {
 			stack.push_back(cell);
 		}
 
-		const Cell* Stack::var_at(size_t loc) const {
+		Cell* Stack::var_at(size_t loc) const {
 			return stack.at(loc);
 		}
 
@@ -716,6 +728,7 @@ namespace sum {
 
 		// segédregiszterek (kiemelni objektumváltozókká?)
 		Cell* r1;
+		Cell* r2;
 		Cell* retval;
 		Cell** rarr;
 		ActivationRecord* ar;
@@ -752,6 +765,17 @@ namespace sum {
 				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
 				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2;
 				stack.set_var_at(bp + ri, r1);
+				break;
+			case STORE_IDX:
+				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
+				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // ez egyre szörnyűbb
+
+				if( stack.var_at(bp+ri)->tag == list ) {
+					r1 = stack.pop();
+					r2 = stack.pop();
+					static_cast<ListRef*>( stack.var_at(bp+ri) )->set_element(r1, r2);
+				} else throw stack_machine::except::incompatible_types();
+
 				break;
 			// control flow
 			case JMP:      //40

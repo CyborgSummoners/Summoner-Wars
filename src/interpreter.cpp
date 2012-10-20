@@ -20,11 +20,12 @@ namespace sum {
 			type tag;
 			virtual std::string to_str() const = 0;
 			virtual Cell* clone() const = 0;
+			virtual Cell* copy() const = 0;
 			virtual ~Cell() {};
 		};
 
 		struct Reference : public Cell {
-			virtual Reference* deep_copy() const = 0;
+			virtual Reference* copy() const = 0;
 			virtual ~Reference() {};
 		};
 
@@ -38,6 +39,9 @@ namespace sum {
 			virtual NullValue* clone() const {
 				return new NullValue();
 			}
+			virtual NullValue* copy() const {
+				return new NullValue();
+			}
 		};
 
 		struct PuppetValue : public Cell {
@@ -48,8 +52,11 @@ namespace sum {
 			virtual std::string to_str() const {
 				return "Puppet '" + value.get_name() + "'";
 			}
-			virtual NullValue* clone() const {
-				return new NullValue();
+			virtual PuppetValue* clone() const {
+				return new PuppetValue(value);
+			}
+			virtual PuppetValue* copy() const {
+				return new PuppetValue(value);
 			}
 		};
 
@@ -62,6 +69,9 @@ namespace sum {
 				return (this->value? "true" : "false");
 			}
 			virtual BooleanValue* clone() const {
+				return new BooleanValue(this->value);
+			}
+			virtual BooleanValue* copy() const {
 				return new BooleanValue(this->value);
 			}
 		};
@@ -78,6 +88,9 @@ namespace sum {
 				return n.str();
 			}
 			virtual IntegerValue* clone() const {
+				return new IntegerValue(this->value);
+			}
+			virtual IntegerValue* copy() const {
 				return new IntegerValue(this->value);
 			}
 		};
@@ -103,7 +116,6 @@ namespace sum {
 				return s.str();
 			}
 			virtual ListValue* clone() const {
-				//deep copy
 				Cell** ncells = new Cell*[len];
 				for(size_t i=0; i<len; ++i) {
 					ncells[i] = value[i]->clone();
@@ -112,6 +124,7 @@ namespace sum {
 				delete[] ncells;
 				return result;
 			}
+
 			virtual ~ListValue() {
 				for(size_t i=0; i<value.size(); ++i) delete value[i];
 			}
@@ -138,7 +151,7 @@ namespace sum {
 			virtual ListRef* clone() const {
 				return new ListRef(value);
 			}
-			virtual ListRef* deep_copy() const {
+			virtual ListRef* copy() const {
 				return new ListRef(value->clone());
 			}
 			virtual void set_element(Cell* idx, Cell* elem) {
@@ -182,6 +195,9 @@ namespace sum {
 			virtual StringValue* clone() const {
 				return new StringValue(this->value);
 			}
+			virtual StringValue* copy() const {
+				return new StringValue(this->value);
+			}
 		};
 
 		struct ActivationRecord : public Cell {
@@ -198,6 +214,9 @@ namespace sum {
 				return out.str();
 			}
 			virtual ActivationRecord* clone() const {
+				return new ActivationRecord(this->prog, this->pc, this->bp);
+			}
+			virtual ActivationRecord* copy() const {
 				return new ActivationRecord(this->prog, this->pc, this->bp);
 			}
 		};
@@ -763,6 +782,11 @@ namespace sum {
 				break;
 			case PUSH_SELF:    // 4
 				stack.push( new PuppetValue(self) );
+				break;
+			case COPY:
+				r1 = stack.pop();
+				stack.push( r1->copy() );
+				delete r1;
 				break;
 			case RSRV:     //10
 				stack.reserve( programs[program_id].get_byte(pc) );

@@ -3,8 +3,7 @@
 
 %token LEXICAL_ERROR
 
-%type <exp> constant
-%type <exp> exp
+%type <exp> exp constant pseudofunction
 
 %type <stmt> assignment
 %type <stmt> conditional
@@ -47,6 +46,7 @@
 %left OP_PLUS OP_MINUS
 %left OP_MULTIPLY OP_DIV OP_MOD
 %left OP_UNARY_MINUS
+%right OP_COPY
 
 %token<str> L_INTEGER
 %token<str> L_STRING
@@ -451,7 +451,10 @@ K_RETURN exp {
 };
 
 exp:
-IDENTIFIER {
+pseudofunction {
+	$$ = $1;
+}
+| IDENTIFIER {
 		$$ = new expression(any);
 		if(symtab.count(*$1) > 0) { //does it exist?
 			if(symtab.find(*$1)->second.read == 0) { //is it read for the first time?
@@ -771,6 +774,12 @@ IDENTIFIER {
 		}
 	}
 ;
+
+pseudofunction:
+OP_COPY T_OPEN exp T_CLOSE {
+	$$ = $3;
+	$3->code.push_back( codeline(COPY) );
+};
 
 constant:
 L_TRUE {

@@ -2,6 +2,7 @@ procedure list_demo is
 	assignment_demo;
 	more_elem_access;
 	nested_for_life;
+	copying;
 end list_demo;
 
 procedure assignment_demo is
@@ -26,3 +27,13 @@ procedure nested_for_life is
 	l[0][2][0] := "hello"; -- observe the wonderful nesting
 	print( l );	-- observe, again, the assignment by reference.
 end nested_for_life;
+
+procedure copying is
+	l1:=[0,1,2,3,["nested","nested"]];
+	--l2 := l1;
+	l2:=copy(l1);
+	l2[0] := "copied";
+	l2[4][0] := "I am still a reference";
+	print(l1);
+	print(l2);
+end copying;

@@ -23,6 +23,11 @@ namespace sum {
 			virtual ~Cell() {};
 		};
 
+		struct Reference : public Cell {
+			virtual Reference* deep_copy() const = 0;
+			virtual ~Reference() {};
+		};
+
 		struct NullValue : public Cell {
 			NullValue() {
 				this->tag = none;
@@ -77,14 +82,13 @@ namespace sum {
 			}
 		};
 
-		struct ListValue : public Cell {
+		struct ListValue {
 			size_t len;
 			std::vector<Cell*> value;
+			size_t refcount;
 
-			ListValue(const std::vector<Cell*>& val) : value(val) {
-				this->tag = list;
-			}
-			ListValue(Cell** cells, size_t len) : len(len), value(len) {
+			ListValue(const std::vector<Cell*>& val) : len(val.size()), value(val), refcount(0) {}
+			ListValue(Cell** cells, size_t len) : len(len), value(len), refcount(0) {
 				for(size_t i=0; i<len; ++i) value[i] = cells[i];
 			}
 
@@ -110,6 +114,59 @@ namespace sum {
 			}
 			virtual ~ListValue() {
 				for(size_t i=0; i<value.size(); ++i) delete value[i];
+			}
+
+			void addref() {
+				++refcount;
+			}
+			void delref() {
+				--refcount;
+				if(refcount == 0) delete this;
+			}
+		};
+
+		struct ListRef : public Reference {
+			ListValue* value;
+
+			ListRef(ListValue* value) : value(value) {
+				this->tag = list;
+				value->addref();
+			}
+			virtual std::string to_str() const {
+				return value->to_str();
+			}
+			virtual ListRef* clone() const {
+				return new ListRef(value);
+			}
+			virtual ListRef* deep_copy() const {
+				return new ListRef(value->clone());
+			}
+			virtual void set_element(Cell* idx, Cell* elem) {
+				int index;
+				if(idx->tag == integer)
+					index = static_cast<IntegerValue*>(idx)->value;
+				else throw stack_machine::except::incompatible_types();
+
+				if(index < 0) index = 0;
+				else if(static_cast<size_t>(index) >= value->len) index = value->len-1;
+
+				delete value->value[index];
+				value->value[index] = elem;
+				delete idx;
+			}
+			virtual const Cell* get_element(Cell* idx) const {
+				int index;
+				if(idx->tag == integer)
+					index = static_cast<IntegerValue*>(idx)->value;
+				else throw stack_machine::except::incompatible_types();
+
+				if(index < 0) index = 0;
+				else if(static_cast<size_t>(index) >= value->len) index = value->len-1;
+
+				return value->value[index];
+			}
+			virtual ~ListRef() {
+				value->delref();
 			}
 		};
 
@@ -155,7 +212,7 @@ namespace sum {
 				Cell* top();
 				void  push(Cell* cell);
 
-				const Cell* var_at(size_t loc) const;
+				Cell* var_at(size_t loc) const;
 				void set_var_at(size_t loc, Cell* cell);
 				size_t get_stack_pointer() const;
 				void set_stack_pointer(size_t sp);
@@ -183,7 +240,7 @@ namespace sum {
 			stack.push_back(cell);
 		}
 
-		const Cell* Stack::var_at(size_t loc) const {
+		Cell* Stack::var_at(size_t loc) const {
 			return stack.at(loc);
 		}
 
@@ -683,11 +740,12 @@ namespace sum {
 
 		// segédregiszterek (kiemelni objektumváltozókká?)
 		Cell* r1;
+		Cell* r2;
 		Cell* retval;
 		Cell** rarr;
 		ActivationRecord* ar;
 		size_t rs;
-		int ri;
+		int ri, rj;
 
 		byte opcode = programs[program_id].get_byte(pc);
 		switch(opcode) {
@@ -719,6 +777,25 @@ namespace sum {
 				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
 				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2;
 				stack.set_var_at(bp + ri, r1);
+				break;
+			case FETCH_IDX:
+				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
+				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // borzasztó
+
+				if( stack.var_at(bp+ri)->tag == list ) {
+					r1 = stack.pop();
+					stack.push( static_cast<ListRef*>( stack.var_at(bp+ri) )->get_element( r1 )->clone() );
+				} else throw stack_machine::except::incompatible_types();
+				break;
+			case STORE_IDX:
+				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
+				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // egyre szörnyűbb
+
+				if( stack.var_at(bp+ri)->tag == list ) {
+					r1 = stack.pop();
+					r2 = stack.pop();
+					static_cast<ListRef*>( stack.var_at(bp+ri) )->set_element(r1, r2);
+				} else throw stack_machine::except::incompatible_types();
 				break;
 			// control flow
 			case JMP:      //40
@@ -812,12 +889,11 @@ namespace sum {
 				(*Interrupt::operators[opcode - ADDI])(stack);
 				break;
 			case LIST:
-				rs = ri = programs[program_id].get_int(pc);
-				rarr = new Cell*[ rs ];
-				while(rs-->0) {
-					rarr[rs] = stack.pop();
-				}
-				stack.push( new ListValue(rarr, ri) );
+				ri = programs[program_id].get_int(pc);
+				rarr = new Cell*[ ri ];
+				rj = 0;
+				while(rj < ri) rarr[rj++] = stack.pop();
+				stack.push( new ListRef(new ListValue(rarr, ri)) );
 				delete[] rarr;
 				break;
 			case DELAY:

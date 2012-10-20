@@ -377,6 +377,39 @@ IDENTIFIER OP_ASSIGNMENT exp {
 
 	delete $1;
 	delete $3;
+}
+| IDENTIFIER T_BRACKET_OPEN exp T_BRACKET_CLOSE OP_ASSIGNMENT exp {
+	$$ = new statement();
+
+	bool err = false;
+	std::map<std::string, var>::iterator varit = symtab.find(*$1);
+	if(varit == symtab.end()) {
+		// if the variable doesn't exist, we cry havoc. maybe we should instead create a new list silently?
+		std::stringstream ss;
+		ss << "List variable '" << *$1 << "' undeclared.";
+		error(ss.str().c_str());
+		err = true;
+	}
+	else if(!varit->second.is(list)) {
+		std::stringstream ss;
+		ss << "Type mismatch: variable '" << *$1 << "' isn't a list.";
+		error(ss.str().c_str());
+		err = true;
+	}
+	if(!$3->is(integer)) {
+		error("Type mismatch: index must be an integer");
+		err = true;
+	}
+
+	if(!err) {
+		$$->code.insert( $$->code.end(), $6->code.begin(), $6->code.end() );	// value
+		$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// index
+		$$->code.push_back( codeline(STORE_IDX, varit->second.num) );
+	}
+
+	delete $1;
+	delete $3;
+	delete $6;
 };
 
 
@@ -448,6 +481,40 @@ IDENTIFIER {
 | constant {
 	$$ = $1;
 	}
+| T_BRACKET_OPEN exp_epsilon_list T_BRACKET_CLOSE {	// make new list
+	$$ = new expression(list);
+	$$->code = $2->code;
+	$$->code.push_back( codeline(LIST, $2->element_count) );
+	delete $2;
+}
+| IDENTIFIER T_BRACKET_OPEN exp T_BRACKET_CLOSE { // list element access
+	$$ = new expression(any);	// we don't know about the type of the element.
+
+	bool err = false;
+	std::map<std::string, var>::iterator varit = symtab.find(*$1);
+	if(varit == symtab.end()) {
+		std::stringstream ss;
+		ss << "List variable '" << *$1 << "' undeclared.";
+		error(ss.str().c_str());
+		err = true;
+	}
+	else if(!varit->second.is(list)) {
+		std::stringstream ss;
+		ss << "Type mismatch: variable '" << *$1 << "' isn't a list.";
+		error(ss.str().c_str());
+		err = true;
+	}
+	if(!$3->is(integer)) {
+		error("Type mismatch: index must be an integer");
+		err = true;
+	}
+
+	$$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
+	$$->code.push_back( codeline(FETCH_IDX, varit->second.num) );
+
+	delete $1;
+	delete $3;
+}
 | OP_MINUS exp %prec OP_UNARY_MINUS {
 	$$ = $2;
 	if( $2->is(integer) ) {
@@ -705,10 +772,4 @@ L_TRUE {
 	$$ = new expression(string);
 	$$->code.push_back( codeline(PSHS, 0, 0, *$1) );
 	delete $1;
-}
-| T_BRACKET_OPEN exp_epsilon_list T_BRACKET_CLOSE {	//list literal
-	$$ = new expression(any);
-	$$->code = $2->code;
-	$$->code.push_back( codeline(LIST, $2->element_count) );
-	delete $2;
 };

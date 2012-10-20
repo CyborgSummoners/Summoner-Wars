@@ -21,6 +21,7 @@ namespace bytecode {
 			case RSRV:
 			case FETCH_X:
 			case STORE_X:
+			case FETCH_IDX:
 			case STORE_IDX:
 			case JMP:
 			case JMPTRUE:
@@ -46,6 +47,7 @@ namespace bytecode {
 				return 4;
 			case FETCH_X:
 			case STORE_X:
+			case FETCH_IDX:
 			case STORE_IDX:
 			case PSHB:
 			case RSRV:

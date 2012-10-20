@@ -152,6 +152,18 @@ namespace sum {
 
 				delete value->value[index];
 				value->value[index] = elem;
+				delete idx;
+			}
+			virtual const Cell* get_element(Cell* idx) const {
+				int index;
+				if(idx->tag == integer)
+					index = static_cast<IntegerValue*>(idx)->value;
+				else throw stack_machine::except::incompatible_types();
+
+				if(index < 0) index = 0;
+				else if(static_cast<size_t>(index) >= value->len) index = value->len-1;
+
+				return value->value[index];
 			}
 			virtual ~ListRef() {
 				value->delref();
@@ -766,16 +778,24 @@ namespace sum {
 				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2;
 				stack.set_var_at(bp + ri, r1);
 				break;
+			case FETCH_IDX:
+				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
+				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // borzasztó
+
+				if( stack.var_at(bp+ri)->tag == list ) {
+					r1 = stack.pop();
+					stack.push( static_cast<ListRef*>( stack.var_at(bp+ri) )->get_element( r1 )->clone() );
+				} else throw stack_machine::except::incompatible_types();
+				break;
 			case STORE_IDX:
 				ri = programs[program_id].get_byte(pc) - programs[program_id].get_argc();
-				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // ez egyre szörnyűbb
+				if(ri < 0) ri= -(programs[program_id].get_argc()+ri) - 2; // egyre szörnyűbb
 
 				if( stack.var_at(bp+ri)->tag == list ) {
 					r1 = stack.pop();
 					r2 = stack.pop();
 					static_cast<ListRef*>( stack.var_at(bp+ri) )->set_element(r1, r2);
 				} else throw stack_machine::except::incompatible_types();
-
 				break;
 			// control flow
 			case JMP:      //40

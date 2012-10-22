@@ -51,6 +51,7 @@ namespace bytecode {
 		NEQ,          //                 pops two values, pushes true if they're not equal, false otherwise
 		LESS,         //                 pops two values, pushes true if the first is less than the second, false otherwise
 		GREATER,      //                 pops two values, pushes true if the first is greater than the second, false otherwise
+		IS,           //                 pops two values, pushes true if they are the same object, false otherwise.
 
 		// ops. These MUST be continuous, their order MUST NOT change.
 		ADDI = 60,    //

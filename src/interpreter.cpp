@@ -414,6 +414,34 @@ namespace sum {
 				}
 			};
 
+			struct is : public Interrupt  {
+				const char* get_name() const {
+					return "";
+				}
+				unsigned int operator()(Stack& stack) const {
+					bool done=false;
+					Cell* r1 = stack.pop();
+					Cell* r2 = stack.pop();
+					if( r1->tag == r2->tag) {
+						if(r1->tag == integer) {
+							stack.push( new BooleanValue( static_cast<IntegerValue*>(r2)->value == static_cast<IntegerValue*>(r1)->value ) );
+							done = true;
+						}
+						else if(r1->tag == boolean) {
+							stack.push( new BooleanValue( static_cast<BooleanValue*>(r2)->value == static_cast<BooleanValue*>(r1)->value ) );
+							done = true;
+						}
+						else if(r1->tag == bytecode::list) {
+						stack.push( new BooleanValue( static_cast<ListRef*>(r2)->value->value == static_cast<ListRef*>(r1)->value->value ) );
+							done = true;
+						}
+					}
+					delete r1;
+					delete r2;
+					if(!done) throw except::incompatible_types();
+					return 0;
+				}
+			};
 			//*****************
 			//*** Operators ***
 			//*****************
@@ -690,7 +718,8 @@ namespace sum {
 			new interrupt::eq(),
 			new interrupt::neq(),
 			new interrupt::less(),
-			new interrupt::greater()
+			new interrupt::greater(),
+			new interrupt::is()
 		};
 		const std::vector<Interrupt*> Interrupt::list = interrupt::list_init();
 		const std::map<std::string, size_t> Interrupt::mapping = interrupt::mapping_init();
@@ -955,6 +984,7 @@ namespace sum {
 			case NEQ:
 			case LESS:
 			case GREATER:
+			case IS:
 				(*Interrupt::comparisons[opcode - EQ])(stack);
 				break;
 			// operations

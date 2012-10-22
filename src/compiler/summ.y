@@ -17,12 +17,12 @@
 %type <stmt> call_arguments
 %type <stmt> elem_access
 %type <exp_list_stmt> exp_list exp_epsilon_list elem_access_list
-%type <code> compare
+%type <code> compare equivalence
 
 %type <count> argument_list arguments
 %token <str> IDENTIFIER
 %token K_PROCEDURE K_FUNCTION
-%token K_IS K_END K_IF K_THEN K_ELSE K_ELSIF K_WHILE K_LOOP K_RETURN
+%token K_END K_IF K_THEN K_ELSE K_ELSIF K_WHILE K_LOOP K_RETURN
 
 %token K_SELF
 
@@ -36,7 +36,7 @@
 %left OP_AND OP_OR
 %right OP_NOT
 
-%left OP_EQUALITY OP_LESS_THAN OP_GREATER_THAN OP_LESS_THAN_OR_EQ OP_GREATER_THAN_OR_EQ
+%left OP_EQUALITY OP_LESS_THAN OP_GREATER_THAN OP_LESS_THAN_OR_EQ OP_GREATER_THAN_OR_EQ K_IS
 
 %left OP_CONCAT
 
@@ -709,29 +709,25 @@ pseudofunction {
 	$$ = $2;
 	$$->code.push_back( codeline(NEG, 0) );
 	}
-| exp OP_EQUALITY exp {
+| exp equivalence exp {
+	$$ = new expression(boolean);
 
-		//operands must be of the same type
-		if( $1->is($3->typ) ) {
+	//operands must be of the same type
+	if( $1->is($3->typ) ) {
+		$$ = new expression(boolean);
 
-			$$ = new expression(boolean);
-
-			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
-			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
-
-			$$->code.push_back( codeline(EQ, 0) );
-
-			delete $1;
-			delete $3;
-		}
-		else {
-			std::stringstream ss;
-			ss << "Type mismatch (operands must be of the same type)" << std::endl;
-			error(ss.str().c_str());
-			$$ = $1;
-			delete $3;
-		}
+		$$->code.insert( $$->code.end(), $1->code.begin(), $1->code.end() );	// első operandus
+		$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
+		$$->code.insert( $$->code.end(), $2->code.begin(), $2->code.end() );	// operátor
 	}
+	else {
+		error("Type mismatch (operands must be of the same type)");
+	}
+
+	delete $1;
+	delete $2;
+	delete $3;
+}
 | exp compare exp {
 	$$ = new expression(boolean);
 
@@ -748,6 +744,16 @@ pseudofunction {
 	delete $1;
 	delete $2;
 	delete $3;
+};
+
+equivalence:
+OP_EQUALITY {
+	$$ = new codepiece();
+	$$->code.push_back(codeline(EQ));
+}
+| K_IS {
+	$$ = new codepiece();
+	$$->code.push_back(codeline(IS));
 };
 
 compare:

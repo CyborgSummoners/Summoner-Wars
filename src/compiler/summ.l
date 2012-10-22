@@ -49,6 +49,8 @@ copy                    return Parser::OP_COPY;
 \]                      return Parser::T_BRACKET_CLOSE;
 :=                      return Parser::OP_ASSIGNMENT;
 =                       return Parser::OP_EQUALITY;
+\<=                      return Parser::OP_LESS_THAN_OR_EQ;
+>=                       return Parser::OP_GREATER_THAN_OR_EQ;
 \<                      return Parser::OP_LESS_THAN;
 >                       return Parser::OP_GREATER_THAN;
 \+                      return Parser::OP_PLUS;

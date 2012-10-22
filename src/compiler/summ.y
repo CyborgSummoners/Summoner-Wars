@@ -39,7 +39,7 @@
 %left OP_AND OP_OR
 %right OP_NOT
 
-%left OP_EQUALITY OP_LESS_THAN OP_GREATER_THAN
+%left OP_EQUALITY OP_LESS_THAN OP_GREATER_THAN OP_LESS_THAN_OR_EQ OP_GREATER_THAN_OR_EQ
 
 %left OP_CONCAT
 
@@ -775,7 +775,44 @@ pseudofunction {
 			delete $3;
 		}
 	}
-;
+| exp OP_GREATER_THAN_OR_EQ exp {
+	$$ = new expression(boolean);
+
+	if($1->is(integer) && $3->is(integer)) {
+		$$->code.insert( $$->code.end(), $1->code.begin(), $1->code.end() ); //[e1]
+		$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() ); //[e2 e1]
+		$$->code.push_back( codeline(DUP_TWO) ); // [e2 e1 e2 e1]
+		$$->code.push_back( codeline(GREATER) ); // [b1 e2 e1]
+		$$->code.push_back( codeline(ROT_THREE) ); // [e2 e1 b1]
+		$$->code.push_back( codeline(EQ) ); // [b2 b1]
+		$$->code.push_back( codeline(OR) ); // [b]
+	}
+	else {
+		error("Type mismatch (both operands must be integers)");
+	}
+
+	delete $1;
+	delete $3;
+}
+| exp OP_LESS_THAN_OR_EQ exp {
+	$$ = new expression(boolean);
+
+	if($1->is(integer) && $3->is(integer)) {
+		$$->code.insert( $$->code.end(), $1->code.begin(), $1->code.end() ); //[e1]
+		$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() ); //[e2 e1]
+		$$->code.push_back( codeline(DUP_TWO) ); // [e2 e1 e2 e1]
+		$$->code.push_back( codeline(LESS) ); // [b1 e2 e1]
+		$$->code.push_back( codeline(ROT_THREE) ); // [e2 e1 b1]
+		$$->code.push_back( codeline(EQ) ); // [b2 b1]
+		$$->code.push_back( codeline(OR) ); // [b]
+	}
+	else {
+		error("Type mismatch (both operands must be integers)");
+	}
+
+	delete $1;
+	delete $3;
+};
 
 pseudofunction:
 OP_COPY T_OPEN exp T_CLOSE {

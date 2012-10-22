@@ -25,8 +25,11 @@ namespace bytecode {
 		COPY,         //                 pops a value from the stack, copies it, and pushes the copy.
 		DCOPY,        //                 pops a value from the stack, performs deep copy on it, and pushes the copy.
 //		DROP,         //                 pops a value and discards it
-//		SWAP,         //                 exchanges two top values
-//		DUP,          //                 duplicates top value.
+		SWAP,         //                 exchanges two top values. Alias of ROT_TWO.
+		DUP,          //                 duplicates top value.
+		DUP_TWO,      //                 duplictaes two top values.
+		ROT_TWO,      //                 exchanges two top values;
+		ROT_THREE,    //                 moves top value down to below the second and third value. [1,2,3] => [2,3,1]
 
 		// mem ops
 		RSRV = 20,    // 1               reserve space for arg local variables.

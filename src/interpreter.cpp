@@ -809,6 +809,7 @@ namespace sum {
 		// segédregiszterek
 		Cell* r1;
 		Cell* r2;
+		Cell* r3;
 		Cell* retval;
 		Cell** rarr;
 		ActivationRecord* ar;
@@ -836,6 +837,31 @@ namespace sum {
 				r1 = stack.pop();
 				stack.push( r1->copy() );
 				delete r1;
+				break;
+			case DUP:
+				stack.push( stack.top()->clone() );
+				break;
+			case DUP_TWO:
+				r1 = stack.pop();
+				r2 = stack.top();
+				stack.push(r1->clone());
+				stack.push(r2->clone());
+				stack.push(r1);
+				break;
+			case SWAP:
+			case ROT_TWO:
+				r1 = stack.pop();
+				r2 = stack.pop();
+				stack.push(r1);
+				stack.push(r2);
+				break;
+			case ROT_THREE:
+				r1 = stack.pop();
+				r2 = stack.pop();
+				r3 = stack.pop();
+				stack.push(r1);
+				stack.push(r3);
+				stack.push(r2);
 				break;
 			case RSRV:     //10
 				stack.reserve( programs[program_id].get_byte(pc) );

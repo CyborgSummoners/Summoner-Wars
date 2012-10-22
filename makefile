@@ -11,6 +11,7 @@ LIBS = -lsfml-graphics -lsfml-window -lsfml-system
 RM = /bin/rm -f
 
 SOURCES := $(wildcard src/*.cpp) $(wildcard src/compiler/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc
+SOURCES := $(filter-out src/konzoltest.cpp, $(SOURCES))
 OBJECTS := $(patsubst src/%.cpp,obj/%.o,$(SOURCES))
 OBJECTS := $(patsubst src/%.cc,obj/%.occ,$(OBJECTS))
 COMPILER_SOURCES := $(wildcard src/compiler/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc src/bytecode.cpp src/interpreter.cpp
@@ -42,6 +43,9 @@ obj/compiler:
 
 compiler-demo: $(COMPILER_OBJECTS) src/compiler/parse.cc
 	$(CC) -Wall $(COMPILER_OBJECTS) -o compiler-demo
+
+konzoltest: src/konzoltest.cpp src/terminal.hpp
+	$(CC) -Wall src/konzoltest.cpp -o compiler-demo
 
 src/compiler/summ.yy.cc: src/compiler/summ.l
 	flex -i -o src/compiler/summ.yy.cc src/compiler/summ.l

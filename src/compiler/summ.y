@@ -17,6 +17,7 @@
 %type <stmt> call_arguments
 %type <stmt> elem_access
 %type <exp_list_stmt> exp_list exp_epsilon_list elem_access_list
+%type <code> compare
 
 %type <count> argument_list arguments
 %token <str> IDENTIFIER
@@ -29,12 +30,8 @@
 
 %token COLON SEMICOLON COMMA
 
-%token T_OPEN T_CLOSE T_BRACKET_OPEN T_BRACKET_CLOSE
 
 %token L_TRUE L_FALSE
-
-
-%left OP_MEMBER
 
 %left OP_AND OP_OR
 %right OP_NOT
@@ -46,6 +43,9 @@
 %left OP_PLUS OP_MINUS
 %left OP_MULTIPLY OP_DIV OP_MOD
 %left OP_UNARY_MINUS
+
+%left OP_MEMBER
+%left T_OPEN T_CLOSE T_BRACKET_OPEN T_BRACKET_CLOSE
 %right OP_COPY
 
 %token<str> L_INTEGER
@@ -60,6 +60,7 @@
 	expression* exp;
 	statement* stmt;
 	expression_list* exp_list_stmt;
+	codepiece* code;
 }
 
 
@@ -731,88 +732,50 @@ pseudofunction {
 			delete $3;
 		}
 	}
-| exp OP_LESS_THAN exp {
-
-		//both operands must be integers
-		if( $1->is(integer) && $3->is(integer) ) {
-			$$ = new expression(boolean);
-
-			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
-			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
-
-			$$->code.push_back( codeline(LESS, 0) );
-
-			delete $1;
-			delete $3;
-		}
-		else {
-			std::stringstream ss;
-			ss << "Type mismatch (both operands must be integers)" << std::endl;
-			error(ss.str().c_str());
-			$$ = $1;
-			delete $3;
-		}
-	}
-| exp OP_GREATER_THAN exp {
-
-		//both operands must be integers
-		if( $1->is(integer) && $3->is(integer) ) {
-			$$ = new expression(boolean);
-
-			$$->code.insert( $$->code.begin(), $1->code.begin(), $1->code.end() );	// első operandus
-			$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );	// második operandus
-
-			$$->code.push_back( codeline(GREATER, 0) );
-
-			delete $1;
-			delete $3;
-		}
-		else {
-			std::stringstream ss;
-			ss << "Type mismatch (both operands must be integers)" << std::endl;
-			error(ss.str().c_str());
-			$$ = $1;
-			delete $3;
-		}
-	}
-| exp OP_GREATER_THAN_OR_EQ exp {
+| exp compare exp {
 	$$ = new expression(boolean);
 
+	// comparison functions defined for integers now
 	if($1->is(integer) && $3->is(integer)) {
-		$$->code.insert( $$->code.end(), $1->code.begin(), $1->code.end() ); //[e1]
-		$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() ); //[e2 e1]
-		$$->code.push_back( codeline(DUP_TWO) ); // [e2 e1 e2 e1]
-		$$->code.push_back( codeline(GREATER) ); // [b1 e2 e1]
-		$$->code.push_back( codeline(ROT_THREE) ); // [e2 e1 b1]
-		$$->code.push_back( codeline(EQ) ); // [b2 b1]
-		$$->code.push_back( codeline(OR) ); // [b]
+		$$->code.insert( $$->code.end(), $1->code.begin(), $1->code.end() );
+		$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() );
+		$$->code.insert( $$->code.end(), $2->code.begin(), $2->code.end() );
 	}
 	else {
 		error("Type mismatch (both operands must be integers)");
 	}
 
 	delete $1;
-	delete $3;
-}
-| exp OP_LESS_THAN_OR_EQ exp {
-	$$ = new expression(boolean);
-
-	if($1->is(integer) && $3->is(integer)) {
-		$$->code.insert( $$->code.end(), $1->code.begin(), $1->code.end() ); //[e1]
-		$$->code.insert( $$->code.end(), $3->code.begin(), $3->code.end() ); //[e2 e1]
-		$$->code.push_back( codeline(DUP_TWO) ); // [e2 e1 e2 e1]
-		$$->code.push_back( codeline(LESS) ); // [b1 e2 e1]
-		$$->code.push_back( codeline(ROT_THREE) ); // [e2 e1 b1]
-		$$->code.push_back( codeline(EQ) ); // [b2 b1]
-		$$->code.push_back( codeline(OR) ); // [b]
-	}
-	else {
-		error("Type mismatch (both operands must be integers)");
-	}
-
-	delete $1;
+	delete $2;
 	delete $3;
 };
+
+compare:
+OP_LESS_THAN {
+	$$ = new codepiece();
+	$$->code.push_back(codeline(LESS));
+}
+| OP_GREATER_THAN {
+	$$ = new codepiece();
+	$$->code.push_back(codeline(GREATER));
+}
+| OP_LESS_THAN_OR_EQ {
+	$$ = new codepiece();
+	$$->code.push_back( codeline(DUP_TWO) ); // [e2 e1 e2 e1]
+	$$->code.push_back( codeline(LESS) ); // [b1 e2 e1]
+	$$->code.push_back( codeline(ROT_THREE) ); // [e2 e1 b1]
+	$$->code.push_back( codeline(EQ) ); // [b2 b1]
+	$$->code.push_back( codeline(OR) ); // [b]
+}
+| OP_GREATER_THAN_OR_EQ {
+	$$ = new codepiece();
+	$$->code.push_back( codeline(DUP_TWO) ); // [e2 e1 e2 e1]
+	$$->code.push_back( codeline(GREATER) ); // [b1 e2 e1]
+	$$->code.push_back( codeline(ROT_THREE) ); // [e2 e1 b1]
+	$$->code.push_back( codeline(EQ) ); // [b2 b1]
+	$$->code.push_back( codeline(OR) ); // [b]
+};
+
 
 pseudofunction:
 OP_COPY T_OPEN exp T_CLOSE {

@@ -26,3 +26,6 @@ src/compiler/summ.yy.cc
 parse.cc
 summparse.ih
 summparsebase.h
+
+# bisonc++ debug info
+src/compiler/summ.y.output

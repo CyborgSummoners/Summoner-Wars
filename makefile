@@ -47,7 +47,7 @@ src/compiler/summ.yy.cc: src/compiler/summ.l
 	flex -i -o src/compiler/summ.yy.cc src/compiler/summ.l
 
 src/compiler/parse.cc: src/compiler/summ.y src/compiler/summ.yy.cc
-	cd src/compiler && bisonc++ --filenames=summparse summ.y
+	cd src/compiler && bisonc++ --verbose --filenames=summparse summ.y
 
 all:
 	$(PROG)

@@ -14,12 +14,20 @@ namespace sum {
 			struct incompatible_types : public std::exception {};
 			struct division_by_zero : public std::exception {};
 			struct subprogram_does_not_exist : public std::exception {};
+			struct index_out_of_range : public std::exception {};
 		}
 
 		struct Cell {
 			type tag;
 			virtual std::string to_str() const = 0;
 			virtual Cell* clone() const = 0;
+			virtual Cell* copy() const = 0;
+			virtual ~Cell() {};
+		};
+
+		struct Reference : public Cell {
+			virtual Reference* copy() const = 0;
+			virtual ~Reference() {};
 		};
 
 		struct NullValue : public Cell {
@@ -32,6 +40,9 @@ namespace sum {
 			virtual NullValue* clone() const {
 				return new NullValue();
 			}
+			virtual NullValue* copy() const {
+				return new NullValue();
+			}
 		};
 
 		struct PuppetValue : public Cell {
@@ -42,8 +53,11 @@ namespace sum {
 			virtual std::string to_str() const {
 				return "Puppet '" + value.get_name() + "'";
 			}
-			virtual NullValue* clone() const {
-				return new NullValue();
+			virtual PuppetValue* clone() const {
+				return new PuppetValue(value);
+			}
+			virtual PuppetValue* copy() const {
+				return new PuppetValue(value);
 			}
 		};
 
@@ -56,6 +70,9 @@ namespace sum {
 				return (this->value? "true" : "false");
 			}
 			virtual BooleanValue* clone() const {
+				return new BooleanValue(this->value);
+			}
+			virtual BooleanValue* copy() const {
 				return new BooleanValue(this->value);
 			}
 		};
@@ -74,6 +91,103 @@ namespace sum {
 			virtual IntegerValue* clone() const {
 				return new IntegerValue(this->value);
 			}
+			virtual IntegerValue* copy() const {
+				return new IntegerValue(this->value);
+			}
+		};
+
+		struct ListValue {
+			size_t len;
+			std::vector<Cell*> value;
+			size_t refcount;
+
+			ListValue(const std::vector<Cell*>& val) : len(val.size()), value(val), refcount(0) {}
+			ListValue(Cell** cells, size_t len) : len(len), value(len), refcount(0) {
+				for(size_t i=0; i<len; ++i) value[i] = cells[i];
+			}
+
+			virtual std::string to_str() const {
+				std::ostringstream s;
+				s << "[";
+				for(size_t i=0; i<value.size(); ++i) {
+					if(i!=0) s << ",";
+					s << value[i]->to_str();
+				}
+				s << "]";
+				return s.str();
+			}
+			virtual ListValue* clone() const {
+				Cell** ncells = new Cell*[len];
+				for(size_t i=0; i<len; ++i) {
+					ncells[i] = value[i]->clone();
+				}
+				ListValue* result = new ListValue(ncells, len);
+				delete[] ncells;
+				return result;
+			}
+
+			virtual ~ListValue() {
+				for(size_t i=0; i<value.size(); ++i) delete value[i];
+			}
+
+			void addref() {
+				++refcount;
+			}
+			void delref() {
+				--refcount;
+				if(refcount == 0) delete this;
+			}
+		};
+
+		struct ListRef : public Reference {
+			ListValue* value;
+
+			ListRef(ListValue* value) : value(value) {
+				this->tag = list;
+				value->addref();
+			}
+			virtual std::string to_str() const {
+				return value->to_str();
+			}
+			virtual ListRef* clone() const {
+				return new ListRef(value);
+			}
+			virtual ListRef* copy() const {
+				return new ListRef(value->clone());
+			}
+			virtual void set_element(Cell* idx, Cell* elem) {
+				int index;
+				if(idx->tag == integer)
+					index = static_cast<IntegerValue*>(idx)->value;
+				else throw stack_machine::except::incompatible_types();
+
+				if(index < 0) {
+					index = value->len+index;
+					if(index<0) throw except::index_out_of_range();
+				}
+				if(static_cast<size_t>(index) >= value->len) throw except::index_out_of_range();
+
+				delete value->value[index];
+				value->value[index] = elem;
+				delete idx;
+			}
+			virtual const Cell* get_element(Cell* idx) const {
+				int index;
+				if(idx->tag == integer)
+					index = static_cast<IntegerValue*>(idx)->value;
+				else throw stack_machine::except::incompatible_types();
+
+				if(index < 0) {
+					index = value->len+index;
+					if(index<0) throw except::index_out_of_range();
+				}
+				if(static_cast<size_t>(index) >= value->len) throw except::index_out_of_range();
+
+				return value->value[index];
+			}
+			virtual ~ListRef() {
+				value->delref();
+			}
 		};
 
 		struct StringValue : public Cell {
@@ -86,6 +200,9 @@ namespace sum {
 				return value;
 			}
 			virtual StringValue* clone() const {
+				return new StringValue(this->value);
+			}
+			virtual StringValue* copy() const {
 				return new StringValue(this->value);
 			}
 		};
@@ -106,6 +223,9 @@ namespace sum {
 			virtual ActivationRecord* clone() const {
 				return new ActivationRecord(this->prog, this->pc, this->bp);
 			}
+			virtual ActivationRecord* copy() const {
+				return new ActivationRecord(this->prog, this->pc, this->bp);
+			}
 		};
 
 
@@ -118,7 +238,7 @@ namespace sum {
 				Cell* top();
 				void  push(Cell* cell);
 
-				const Cell* var_at(size_t loc) const;
+				Cell* var_at(size_t loc) const;
 				void set_var_at(size_t loc, Cell* cell);
 				size_t get_stack_pointer() const;
 				void set_stack_pointer(size_t sp);
@@ -146,7 +266,7 @@ namespace sum {
 			stack.push_back(cell);
 		}
 
-		const Cell* Stack::var_at(size_t loc) const {
+		Cell* Stack::var_at(size_t loc) const {
 			return stack.at(loc);
 		}
 
@@ -193,7 +313,7 @@ namespace sum {
 			static const std::map<std::string, size_t> mapping;
 
 
-			virtual void operator()(Stack& stack) const = 0;
+			virtual unsigned int operator()(Stack& stack) const = 0;
 			virtual const char* get_name() const = 0;
 		};
 
@@ -206,7 +326,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -223,6 +343,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 			// operator!=
@@ -230,7 +351,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -247,6 +368,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 			// operator<
@@ -254,7 +376,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -267,6 +389,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 			// operator>
@@ -274,7 +397,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -287,6 +410,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 
@@ -298,7 +422,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -313,6 +437,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 
@@ -321,7 +446,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -332,6 +457,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 
@@ -340,7 +466,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -351,6 +477,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 
@@ -359,7 +486,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -375,6 +502,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 
@@ -383,7 +511,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -399,6 +527,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 
@@ -407,7 +536,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -418,6 +547,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 
@@ -426,7 +556,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					Cell* r2 = stack.pop();
@@ -437,6 +567,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 
@@ -445,7 +576,7 @@ namespace sum {
 				const char* get_name() const {
 					return "";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					bool done=false;
 					Cell* r1 = stack.pop();
 					if( r1->tag == boolean ) {
@@ -458,6 +589,7 @@ namespace sum {
 					}
 					delete r1;
 					if(!done) throw except::incompatible_types();
+					return 0;
 				}
 			};
 
@@ -468,10 +600,11 @@ namespace sum {
 				const char* get_name() const {
 					return "PRINT";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					Cell* r1 = stack.pop();
 					std::cout << r1->to_str() << std::endl;
 					delete r1;
+					return 0;
 				}
 			};
 
@@ -479,10 +612,11 @@ namespace sum {
 				const char* get_name() const {
 					return "STRING";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					Cell* r1 = stack.pop();
 					stack.push( new StringValue(r1->to_str()) );
 					delete r1;
+					return 0;
 				}
 			};
 
@@ -493,33 +627,36 @@ namespace sum {
 				const char* get_name() const {
 					return "SELF::MOVE";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					Cell* r1 = stack.pop(); //supposed to be self. need to check.
 					if(r1->tag != puppet) throw except::incompatible_types();
-					static_cast<PuppetValue*>(r1)->value.move();
+					unsigned int delay = static_cast<PuppetValue*>(r1)->value.move();
 					delete r1;
+					return delay;
 				}
 			};
 			struct self_turn_left : public Interrupt  {
 				const char* get_name() const {
 					return "SELF::TURN_LEFT";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					Cell* r1 = stack.pop(); //supposed to be self. need to check.
 					if(r1->tag != puppet) throw except::incompatible_types();
-					static_cast<PuppetValue*>(r1)->value.turn_left();
+					unsigned int delay = static_cast<PuppetValue*>(r1)->value.turn_left();
 					delete r1;
+					return delay;
 				}
 			};
 			struct self_turn_right : public Interrupt  {
 				const char* get_name() const {
 					return "SELF::TURN_RIGHT";
 				}
-				void operator()(Stack& stack) const {
+				unsigned int operator()(Stack& stack) const {
 					Cell* r1 = stack.pop(); //supposed to be self. need to check.
 					if(r1->tag != puppet) throw except::incompatible_types();
-					static_cast<PuppetValue*>(r1)->value.turn_right();
+					unsigned int delay = static_cast<PuppetValue*>(r1)->value.turn_right();
 					delete r1;
+					return delay;
 				}
 			};
 
@@ -580,6 +717,9 @@ namespace sum {
 		code[2] = code[3] = code[4] = 0;
 		code[5] = 100;
 		programs.push_back(bytecode::subprogram("NOP", 0, code, 5, false));
+
+		//clock starts at 0
+		clock = 0;
 	}
 
 	int Interpreter::get_interrupt_id(const std::string& name) {
@@ -612,20 +752,40 @@ namespace sum {
 
 
 	bool Interpreter::step(unsigned int ticks) {
-		//find the next puppet with a delay < ticks
-		std::list<puppet_brain*>::iterator it = puppets.begin();
-		if( it==puppets.end() || (*it)->delay > ticks ) return false;
+		if(puppets.empty()) return false;
+		clock += ticks;
 
-		puppet_brain* puppet = *it;
+		if(puppets.front()->delay > clock) return false;
 
-//		while(puppet->delay < ticks) {
-			if(puppet->program_counter >= programs[ puppet->program ].len) puppet->program_counter=0;
-			execute_instruction(puppet->puppet, puppet->program, *(puppet->stack), puppet->program_counter, puppet->base_pointer);
-//		}
+		puppet_brain* puppet = 0;
+		unsigned int delay = 0;
+		while(puppets.front()->delay <= clock) {
+			puppet = dequeue_puppet();
+			delay = 0;
+
+			while(delay == 0) {
+				if(puppet->program_counter >= programs[ puppet->program ].len) puppet->program_counter=0;
+				delay += execute_instruction(puppet->puppet, puppet->program, *(puppet->stack), puppet->program_counter, puppet->base_pointer);
+			}
+
+			puppet->delay += delay;
+			enqueue_puppet(puppet);
+		}
 
 		return true;
 	}
 
+	void Interpreter::enqueue_puppet(puppet_brain* puppet) {
+		std::list<puppet_brain*>::iterator it;
+		for(it = puppets.begin(); it!=puppets.end() && (*it)->delay < puppet->delay; ++it);
+		puppets.insert(it,puppet);
+	}
+
+	Interpreter::puppet_brain* Interpreter::dequeue_puppet() {
+		puppet_brain* Result = puppets.front();
+		puppets.pop_front();
+		return Result;
+	}
 
 	void Interpreter::execute(const std::string& program) const {
 		Puppet p("Hamis Baba");
@@ -640,16 +800,20 @@ namespace sum {
 	}
 
 
-	size_t Interpreter::execute_instruction(Puppet& self, size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const {
+	unsigned int Interpreter::execute_instruction(Puppet& self, size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const {
 		using namespace stack_machine;
 		using namespace bytecode;
 
-		// segédregiszterek (kiemelni objektumváltozókká?)
+		unsigned int delay = 0;
+
+		// segédregiszterek
 		Cell* r1;
+		Cell* r2;
 		Cell* retval;
+		Cell** rarr;
 		ActivationRecord* ar;
 		size_t rs;
-		int ri;
+		int ri, rj;
 
 		byte opcode = programs[program_id].get_byte(pc);
 		switch(opcode) {
@@ -667,6 +831,11 @@ namespace sum {
 				break;
 			case PUSH_SELF:    // 4
 				stack.push( new PuppetValue(self) );
+				break;
+			case COPY:
+				r1 = stack.pop();
+				stack.push( r1->copy() );
+				delete r1;
 				break;
 			case RSRV:     //10
 				stack.reserve( programs[program_id].get_byte(pc) );
@@ -743,7 +912,7 @@ namespace sum {
 			case INTERRUPT: //46
 				rs = programs[program_id].get_int(pc);
 				if(rs < Interrupt::list.size()) {
-					(*Interrupt::list[rs])(stack);
+					delay += (*Interrupt::list[rs])(stack);
 				}
 				break;
 			case APPLY: //47
@@ -773,13 +942,34 @@ namespace sum {
 			case NEG:
 				(*Interrupt::operators[opcode - ADDI])(stack);
 				break;
+			case LIST:
+				ri = programs[program_id].get_int(pc);
+				rarr = new Cell*[ ri ];
+				rj = 0;
+				while(rj < ri) rarr[rj++] = stack.pop();
+				stack.push( new ListRef(new ListValue(rarr, ri)) );
+				delete[] rarr;
+				break;
+			case FETCH_IDX:
+				r1 = stack.pop();
+				if(r1->tag == list) {
+					stack.push( static_cast<ListRef*>(r1)->get_element( stack.pop() )->clone() );
+				} else throw stack_machine::except::incompatible_types();
+				break;
+			case STORE_IDX:
+				r1 = stack.pop(); //listref
+				if(r1->tag == list) {
+					r2 = stack.pop(); //index
+					static_cast<ListRef*>( r1 )->set_element(r2, stack.pop());
+				} else throw stack_machine::except::incompatible_types();
+				break;
 			case DELAY:
 				return programs[program_id].get_int(pc);
 			default:
 				std::cerr << "unknown opcode " << (int)opcode << std::endl;
 				break;
 		}
-		return 100;
+		return delay;
 	}
 
 	bool Interpreter::register_puppet(Puppet& puppet) {

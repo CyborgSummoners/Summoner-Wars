@@ -37,12 +37,16 @@ and                     return Parser::OP_AND;
 or                      return Parser::OP_OR;
 not                     return Parser::OP_NOT;
 
+copy                    return Parser::OP_COPY;
+
 \.                      return Parser::OP_MEMBER;
 ;                       return Parser::SEMICOLON;
 :                       return Parser::COLON;
 ,                       return Parser::COMMA;
 \(                      return Parser::T_OPEN;
 \)                      return Parser::T_CLOSE;
+\[                      return Parser::T_BRACKET_OPEN;
+\]                      return Parser::T_BRACKET_CLOSE;
 :=                      return Parser::OP_ASSIGNMENT;
 =                       return Parser::OP_EQUALITY;
 \<                      return Parser::OP_LESS_THAN;

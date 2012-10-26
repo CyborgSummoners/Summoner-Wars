@@ -70,7 +70,7 @@ void Parser::second_pass(codelines& code) {
 	}
 
 	//put all reservations to the front:
-	code.insert(code.begin(), codeline(RSRV, vars));
+	if(vars > 0) code.insert(code.begin(), codeline(RSRV, vars));
 
 	// calculate real line numbers (not counting labelless NOPs)
 	size_t line=0;
@@ -137,12 +137,9 @@ void Parser::reset() {
 }
 
 bool var::is(type typ) const {
-	if(typ == any || this->typ == typ) return true; // any is the top type, everything is a subtype to it
-	if(typ == puppet && this->typ == self) return true; // self is a subtype of puppet
-	return (this->typ == any);
+	return (this->typ==any || subtypeof(typ, this->typ));
 }
 
 bool expression::is(type typ) const {
-	if(typ == any || this->typ == typ) return true;
-	return (this->typ == any);
+	return (this->typ==any || subtypeof(typ, this->typ));
 }

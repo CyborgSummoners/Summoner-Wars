@@ -44,8 +44,8 @@ obj/compiler:
 compiler-demo: $(COMPILER_OBJECTS) src/compiler/parse.cc
 	$(CC) -Wall $(COMPILER_OBJECTS) -o compiler-demo
 
-konzoltest: src/konzoltest.cpp src/terminal.hpp
-	$(CC) -Wall src/konzoltest.cpp -o compiler-demo
+konzoltest: src/konzoltest.cpp src/terminal.cpp src/terminal.hpp
+	$(CC) -Wall src/konzoltest.cpp src/terminal.cpp -o konzoltest
 
 src/compiler/summ.yy.cc: src/compiler/summ.l
 	flex -i -o src/compiler/summ.yy.cc src/compiler/summ.l

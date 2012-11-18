@@ -1,8 +1,8 @@
 #ifndef TERMINAL_HPP
 #define TERMINAL_HPP 1
+#include <string>
 
 namespace sum {
-
 
 class Terminal {
 	public:
@@ -14,9 +14,7 @@ class Terminal {
 
 		// Visszaadja az aktuális patht, pl "/bin" vagy "/spells/buffs" vagy "/"
 		std::string get_working_directory();
-};
-
-
+	};
 }
 
 #endif

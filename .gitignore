@@ -18,6 +18,7 @@ bin/*
 # executables
 sumwar
 compiler-demo
+konzoltest
 
 # flex-generated lexer
 src/compiler/summ.yy.cc

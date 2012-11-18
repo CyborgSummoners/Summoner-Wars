@@ -48,6 +48,7 @@ class Parser : public ParserBase {
         void warning(char const *msg);
         int lex();                      // returns the next token from the lexical scanner.
 		void print();                   // use, e.g., d_token, d_loc
+		void print__();
 
 		// support functions for parse():
 		void executeAction(int ruleNr);

@@ -30,6 +30,9 @@ class Terminal {
 		filesystem::Dir* root;
 		filesystem::Path working_directory;
 
+	private:
+		filesystem::Path string_to_path(std::string path);
+
 	public:
 		Terminal();
 	

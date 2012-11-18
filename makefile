@@ -57,4 +57,4 @@ all:
 	$(PROG)
 
 clean:
-	$(RM) $(sort $(PROG) compiler-demo $(OBJECTS) $(COMPILER_OBJECTS) src/compiler/summparsebase.h src/compiler/summparse.ih src/compiler/parse.cc src/compiler/summ.yy.cc)
+	$(RM) $(sort $(PROG) compiler-demo $(OBJECTS) $(COMPILER_OBJECTS) src/compiler/summparsebase.h src/compiler/parse.cc src/compiler/summ.yy.cc)

@@ -17,8 +17,8 @@ bgColor(0,213,0)
 void Terminal::Draw()
 {
 	window->Draw(sf::Shape::Rectangle(x,y,x+width,y+height,bgColor));
-	input.SetX(400);
-	input.SetY(400);
+	input.SetX(600);
+	input.SetY(600);
 	window->Draw(input);
 }
 

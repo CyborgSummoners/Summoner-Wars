@@ -41,6 +41,11 @@ class Terminal {
 			void down();
 			void enter();
 		};
+		
+		class InputField
+		{
+			
+		};
 
 		float x,y;
 		int width;

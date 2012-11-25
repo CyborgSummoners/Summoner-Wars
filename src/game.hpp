@@ -1,7 +1,7 @@
 #pragma once
 #include "SFML/Window.hpp"
 #include "SFML/Graphics.hpp"
-#include "terminal.hpp"
+#include "guiterminal.hpp"
 
 namespace sum
 {
@@ -20,7 +20,7 @@ private:
   
 	static GameState gameState;
 	static sf::RenderWindow *mainWindow;
-	static Terminal *terminal;
+	static GuiTerminal *terminal;
 };
 
 }

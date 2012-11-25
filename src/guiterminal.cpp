@@ -1,9 +1,9 @@
-#include "terminal.hpp"
+#include "guiterminal.hpp"
 #include <iostream>
 
 namespace sum{
 
-Terminal::Terminal(sf::RenderWindow *_window) :
+GuiTerminal::GuiTerminal(sf::RenderWindow *_window) :
 bgColor(0,213,0)
 {
 	window=_window;
@@ -14,7 +14,7 @@ bgColor(0,213,0)
 	input.SetColor(sf::Color(255,255,255));
 }
 
-void Terminal::Draw()
+void GuiTerminal::Draw()
 {
 	window->Draw(sf::Shape::Rectangle(x,y,x+width,y+height,bgColor));
 	input.SetX(400);
@@ -22,40 +22,44 @@ void Terminal::Draw()
 	window->Draw(input);
 }
 
-void Terminal::handleEvent(sf::Event &event)
+void GuiTerminal::handleEvent(sf::Event &event)
 {
-	std::string fosom="a";
 	if(event.Type == sf::Event::TextEntered)
 	{
 		char f=event.Key.Code;
-		fosom[0]=f;
+		fosom+=f;
+		input.SetText(fosom);
+	}
+	if(event.Key.Code == sf::Key::Back)
+	{
+		fosom = fosom.substr(0,fosom.size()-1);
 		input.SetText(fosom);
 	}
 }
 
-Terminal::Buffer::Buffer(int _size) :
+GuiTerminal::Buffer::Buffer(int _size) :
 strbuffer(_size),
 act(0),head(0),
-size(_size)
+size(_size),
+val()
 {
-	val=&strbuffer[head];
 }
 
-void Terminal::Buffer::up()
+void GuiTerminal::Buffer::up()
 {
 	if((act+1)%size!=head || strbuffer[(act+1)%size].empty())
 		++act;
-	val=&strbuffer[act];
+	val=strbuffer[act];
 }
 
-void Terminal::Buffer::down()
+void GuiTerminal::Buffer::down()
 {
 	if(act!=head)
 		--act;
-	val=&strbuffer[act];
+	val=strbuffer[act];
 }
 
-void Terminal::Buffer::enter()
+void GuiTerminal::Buffer::enter()
 {
 	if(head==0)
 		head=size-1;
@@ -63,7 +67,7 @@ void Terminal::Buffer::enter()
 		--head;
 	act=head;
 	strbuffer[head]="";
-	val=&strbuffer[head];
+	val=strbuffer[head];
 }
 
 

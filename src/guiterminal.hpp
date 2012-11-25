@@ -9,7 +9,7 @@ namespace sum {
 
 class Game;
 
-class Terminal {
+class GuiTerminal {
 	public:
 		// Bemenetként kap egy stringet, ez a sor, amit a user beírt. Feltesszük, hogy nem üres.
 		// ezt a stringet feldolgozzuk, végrehajtjuk a parancsot,
@@ -20,7 +20,7 @@ class Terminal {
 		// Visszaadja az aktuális patht, pl "/bin" vagy "/spells/buffs" vagy "/"
 		std::string get_working_directory();
 		
-		Terminal(sf::RenderWindow *_window);
+		GuiTerminal(sf::RenderWindow *_window);
 		
 		void Draw();
 		void handleEvent(sf::Event &event);
@@ -34,7 +34,7 @@ class Terminal {
 			int act;
 			int size;
 			int head;
-			std::string *val;
+			std::string val;
 		public:
 			Buffer(int _size=200);
 			void up();
@@ -46,6 +46,7 @@ class Terminal {
 		int width;
 		int height;
 		sf::Color bgColor;
+		std::string fosom;
 		sf::String input;
 		sf::RenderWindow *window;
 		Buffer buffer;

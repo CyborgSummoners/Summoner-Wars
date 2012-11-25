@@ -1,29 +1,20 @@
 #ifndef TERMINAL_HPP
 #define TERMINAL_HPP
 
-#include "SFML/Window.hpp"
-#include "SFML/Graphics.hpp"
-#include <vector>
+#include "widget.hpp"
 
 namespace sum {
 
 class Game;
 
-class GuiTerminal {
+class GuiTerminal : public Widget {
 	public:
-		// Bemenetként kap egy stringet, ez a sor, amit a user beírt. Feltesszük, hogy nem üres.
-		// ezt a stringet feldolgozzuk, végrehajtjuk a parancsot,
-		// és visszaadjuk a választ, amit kiírunk a képernyőre.
-		// A válasz sikeres végrehajtás esetén üres string.
-		std::string command(const std::string& input);
-
-		// Visszaadja az aktuális patht, pl "/bin" vagy "/spells/buffs" vagy "/"
-		std::string get_working_directory();
 		
 		GuiTerminal(sf::RenderWindow *_window);
 		
-		void Draw();
+		void draw();
 		void handleEvent(sf::Event &event);
+		
 	private:
 		
 		class Buffer
@@ -48,7 +39,6 @@ class GuiTerminal {
 		sf::Color bgColor;
 		std::string fosom;
 		sf::String input;
-		sf::RenderWindow *window;
 		Buffer buffer;
 };
 

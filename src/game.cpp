@@ -44,7 +44,7 @@ void Game::GameLoop()
 		}
 	}
 	mainWindow->Clear();
-	terminal->Draw();
+	terminal->draw();
 	mainWindow->Display();
 }
 

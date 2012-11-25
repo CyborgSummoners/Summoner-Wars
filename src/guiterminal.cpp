@@ -4,6 +4,7 @@
 namespace sum{
 
 GuiTerminal::GuiTerminal(sf::RenderWindow *_window) :
+Widget(_window),
 bgColor(0,213,0)
 {
 	window=_window;
@@ -14,7 +15,7 @@ bgColor(0,213,0)
 	input.SetColor(sf::Color(255,255,255));
 }
 
-void GuiTerminal::Draw()
+void GuiTerminal::draw()
 {
 	window->Draw(sf::Shape::Rectangle(x,y,x+width,y+height,bgColor));
 	input.SetX(400);

@@ -1,7 +1,7 @@
 #ifndef TERMINAL_HPP
 #define TERMINAL_HPP
 
-#include "widget.hpp"
+#include "inputfield.hpp"
 
 namespace sum {
 
@@ -40,6 +40,8 @@ class GuiTerminal : public Widget {
 		std::string fosom;
 		sf::String input;
 		Buffer buffer;
+		InputField inputfield;
+		
 };
 
 

@@ -41,6 +41,8 @@ void Game::GameLoop()
 				terminal->handleEvent(currentEvent);
 				break;
 			}
+			default:
+			break;
 		}
 	}
 	mainWindow->Clear();

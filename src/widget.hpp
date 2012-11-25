@@ -23,6 +23,7 @@ protected:
 	static sf::Color textColor;
 	static sf::Color bgColor;
 	static int textSize;
+	sf::Font gameFont;
 };
 
 }

@@ -19,8 +19,11 @@ public:
 private:
 
 	std::string value;
+	std::string cursy;
 	sf::String text;
+	sf::String cursor;	
 	char tmp;
+	int pos;
 };
 
 }

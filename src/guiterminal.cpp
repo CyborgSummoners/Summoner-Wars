@@ -5,7 +5,8 @@ namespace sum{
 
 GuiTerminal::GuiTerminal(sf::RenderWindow *_window) :
 Widget(_window),
-bgColor(0,213,0)
+bgColor(0,213,0),
+inputfield(_window,400,400)
 {
 	window=_window;
 	width=window->GetWidth();
@@ -17,25 +18,12 @@ bgColor(0,213,0)
 
 void GuiTerminal::draw()
 {
-	window->Draw(sf::Shape::Rectangle(x,y,x+width,y+height,bgColor));
-	input.SetX(400);
-	input.SetY(400);
-	window->Draw(input);
+	inputfield.draw();
 }
 
 void GuiTerminal::handleEvent(sf::Event &event)
 {
-	if(event.Type == sf::Event::TextEntered)
-	{
-		char f=event.Key.Code;
-		fosom+=f;
-		input.SetText(fosom);
-	}
-	if(event.Key.Code == sf::Key::Back)
-	{
-		fosom = fosom.substr(0,fosom.size()-1);
-		input.SetText(fosom);
-	}
+	inputfield.handleEvent(event);
 }
 
 GuiTerminal::Buffer::Buffer(int _size) :

@@ -22,7 +22,13 @@ void TextBox::draw()
 
 void TextBox::set(std::string _text)
 {
+	value=_text;
 	text.SetText(_text);
+}
+
+std::string TextBox::val()
+{
+	return value;
 }
 
 }

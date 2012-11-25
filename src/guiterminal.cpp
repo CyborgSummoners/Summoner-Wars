@@ -13,11 +13,13 @@ inputfield_size(25)
 	x=0;
 	y=window->GetHeight()-height;
 	inputfield=new InputField(_window,5,_window->GetHeight()-inputfield_size);
+	textbox=new TextBox(_window,5,y,width,height-inputfield_size);
 }
 
 GuiTerminal::~GuiTerminal()
 {
 	delete inputfield;
+	delete textbox;
 }
 
 void GuiTerminal::draw()
@@ -29,6 +31,7 @@ void GuiTerminal::draw()
 		window->GetHeight()-height + 2 ,
 		textColor));
 	inputfield->draw();
+	textbox->draw();
 }
 
 void GuiTerminal::handleEvent(sf::Event &event)
@@ -36,6 +39,8 @@ void GuiTerminal::handleEvent(sf::Event &event)
 	inputfield->handleEvent(event);
 	if(event.Key.Code == sf::Key::Return)
 	{
+		std::string tmp=textbox->val() + '\n' + inputfield->val();
+		textbox->set(tmp);
 		inputfield->set("");
 	}
 }

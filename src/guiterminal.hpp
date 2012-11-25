@@ -2,6 +2,7 @@
 #define TERMINAL_HPP
 
 #include "inputfield.hpp"
+#include "textbox.hpp"
 
 namespace sum {
 
@@ -37,8 +38,8 @@ class GuiTerminal : public Widget {
 		int height;
 		Buffer buffer;
 		InputField *inputfield;
+		TextBox *textbox;
 		const int inputfield_size;
-		//TextBox textbox;
 };
 
 

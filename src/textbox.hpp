@@ -13,10 +13,12 @@ public:
 	TextBox(sf::RenderWindow *_window,int _x,int _y,int _width, int _height);
 	void draw();
 	void set(std::string _text);
+	std::string val();
 	
 private:
 
 	int width, height;
+	std::string value;
 	sf::String text;
 
 };

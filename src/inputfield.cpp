@@ -13,8 +13,12 @@ pos(0)
 	cursor.SetY(y);
 	text.SetSize(textSize);
 	cursor.SetSize(textSize);
+	
+	//only works if i put this here. Cant be static or be in widget.
+	//interesting
+	
 	if(!gameFont.LoadFromFile("resources/FreeMono.ttf",50))
-	std::cout<<"fosom";
+		std::cout<<"fosom";
 }
 
 void InputField::draw()
@@ -44,16 +48,22 @@ void InputField::handleEvent(sf::Event &event)
 	}
 	if(event.Type == sf::Event::TextEntered)
 	{
-		tmp=event.Key.Code;
-		value.insert(value.begin()+pos,1,tmp);
-		++pos;
-		text.SetText(value);
+		if(event.Key.Code != sf::Key::Delete)
+		{
+			tmp=event.Key.Code;
+			value.insert(value.begin()+pos,1,tmp);
+			++pos;
+			text.SetText(value);
+		}
 	}
 	if(event.Key.Code == sf::Key::Back)
 	{
-		--pos;
-		value = value.erase(pos,1);
-		text.SetText(value);
+		if(pos!=0)
+		{
+			--pos;
+			value.erase(pos,1);
+			text.SetText(value);
+		}
 	}
 }
 

@@ -14,7 +14,7 @@ pos(0)
 	text.SetSize(textSize);
 	cursor.SetSize(textSize);
 	
-	//only works if i put this here. Cant be static or be in widget.
+	//only works if i put this here.
 	//interesting
 	
 	if(!gameFont.LoadFromFile("resources/FreeMono.ttf",50))

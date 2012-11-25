@@ -11,6 +11,7 @@ class GuiTerminal : public Widget {
 	public:
 		
 		GuiTerminal(sf::RenderWindow *_window);
+		~GuiTerminal();
 		
 		void draw();
 		void handleEvent(sf::Event &event);
@@ -32,16 +33,12 @@ class GuiTerminal : public Widget {
 			void down();
 			void enter();
 		};
-
-		float x,y;
 		int width;
 		int height;
-		sf::Color bgColor;
-		std::string fosom;
-		sf::String input;
 		Buffer buffer;
-		InputField inputfield;
-		
+		InputField *inputfield;
+		const int inputfield_size;
+		//TextBox textbox;
 };
 
 

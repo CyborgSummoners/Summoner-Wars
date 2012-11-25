@@ -5,25 +5,39 @@ namespace sum{
 
 GuiTerminal::GuiTerminal(sf::RenderWindow *_window) :
 Widget(_window),
-bgColor(0,213,0),
-inputfield(_window,400,400)
+inputfield_size(25)
 {
 	window=_window;
 	width=window->GetWidth();
 	height=window->GetHeight()/3;
 	x=0;
 	y=window->GetHeight()-height;
-	input.SetColor(sf::Color(255,255,255));
+	inputfield=new InputField(_window,5,_window->GetHeight()-inputfield_size);
+}
+
+GuiTerminal::~GuiTerminal()
+{
+	delete inputfield;
 }
 
 void GuiTerminal::draw()
 {
-	inputfield.draw();
+	window->Draw(sf::Shape::Rectangle(
+		0,
+		window->GetHeight()-height ,
+		width,
+		window->GetHeight()-height + 2 ,
+		textColor));
+	inputfield->draw();
 }
 
 void GuiTerminal::handleEvent(sf::Event &event)
 {
-	inputfield.handleEvent(event);
+	inputfield->handleEvent(event);
+	if(event.Key.Code == sf::Key::Return)
+	{
+		inputfield->set("");
+	}
 }
 
 GuiTerminal::Buffer::Buffer(int _size) :

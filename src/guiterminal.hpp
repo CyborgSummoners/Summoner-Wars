@@ -18,25 +18,9 @@ class GuiTerminal : public Widget {
 		void handleEvent(sf::Event &event);
 		
 	private:
-		
-		class Buffer
-		{
-		
-		private:
-			std::vector<std::string> strbuffer;
-			int act;
-			int size;
-			int head;
-			std::string val;
-		public:
-			Buffer(int _size=200);
-			void up();
-			void down();
-			void enter();
-		};
+
 		int width;
 		int height;
-		Buffer buffer;
 		InputField *inputfield;
 		TextBox *textbox;
 		const int inputfield_size;

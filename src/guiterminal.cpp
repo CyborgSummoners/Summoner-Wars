@@ -13,7 +13,7 @@ inputfield_size(25)
 	x=0;
 	y=window->GetHeight()-height;
 	inputfield=new InputField(_window,5,_window->GetHeight()-inputfield_size);
-	textbox=new TextBox(_window,5,y,width,height-inputfield_size);
+	textbox=new TextBox(_window,5,y,width,height-(inputfield_size+10));
 }
 
 GuiTerminal::~GuiTerminal()
@@ -42,39 +42,6 @@ void GuiTerminal::handleEvent(sf::Event &event)
 		textbox->add(inputfield->val());
 		inputfield->set("");
 	}
-}
-
-GuiTerminal::Buffer::Buffer(int _size) :
-strbuffer(_size),
-act(0),head(0),
-size(_size),
-val()
-{
-}
-
-void GuiTerminal::Buffer::up()
-{
-	if((act+1)%size!=head || strbuffer[(act+1)%size].empty())
-		++act;
-	val=strbuffer[act];
-}
-
-void GuiTerminal::Buffer::down()
-{
-	if(act!=head)
-		--act;
-	val=strbuffer[act];
-}
-
-void GuiTerminal::Buffer::enter()
-{
-	if(head==0)
-		head=size-1;
-	else
-		--head;
-	act=head;
-	strbuffer[head]="";
-	val=strbuffer[head];
 }
 
 

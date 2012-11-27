@@ -21,6 +21,8 @@ private:
 	std::vector<std::string> lines;
 	sf::String text;
 	const int linesize;
+	bool chopping;
+	int chopping_size;
 };
 
 }

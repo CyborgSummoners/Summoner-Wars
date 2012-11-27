@@ -12,15 +12,15 @@ public:
 	
 	TextBox(sf::RenderWindow *_window,int _x,int _y,int _width, int _height);
 	void draw();
-	void set(std::string _text);
-	std::string val();
+	void add(std::string _text);
+	std::vector<std::string> val();
 	
 private:
 
 	int width, height;
-	std::string value;
+	std::vector<std::string> lines;
 	sf::String text;
-
+	const int linesize;
 };
 
 }

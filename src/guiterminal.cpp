@@ -39,8 +39,7 @@ void GuiTerminal::handleEvent(sf::Event &event)
 	inputfield->handleEvent(event);
 	if(event.Key.Code == sf::Key::Return)
 	{
-		std::string tmp=textbox->val() + '\n' + inputfield->val();
-		textbox->set(tmp);
+		textbox->add(inputfield->val());
 		inputfield->set("");
 	}
 }

@@ -5,7 +5,8 @@ namespace sum
 
 TextBox::TextBox(sf::RenderWindow *_window,int _x,int _y,int _width, int _height) :
 Widget(_window, _x, _y),
-width(_width), height(_height)
+width(_width), height(_height),
+linesize(8)
 {
 	if(!gameFont.LoadFromFile("resources/FreeMono.ttf",50))
 	std::cout<<"fosom";
@@ -17,18 +18,22 @@ width(_width), height(_height)
 void TextBox::draw()
 {
 	text.SetColor(textColor);
-	window->Draw(text);
+	for(int i=0;i<lines.size();++i)
+	{
+		text.SetText(lines[i]);
+		text.SetY(y + i*linesize);
+		window->Draw(text);
+	}
 }
 
-void TextBox::set(std::string _text)
+void TextBox::add(std::string _text)
 {
-	value=_text;
-	text.SetText(_text);
+	lines.push_back(_text);
 }
 
-std::string TextBox::val()
+std::vector<std::string> TextBox::val()
 {
-	return value;
+	return lines;
 }
 
 }

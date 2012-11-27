@@ -13,13 +13,15 @@ inputfield_size(25)
 	x=0;
 	y=window->GetHeight()-height;
 	inputfield=new InputField(_window,5,_window->GetHeight()-inputfield_size);
-	textbox=new TextBox(_window,5,y,width,height-(inputfield_size+10));
+	textbox=new TextBox(_window,5,y,width,height-(inputfield_size*2));
+	term=new Terminal();
 }
 
 GuiTerminal::~GuiTerminal()
 {
 	delete inputfield;
 	delete textbox;
+	delete term;
 }
 
 void GuiTerminal::draw()
@@ -36,12 +38,36 @@ void GuiTerminal::draw()
 
 void GuiTerminal::handleEvent(sf::Event &event)
 {
-	inputfield->handleEvent(event);
-	if(event.Key.Code == sf::Key::Return)
+	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Return))
 	{
 		textbox->add(inputfield->val());
+		std::vector<std::string> ret = explode(term->command(inputfield->val()), '\n');
+		for(int i=0; i<ret.size(); ++i)
+			textbox->add(ret[i]);
 		inputfield->set("");
 	}
+	else
+	{
+		inputfield->handleEvent(event);
+	}
+}
+
+std::vector<std::string> GuiTerminal::explode(const std::string& str, const char& ch) {
+    std::string next = "";
+    std::vector<std::string> result;
+
+    for (std::string::const_iterator it = str.begin(); it != str.end(); it++) {
+    	if (*it == ch) {
+    		if (next.length() > 0) {
+    			result.push_back(next);
+    			next = "";
+    		}
+    	} else {
+    		next += *it;
+    	}
+    }
+
+    return result;
 }
 
 

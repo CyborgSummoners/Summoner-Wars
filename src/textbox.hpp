@@ -23,6 +23,7 @@ private:
 	const int linesize;
 	bool chopping;
 	int chopping_size;
+	
 };
 
 }

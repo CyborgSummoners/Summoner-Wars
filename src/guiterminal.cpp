@@ -38,18 +38,14 @@ void GuiTerminal::draw()
 
 void GuiTerminal::handleEvent(sf::Event &event)
 {
-	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Return))
+	if((event.Key.Code == sf::Key::Return) && (event.Type == sf::Event::KeyPressed))
 	{
-		textbox->add(inputfield->val());
 		std::vector<std::string> ret = explode(term->command(inputfield->val()), '\n');
 		for(int i=0; i<ret.size(); ++i)
 			textbox->add(ret[i]);
-		inputfield->set("");
+		inputfield->reset();
 	}
-	else
-	{
-		inputfield->handleEvent(event);
-	}
+	inputfield->handleEvent(event);
 }
 
 std::vector<std::string> GuiTerminal::explode(const std::string& str, const char& ch) {

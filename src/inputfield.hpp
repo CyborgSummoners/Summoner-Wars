@@ -15,13 +15,16 @@ public:
 	void handleEvent(sf::Event &event);
 	std::string val();
 	void set(std::string _value);
+	void reset();
 	
 private:
 
 	std::string value;
 	std::string cursy;
 	sf::String text;
-	sf::String cursor;	
+	sf::String cursor;
+	sf::String cursor_text;
+	std::string curs_str;
 	char tmp;
 	int pos;
 };

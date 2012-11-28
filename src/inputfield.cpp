@@ -11,8 +11,12 @@ pos(0)
 	text.SetY(y);
 	cursor.SetX(x);
 	cursor.SetY(y);
+	cursor_text.SetX(x);
+	cursor_text.SetY(y);
 	text.SetSize(textSize);
 	cursor.SetSize(textSize);
+	cursor_text.SetSize(textSize);
+	cursor.SetText("_");
 	
 	//only works if i put this here.
 	//interesting
@@ -27,12 +31,18 @@ void InputField::draw()
 	text.SetColor(textColor);
 	cursor.SetFont(gameFont);
 	cursor.SetColor(textColor);
-	cursy.insert(0,pos,' ');
-	cursy.push_back('_');
-	cursor.SetText(cursy);
+	cursor.SetStyle(sf::String::Bold);
+	cursor_text.SetFont(gameFont);
+	//cursor.SetColor(textColor);
+	//cursy.insert(0,pos,' ');
+	//cursy.push_back('_');
+	//cursor.SetText(cursy);
 	window->Draw(text);
 	window->Draw(cursor);
-	cursy="";
+	curs_str=value.substr(0,pos);
+	cursor_text.SetText(curs_str);
+	cursor.SetX(x+cursor_text.GetRect().GetWidth());
+	//cursy="";
 }
 void InputField::handleEvent(sf::Event &event)
 {
@@ -48,13 +58,10 @@ void InputField::handleEvent(sf::Event &event)
 	}
 	if(event.Type == sf::Event::TextEntered)
 	{
-		if(event.Key.Code != sf::Key::Delete)
-		{
-			tmp=event.Key.Code;
-			value.insert(value.begin()+pos,1,tmp);
-			++pos;
-			text.SetText(value);
-		}
+		tmp=event.Key.Code;
+		value.insert(value.begin()+pos,1,tmp);
+		text.SetText(value);
+		++pos;
 	}
 	if(event.Key.Code == sf::Key::Back)
 	{
@@ -76,6 +83,13 @@ void InputField::set(std::string _value)
 {
 	value=_value;
 	pos=_value.size();
+}
+
+void InputField::reset()
+{
+	value="";
+	pos=0;
+	text.SetText(value);
 }
 
 }

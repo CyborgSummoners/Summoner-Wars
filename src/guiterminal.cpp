@@ -40,13 +40,59 @@ void GuiTerminal::handleEvent(sf::Event &event)
 {
 	if((event.Key.Code == sf::Key::Return) && (event.Type == sf::Event::KeyPressed))
 	{
+		buffer.enter(inputfield->val());
 		std::vector<std::string> ret = explode(term->command(inputfield->val()), '\n');
 		for(int i=0; i<ret.size(); ++i)
 			textbox->add(ret[i]);
 		inputfield->reset();
 	}
+	if((event.Key.Code == sf::Key::Up) && (event.Type == sf::Event::KeyPressed))
+	{
+		if(buffer.up())
+			inputfield->set(buffer.val());
+	}
+	if((event.Key.Code == sf::Key::Down) && (event.Type == sf::Event::KeyPressed))
+	{
+		if(buffer.down())
+			inputfield->set(buffer.is_end() ? "" : buffer.val());
+	}
 	inputfield->handleEvent(event);
 }
+
+bool GuiTerminal::Buffer::up()
+{
+	bool not_start=act!=buff.begin();
+	if(not_start)
+		--act;
+	return not_start;
+}
+
+std::string GuiTerminal::Buffer::val()
+{
+	return *act;
+}
+			
+bool GuiTerminal::Buffer::is_end()
+{
+	return act==buff.end();
+}
+			
+bool GuiTerminal::Buffer::down()
+{
+	bool not_end=act!=buff.end();
+	if(not_end)
+		++act;
+	return not_end;
+}
+
+void GuiTerminal::Buffer::enter(std::string _val)
+{
+	if(buff.size()>size)
+		buff.erase(buff.begin(), buff.begin() + (size/2));
+	buff.push_back(_val);
+	act=buff.end();
+}
+
 
 std::vector<std::string> GuiTerminal::explode(const std::string& str, const char& ch) {
     std::string next = "";

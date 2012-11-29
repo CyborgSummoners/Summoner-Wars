@@ -83,6 +83,7 @@ void InputField::set(std::string _value)
 {
 	value=_value;
 	pos=_value.size();
+	text.SetText(value);
 }
 
 void InputField::reset()

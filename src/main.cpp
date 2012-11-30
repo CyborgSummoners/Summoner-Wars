@@ -88,33 +88,7 @@ int main(int argc, char** argv) {
 
 int main()
 {
-	std::ifstream source("script-samples/puppet_demo.summ");
-	if(!source.is_open() || !source.good()) {
-		std::cerr << "Could not open source file 'script-samples/puppet_demo.summ' for reading." << std::endl;
-		return 1;
-	}
-	Parser parser(source, std::cout);
-	parser.parse();
-	sum::Interpreter interpreter;
-	for(size_t i=0; i<parser.subprograms.size(); ++i) {
-		interpreter.register_subprogram(parser.subprograms[i]);
-	}
-	// ^ ezeket itt marha jó lenne betenni... akár az Interpreter konstruktorába? tagfüggvényébe? (load_file és load_dir vagy ilyesmi)
-
-	sum::Puppet puppet("Blue Square");
-	interpreter.register_puppet(puppet);
-	interpreter.set_behaviour(puppet, "DEMO");
-
-	sum::Puppet p2("Red Circle");
-	interpreter.register_puppet(p2);
-	interpreter.set_behaviour(p2, "DEMO");
-
-	while(true) {
-		interpreter.step(10);
-		sf::Sleep(0.2f);
-	}
-
-    //sum::Game::Start();
+    sum::Game::Start();
     return EXIT_SUCCESS;
 }
 

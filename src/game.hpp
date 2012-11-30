@@ -1,6 +1,7 @@
 #pragma once
 #include "SFML/Window.hpp"
 #include "SFML/Graphics.hpp"
+#include "guiterminal.hpp"
 
 namespace sum
 {
@@ -15,10 +16,11 @@ private:
 	static bool IsExiting();
 	static void GameLoop();
 
-	enum GameState { Uninitialized, ShowingSplash, Paused, ShowingMenu, Playing, Exiting };
+	enum GameState { Uninitialized, Playing, Exiting };
   
-	static GameState _gameState;
-	static sf::RenderWindow _mainWindow;
+	static GameState gameState;
+	static sf::RenderWindow *mainWindow;
+	static GuiTerminal *terminal;
 };
 
 }

@@ -1,0 +1,54 @@
+#ifndef GUITERMINAL_HPP
+#define GUITERMINAL_HPP
+
+#include "inputfield.hpp"
+#include "textbox.hpp"
+#include "terminal.hpp"
+
+namespace sum {
+
+class GuiTerminal : public Widget {
+	
+	public:
+		
+		GuiTerminal(sf::RenderWindow *_window);
+		~GuiTerminal();
+		
+		void draw();
+		void handleEvent(sf::Event &event);
+		
+	private:
+	
+		struct Buffer
+		{
+		
+			std::vector<std::string> buff;
+			int head;
+			int size;
+			std::vector<std::string>::iterator act;
+			
+			Buffer(int _size=100) : head(0),size(_size),act(0){}
+			
+			bool up();
+			std::string val();
+			bool is_end();
+			bool down();
+			void enter(std::string _val);
+		};
+
+		int width;
+		int height;
+		InputField *inputfield;
+		TextBox *textbox;
+		Terminal *term;
+		Buffer buffer;
+		const int inputfield_size;
+		
+		static std::vector<std::string> explode(const std::string& str, const char& ch);
+		
+};
+
+
+}
+
+#endif

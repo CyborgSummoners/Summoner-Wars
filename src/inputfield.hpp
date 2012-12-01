@@ -9,7 +9,7 @@ namespace sum
 class InputField : public Widget {
 
 public:
-	InputField(sf::RenderWindow *_window, int _x, int _y);
+	InputField(sf::RenderWindow *_window, int _x, int _y,int _width, int _height);
 	
 	virtual void draw();
 	void handleEvent(sf::Event &event);
@@ -29,6 +29,8 @@ private:
 	char tmp;
 	int pos;
 	bool back_pushed;
+	int width;
+	int height;
 };
 
 }

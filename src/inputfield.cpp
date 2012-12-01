@@ -3,10 +3,12 @@
 namespace sum
 {
 
-InputField::InputField(sf::RenderWindow *_window,int _x, int _y) :
+InputField::InputField(sf::RenderWindow *_window,int _x, int _y,int _width, int _height) :
 Widget(_window,_x,_y),
 pos(0),
-back_pushed(false)
+back_pushed(false),
+width(_width),
+height(_height)
 {
 	text.SetX(x);
 	text.SetY(y);
@@ -84,11 +86,14 @@ void InputField::handleEvent(sf::Event &event)
 	}
 	if(event.Type == sf::Event::TextEntered)
 	{
-		tmp=event.Key.Code;
-		value.insert(value.begin()+pos,1,tmp);
-		text.SetText(value);
-		++pos;
-		return;
+		if(text.GetRect().GetWidth() < width)
+		{
+			tmp=event.Key.Code;
+			value.insert(value.begin()+pos,1,tmp);
+			text.SetText(value);
+			++pos;
+			return;
+		}
 	}
 }
 

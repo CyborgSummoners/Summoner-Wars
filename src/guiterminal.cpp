@@ -15,13 +15,15 @@ player_name(_player_name)
 	x=5;
 	y=window->GetHeight()-height;
 	name_pwd.SetX(x);
-	name_pwd.SetY(_window->GetHeight()-inputfield_size);
+	name_pwd.SetY(y+height-inputfield_size);
 	name_pwd.SetSize(textSize);
 	name_pwd.SetText(player_name + term->get_working_directory() + "$");
 	inputfield=new InputField(
 		_window,
 		x+name_pwd.GetRect().GetWidth(),
-		_window->GetHeight()-inputfield_size);
+		y+height-inputfield_size,
+		width-x-name_pwd.GetRect().GetWidth()-x,
+		inputfield_size);
 	textbox=new TextBox(_window,x,y,width,height-(inputfield_size*2));
 	
 }

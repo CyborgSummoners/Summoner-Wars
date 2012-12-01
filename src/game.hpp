@@ -1,6 +1,6 @@
-#pragma once
-#include "SFML/Window.hpp"
-#include "SFML/Graphics.hpp"
+#ifndef GAME_HPP
+#define GAME_HPP
+
 #include "guiterminal.hpp"
 
 namespace sum
@@ -24,3 +24,5 @@ private:
 };
 
 }
+
+#endif

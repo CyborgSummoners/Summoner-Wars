@@ -5,7 +5,8 @@ namespace sum
 
 InputField::InputField(sf::RenderWindow *_window,int _x, int _y) :
 Widget(_window,_x,_y),
-pos(0)
+pos(0),
+back_pushed(false)
 {
 	text.SetX(x);
 	text.SetY(y);
@@ -50,20 +51,28 @@ void InputField::handleEvent(sf::Event &event)
 	{
 		if(pos>0)
 			--pos;
+		return;
 	}
 	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Right))
 	{
 		if(pos<value.size())
 			++pos;
+		return;
 	}
-	if(event.Type == sf::Event::TextEntered)
+
+	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Back))
 	{
-		tmp=event.Key.Code;
-		value.insert(value.begin()+pos,1,tmp);
-		text.SetText(value);
-		++pos;
+		back_pushed=true;
+		return;
 	}
-	if(event.Key.Code == sf::Key::Back)
+
+	if((event.Type == sf::Event::KeyReleased) && (event.Key.Code == sf::Key::Back))
+	{
+		back_pushed=false;
+		return;
+	}
+
+	if(back_pushed)
 	{
 		if(pos!=0)
 		{
@@ -71,6 +80,15 @@ void InputField::handleEvent(sf::Event &event)
 			value.erase(pos,1);
 			text.SetText(value);
 		}
+		return;
+	}
+	if(event.Type == sf::Event::TextEntered)
+	{
+		tmp=event.Key.Code;
+		value.insert(value.begin()+pos,1,tmp);
+		text.SetText(value);
+		++pos;
+		return;
 	}
 }
 

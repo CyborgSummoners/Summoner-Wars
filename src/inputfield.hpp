@@ -1,5 +1,5 @@
 #ifndef INPUTFIELD_HPP
-#define INPUTFIELD_CPP
+#define INPUTFIELD_HPP
 
 #include "widget.hpp"
 
@@ -28,6 +28,7 @@ private:
 	std::string curs_str;
 	char tmp;
 	int pos;
+	bool back_pushed;
 };
 
 }

@@ -17,6 +17,7 @@ public:
 	void set(std::string _value);
 	void reset();
 	void setX(int _x);
+	void setWidth(int _width) {width=_width;}
 	
 private:
 

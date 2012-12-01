@@ -12,7 +12,7 @@ player_name(_player_name)
 	term=new Terminal();
 	width=window->GetWidth();
 	height=window->GetHeight()/3;
-	x=0;
+	x=5;
 	y=window->GetHeight()-height;
 	name_pwd.SetX(x);
 	name_pwd.SetY(_window->GetHeight()-inputfield_size);
@@ -20,9 +20,9 @@ player_name(_player_name)
 	name_pwd.SetText(player_name + term->get_working_directory() + "$");
 	inputfield=new InputField(
 		_window,
-		name_pwd.GetRect().GetWidth(),
+		x+name_pwd.GetRect().GetWidth(),
 		_window->GetHeight()-inputfield_size);
-	textbox=new TextBox(_window,5,y,width,height-(inputfield_size*2));
+	textbox=new TextBox(_window,x,y,width,height-(inputfield_size*2));
 	
 }
 
@@ -55,10 +55,11 @@ void GuiTerminal::handleEvent(sf::Event &event)
 		std::vector<std::string> ret = explode(term->command(inputfield->val()), '\n');
 		std::string term_user=player_name + term->get_working_directory() + "$";
 		name_pwd.SetText(term_user);
-		inputfield->setX(name_pwd.GetRect().GetWidth());
+		inputfield->setX(x + name_pwd.GetRect().GetWidth());
 		textbox->add(term_user+inputfield->val());
 		for(int i=0; i<ret.size(); ++i)
 			textbox->add(ret[i]);
+		textbox->add("\n");
 		inputfield->reset();
 	}
 	if((event.Key.Code == sf::Key::Up) && (event.Type == sf::Event::KeyPressed))

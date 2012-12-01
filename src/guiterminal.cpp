@@ -62,7 +62,6 @@ void GuiTerminal::handleEvent(sf::Event &event)
 		textbox->add(term_user+inputfield->val());
 		for(int i=0; i<ret.size(); ++i)
 			textbox->add(ret[i]);
-		textbox->add("\n");
 		inputfield->reset();
 	}
 	if((event.Key.Code == sf::Key::Up) && (event.Type == sf::Event::KeyPressed))

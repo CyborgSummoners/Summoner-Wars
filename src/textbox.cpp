@@ -28,44 +28,32 @@ void TextBox::draw()
 	)
 	{
 		chopping == true ? j=i-chopped : j=i;
-		tmp.SetText(lines[i]);
-		if(tmp.GetRect().GetWidth() < width-linesize)
-		{
-			text.SetText(lines[i]);
-			text.SetY(y + j*linesize);
-			window->Draw(text);
-		}
-		else
-		{
-			std::string buff="";
-			int breaks(0);
-			for(int k=0; k<lines[i].size() ; ++k)
-			{
-				buff+=lines[i][k];
-				tmp.SetText(buff);
-				if(tmp.GetRect().GetWidth() > width-linesize)
-				{
-					text.SetText(buff);
-					text.SetY(y + (breaks+j)*linesize);
-					window->Draw(text);
-					buff="";
-					++breaks;
-				}
-				
-			}
-			if(!buff.empty())
-			{
-				text.SetText(buff);
-				text.SetY(y + (breaks+j)*linesize);
-				window->Draw(text);
-			}
-		}
+		text.SetText(lines[i]);
+		text.SetY(y + j*linesize);
+		window->Draw(text);
 	}
 }
 
 void TextBox::add(std::string _text)
 {
-	lines.push_back(_text);
+	std::string buff="";
+	int breaks(0);
+	for(int k=0; k<_text.size() ; ++k)
+	{
+		buff+=_text[k];
+		tmp.SetText(buff);
+		if(tmp.GetRect().GetWidth() > width-linesize)
+		{
+			lines.push_back(buff);
+			buff="";
+			++breaks;
+		}
+		
+	}
+	if(!buff.empty())
+	{
+		lines.push_back(buff);
+	}
 	if(chopping ==false && lines.size()*linesize > height)
 	{
 		chopping=true;

@@ -20,6 +20,7 @@ private:
 	int width, height;
 	std::vector<std::string> lines;
 	sf::String text;
+	sf::String tmp;
 	const int linesize;
 	bool chopping;
 	int chopping_size;

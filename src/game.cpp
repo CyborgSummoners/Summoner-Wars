@@ -53,6 +53,6 @@ void Game::GameLoop()
 
 Game::GameState Game::gameState = Uninitialized;
 sf::RenderWindow *Game::mainWindow = new sf::RenderWindow(sf::VideoMode(1024,768,32),"Sumwar");
-GuiTerminal *Game::terminal = new GuiTerminal(mainWindow);
+GuiTerminal *Game::terminal = new GuiTerminal(mainWindow,"testplaya");
 
 }

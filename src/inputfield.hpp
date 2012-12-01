@@ -16,6 +16,7 @@ public:
 	std::string val();
 	void set(std::string _value);
 	void reset();
+	void setX(int _x);
 	
 private:
 

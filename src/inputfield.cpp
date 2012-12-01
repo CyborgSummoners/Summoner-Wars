@@ -17,22 +17,13 @@ pos(0)
 	cursor.SetSize(textSize);
 	cursor_text.SetSize(textSize);
 	cursor.SetText("_");
-	
-	//only works if i put this here.
-	//interesting
-	
-	if(!gameFont.LoadFromFile("resources/FreeMono.ttf",50))
-		std::cout<<"fosom";
 }
 
 void InputField::draw()
 {
-	text.SetFont(gameFont);
 	text.SetColor(textColor);
-	cursor.SetFont(gameFont);
 	cursor.SetColor(textColor);
 	cursor.SetStyle(sf::String::Bold);
-	cursor_text.SetFont(gameFont);
 	//cursor.SetColor(textColor);
 	//cursy.insert(0,pos,' ');
 	//cursy.push_back('_');
@@ -44,6 +35,15 @@ void InputField::draw()
 	cursor.SetX(x+cursor_text.GetRect().GetWidth());
 	//cursy="";
 }
+
+void InputField::setX(int _x)
+{
+	x=_x;
+	text.SetX(_x);
+	cursor.SetX(_x);
+	cursor_text.SetX(_x);
+}
+
 void InputField::handleEvent(sf::Event &event)
 {
 	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Left))

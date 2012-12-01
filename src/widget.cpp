@@ -13,6 +13,7 @@ Widget::~Widget()
 
 
 sf::Color Widget::textColor(255,255,255);
+sf::Color Widget::nameColor(128,128,128);
 sf::Color Widget::bgColor(0,0,0);
 int Widget::textSize(14);
 

@@ -11,7 +11,7 @@ class GuiTerminal : public Widget {
 	
 	public:
 		
-		GuiTerminal(sf::RenderWindow *_window);
+		GuiTerminal(sf::RenderWindow *_window,std::string _player_name);
 		~GuiTerminal();
 		
 		void draw();
@@ -38,6 +38,8 @@ class GuiTerminal : public Widget {
 
 		int width;
 		int height;
+		std::string player_name;
+		sf::String name_pwd;
 		InputField *inputfield;
 		TextBox *textbox;
 		Terminal *term;

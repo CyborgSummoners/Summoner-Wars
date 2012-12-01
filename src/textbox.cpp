@@ -10,8 +10,6 @@ linesize(13),
 chopping(false),
 chopping_size(0)
 {
-	if(!gameFont.LoadFromFile("resources/FreeMono.ttf",50))
-	std::cout<<"fosom";
 	text.SetX(x);
 	text.SetY(y);
 	text.SetSize(textSize);

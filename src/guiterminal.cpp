@@ -3,18 +3,27 @@
 
 namespace sum{
 
-GuiTerminal::GuiTerminal(sf::RenderWindow *_window) :
+GuiTerminal::GuiTerminal(sf::RenderWindow *_window,std::string _player_name) :
 Widget(_window),
-inputfield_size(25)
+inputfield_size(25),
+player_name(_player_name)
 {
 	window=_window;
+	term=new Terminal();
 	width=window->GetWidth();
 	height=window->GetHeight()/3;
 	x=0;
 	y=window->GetHeight()-height;
-	inputfield=new InputField(_window,5,_window->GetHeight()-inputfield_size);
+	name_pwd.SetX(x);
+	name_pwd.SetY(_window->GetHeight()-inputfield_size);
+	name_pwd.SetSize(textSize);
+	name_pwd.SetText(player_name + term->get_working_directory() + "$");
+	inputfield=new InputField(
+		_window,
+		name_pwd.GetRect().GetWidth(),
+		_window->GetHeight()-inputfield_size);
 	textbox=new TextBox(_window,5,y,width,height-(inputfield_size*2));
-	term=new Terminal();
+	
 }
 
 GuiTerminal::~GuiTerminal()
@@ -33,6 +42,8 @@ void GuiTerminal::draw()
 		window->GetHeight()-height + 2 ,
 		textColor));
 	inputfield->draw();
+	name_pwd.SetColor(nameColor);
+	window->Draw(name_pwd);
 	textbox->draw();
 }
 
@@ -42,6 +53,10 @@ void GuiTerminal::handleEvent(sf::Event &event)
 	{
 		buffer.enter(inputfield->val());
 		std::vector<std::string> ret = explode(term->command(inputfield->val()), '\n');
+		std::string term_user=player_name + term->get_working_directory() + "$";
+		name_pwd.SetText(term_user);
+		inputfield->setX(name_pwd.GetRect().GetWidth());
+		textbox->add(term_user+inputfield->val());
 		for(int i=0; i<ret.size(); ++i)
 			textbox->add(ret[i]);
 		inputfield->reset();

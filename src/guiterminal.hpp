@@ -35,8 +35,6 @@ class GuiTerminal : public Widget {
 			void enter(std::string _val);
 		};
 
-		int width;
-		int height;
 		std::string player_name;
 		sf::String name_pwd;
 		InputField *inputfield;

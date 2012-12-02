@@ -17,7 +17,6 @@ public:
 	
 private:
 
-	int width, height;
 	std::vector<std::string> lines;
 	sf::String text;
 	sf::String tmp;

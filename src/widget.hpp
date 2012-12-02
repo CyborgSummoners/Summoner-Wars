@@ -10,22 +10,33 @@ class Widget{
 
 public:
 
-	Widget(sf::RenderWindow *_window,int _x=0,int _y=0);
-	~Widget();
+	Widget(
+		sf::RenderWindow *_window,
+		int _x=0,
+		int _y=0,
+		int _width=0,
+		int _height=0
+		);
+	virtual ~Widget(){}
 	
 	virtual void draw()=0;
 	virtual void handleEvent(sf::Event &event){}
 	virtual void setX(int _x) {x=_x;}
 	virtual void setY(int _y) {y=_y;}
+	virtual void setWidth(int _width) {width=_width;}
+	virtual void setHeight(int _height) {height=_height;}
  
 protected:
 
 	sf::RenderWindow *window;
-	int x,y;
+	int x,y,width, height;
 	static sf::Color textColor;
 	static sf::Color nameColor;
 	static sf::Color bgColor;
+	static int bordersize;
 	static int textSize;
+
+	void draw_borders();
 };
 
 }

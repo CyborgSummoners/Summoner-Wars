@@ -30,8 +30,6 @@ private:
 	char tmp;
 	int pos;
 	bool back_pushed;
-	int width;
-	int height;
 };
 
 }

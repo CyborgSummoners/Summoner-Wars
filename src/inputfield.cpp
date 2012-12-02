@@ -4,11 +4,9 @@ namespace sum
 {
 
 InputField::InputField(sf::RenderWindow *_window,int _x, int _y,int _width, int _height) :
-Widget(_window,_x,_y),
+Widget(_window,_x,_y,_width,_height),
 pos(0),
-back_pushed(false),
-width(_width),
-height(_height)
+back_pushed(false)
 {
 	text.SetX(x);
 	text.SetY(y);

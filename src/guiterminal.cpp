@@ -10,8 +10,10 @@ player_name(_player_name)
 {
 	window=_window;
 	term=new Terminal();
-	width=window->GetWidth();
-	height=window->GetHeight()/3;
+	//width=window->GetWidth();
+	//height=window->GetHeight()/3;
+	width=300;
+	height=200;
 	x=5;
 	y=window->GetHeight()-height;
 	name_pwd.SetX(x);
@@ -37,12 +39,6 @@ GuiTerminal::~GuiTerminal()
 
 void GuiTerminal::draw()
 {
-	window->Draw(sf::Shape::Rectangle(
-		0,
-		window->GetHeight()-height ,
-		width,
-		window->GetHeight()-height + 2 ,
-		textColor));
 	inputfield->draw();
 	name_pwd.SetColor(nameColor);
 	window->Draw(name_pwd);

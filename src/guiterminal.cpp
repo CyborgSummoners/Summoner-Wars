@@ -3,17 +3,27 @@
 
 namespace sum{
 
-GuiTerminal::GuiTerminal(sf::RenderWindow *_window,std::string _player_name) :
+GuiTerminal::GuiTerminal(
+	sf::RenderWindow *_window,
+	std::string _player_name,
+	int _width,
+	int _height) :
 Widget(_window),
 inputfield_size(25),
 player_name(_player_name)
 {
 	window=_window;
+
+	if(_width!=0)
+		width=_width;
+	else
+		width=_window->GetWidth()-(_window->GetWidth()/3);
+	if(_height!=0)
+		height=_height;
+	else
+		height=_window->GetHeight()/3;
+
 	term=new Terminal();
-	//width=window->GetWidth();
-	//height=window->GetHeight()/3;
-	width=300;
-	height=200;
 	x=5;
 	y=window->GetHeight()-height;
 	name_pwd.SetX(x);

@@ -3,11 +3,18 @@
 namespace sum
 {
 
-TextBox::TextBox(sf::RenderWindow *_window,int _x,int _y,int _width, int _height) :
+TextBox::TextBox(
+	sf::RenderWindow *_window,
+	int _x,
+	int _y,
+	int _width,
+	int _height,
+	int _size) :
 Widget(_window, _x, _y,_width,_height),
 linesize(13),
 chopping(false),
-chopping_size(0)
+chopping_size(0),
+size(_size)
 {
 	text.SetX(x);
 	text.SetY(y);

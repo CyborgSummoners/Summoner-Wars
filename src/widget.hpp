@@ -25,6 +25,10 @@ public:
 	virtual void setY(int _y) {y=_y;}
 	virtual void setWidth(int _width) {width=_width;}
 	virtual void setHeight(int _height) {height=_height;}
+	int getX() {return x;}
+	int getY() {return y;}
+	int getWidth() {return width;}
+	int getHeight() {return height;} 
  
 protected:
 

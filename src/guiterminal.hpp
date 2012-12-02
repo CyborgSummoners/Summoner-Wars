@@ -11,7 +11,11 @@ class GuiTerminal : public Widget {
 	
 	public:
 		
-		GuiTerminal(sf::RenderWindow *_window,std::string _player_name);
+		GuiTerminal(
+			sf::RenderWindow *_window,
+			std::string _player_name,
+			int _width = 0,
+			int _height = 0);
 		~GuiTerminal();
 		
 		void draw();

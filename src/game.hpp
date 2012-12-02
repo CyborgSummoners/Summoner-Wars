@@ -2,6 +2,7 @@
 #define GAME_HPP
 
 #include "guiterminal.hpp"
+#include "infobar.hpp"
 
 namespace sum
 {
@@ -20,7 +21,9 @@ private:
   
 	static GameState gameState;
 	static sf::RenderWindow *mainWindow;
+	static InfoBar *infobar;
 	static GuiTerminal *terminal;
+	static TextBox *combat_log;
 };
 
 }

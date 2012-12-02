@@ -36,23 +36,31 @@ void TextBox::draw()
 
 void TextBox::add(std::string _text)
 {
-	std::string buff="";
-	int breaks(0);
-	for(int k=0; k<_text.size() ; ++k)
+	tmp.SetText(_text);
+	if(tmp.GetRect().GetWidth() > width-linesize)
 	{
-		buff+=_text[k];
-		tmp.SetText(buff);
-		if(tmp.GetRect().GetWidth() > width-linesize)
+		std::string buff="";
+		int breaks(0);
+		for(int k=0; k<_text.size() ; ++k)
+		{
+			buff+=_text[k];
+			tmp.SetText(buff);
+			if(tmp.GetRect().GetWidth() > width-linesize)
+			{
+				lines.push_back(buff);
+				buff="";
+				++breaks;
+			}
+			
+		}
+		if(!buff.empty())
 		{
 			lines.push_back(buff);
-			buff="";
-			++breaks;
 		}
-		
 	}
-	if(!buff.empty())
+	else
 	{
-		lines.push_back(buff);
+		lines.push_back(_text);
 	}
 	if(chopping ==false && lines.size()*linesize > height)
 	{

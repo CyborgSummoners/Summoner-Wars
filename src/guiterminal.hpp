@@ -23,11 +23,10 @@ class GuiTerminal : public Widget {
 		{
 		
 			std::vector<std::string> buff;
-			int head;
 			int size;
 			std::vector<std::string>::iterator act;
 			
-			Buffer(int _size=100) : head(0),size(_size),act(0){}
+			Buffer(int _size=100) : size(_size),act(0){}
 			
 			bool up();
 			std::string val();

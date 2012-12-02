@@ -23,7 +23,7 @@ void Game::Start()
 		terminal->getHeight() - 30
 		);
 
-	infobar = new InfoBar(mainWindow, "testplaya");
+	infobar = new InfoBar(mainWindow, "testplaya            ------ INFOBAR -------");
 
 	//TESTLINES
 

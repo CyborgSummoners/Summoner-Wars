@@ -60,12 +60,13 @@ void GuiTerminal::handleEvent(sf::Event &event)
 	if((event.Key.Code == sf::Key::Return) && (event.Type == sf::Event::KeyPressed))
 	{
 		buffer.enter(inputfield->val());
-		std::vector<std::string> ret = explode(term->command(inputfield->val()), '\n');
 		std::string term_user=player_name + term->get_working_directory() + "$";
+		textbox->add(term_user+inputfield->val());
+		std::vector<std::string> ret = explode(term->command(inputfield->val()), '\n');
+		term_user=player_name + term->get_working_directory() + "$";
 		name_pwd.SetText(term_user);
 		inputfield->setX(x + name_pwd.GetRect().GetWidth());
 		inputfield->setWidth(width-x-name_pwd.GetRect().GetWidth()-x);
-		textbox->add(term_user+inputfield->val());
 		for(int i=0; i<ret.size(); ++i)
 			textbox->add(ret[i]);
 		inputfield->reset();

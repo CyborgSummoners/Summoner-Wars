@@ -3,18 +3,41 @@
 
 namespace sum{
 
-GuiTerminal::GuiTerminal(sf::RenderWindow *_window) :
+GuiTerminal::GuiTerminal(
+	sf::RenderWindow *_window,
+	std::string _player_name,
+	int _width,
+	int _height) :
 Widget(_window),
-inputfield_size(25)
+inputfield_size(25),
+player_name(_player_name)
 {
 	window=_window;
-	width=window->GetWidth();
-	height=window->GetHeight()/3;
-	x=0;
-	y=window->GetHeight()-height;
-	inputfield=new InputField(_window,5,_window->GetHeight()-inputfield_size);
-	textbox=new TextBox(_window,5,y,width,height-(inputfield_size*2));
+
+	if(_width!=0)
+		width=_width;
+	else
+		width=_window->GetWidth()-(_window->GetWidth()/3);
+	if(_height!=0)
+		height=_height;
+	else
+		height=_window->GetHeight()/3;
+
 	term=new Terminal();
+	x=5;
+	y=window->GetHeight()-height;
+	name_pwd.SetX(x);
+	name_pwd.SetY(y+height-inputfield_size);
+	name_pwd.SetSize(textSize);
+	name_pwd.SetText(player_name + term->get_working_directory() + "$");
+	inputfield=new InputField(
+		_window,
+		x+name_pwd.GetRect().GetWidth(),
+		y+height-inputfield_size,
+		width-x-name_pwd.GetRect().GetWidth()-x,
+		inputfield_size);
+	textbox=new TextBox(_window,x,y,width,height-(inputfield_size*2));
+	
 }
 
 GuiTerminal::~GuiTerminal()
@@ -26,13 +49,9 @@ GuiTerminal::~GuiTerminal()
 
 void GuiTerminal::draw()
 {
-	window->Draw(sf::Shape::Rectangle(
-		0,
-		window->GetHeight()-height ,
-		width,
-		window->GetHeight()-height + 2 ,
-		textColor));
 	inputfield->draw();
+	name_pwd.SetColor(nameColor);
+	window->Draw(name_pwd);
 	textbox->draw();
 }
 
@@ -41,7 +60,13 @@ void GuiTerminal::handleEvent(sf::Event &event)
 	if((event.Key.Code == sf::Key::Return) && (event.Type == sf::Event::KeyPressed))
 	{
 		buffer.enter(inputfield->val());
+		std::string term_user=player_name + term->get_working_directory() + "$";
+		textbox->add(term_user+inputfield->val());
 		std::vector<std::string> ret = explode(term->command(inputfield->val()), '\n');
+		term_user=player_name + term->get_working_directory() + "$";
+		name_pwd.SetText(term_user);
+		inputfield->setX(x + name_pwd.GetRect().GetWidth());
+		inputfield->setWidth(width-x-name_pwd.GetRect().GetWidth()-x);
 		for(int i=0; i<ret.size(); ++i)
 			textbox->add(ret[i]);
 		inputfield->reset();

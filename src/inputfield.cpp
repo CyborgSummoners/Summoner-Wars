@@ -3,9 +3,10 @@
 namespace sum
 {
 
-InputField::InputField(sf::RenderWindow *_window,int _x, int _y) :
-Widget(_window,_x,_y),
-pos(0)
+InputField::InputField(sf::RenderWindow *_window,int _x, int _y,int _width, int _height) :
+Widget(_window,_x,_y,_width,_height),
+pos(0),
+back_pushed(false)
 {
 	text.SetX(x);
 	text.SetY(y);
@@ -17,22 +18,13 @@ pos(0)
 	cursor.SetSize(textSize);
 	cursor_text.SetSize(textSize);
 	cursor.SetText("_");
-	
-	//only works if i put this here.
-	//interesting
-	
-	if(!gameFont.LoadFromFile("resources/FreeMono.ttf",50))
-		std::cout<<"fosom";
 }
 
 void InputField::draw()
 {
-	text.SetFont(gameFont);
 	text.SetColor(textColor);
-	cursor.SetFont(gameFont);
 	cursor.SetColor(textColor);
 	cursor.SetStyle(sf::String::Bold);
-	cursor_text.SetFont(gameFont);
 	//cursor.SetColor(textColor);
 	//cursy.insert(0,pos,' ');
 	//cursy.push_back('_');
@@ -44,32 +36,61 @@ void InputField::draw()
 	cursor.SetX(x+cursor_text.GetRect().GetWidth());
 	//cursy="";
 }
+
+void InputField::setX(int _x)
+{
+	x=_x;
+	text.SetX(_x);
+	cursor.SetX(_x);
+	cursor_text.SetX(_x);
+}
+
 void InputField::handleEvent(sf::Event &event)
 {
 	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Left))
 	{
 		if(pos>0)
 			--pos;
+		return;
 	}
 	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Right))
 	{
 		if(pos<value.size())
 			++pos;
+		return;
 	}
-	if(event.Type == sf::Event::TextEntered)
+
+	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Back))
 	{
-		tmp=event.Key.Code;
-		value.insert(value.begin()+pos,1,tmp);
-		text.SetText(value);
-		++pos;
+		back_pushed=true;
+		return;
 	}
-	if(event.Key.Code == sf::Key::Back)
+
+	if((event.Type == sf::Event::KeyReleased) && (event.Key.Code == sf::Key::Back))
+	{
+		back_pushed=false;
+		return;
+	}
+
+	if(back_pushed)
 	{
 		if(pos!=0)
 		{
 			--pos;
 			value.erase(pos,1);
 			text.SetText(value);
+		}
+		return;
+	}
+	if(event.Type == sf::Event::TextEntered)
+	{
+		if(text.GetRect().GetWidth() < width)
+		{
+			tmp=event.Key.Code;
+			value.insert(value.begin()+pos,1,tmp);
+			text.SetText(value);
+			++pos;
+			return;
 		}
 	}
 }

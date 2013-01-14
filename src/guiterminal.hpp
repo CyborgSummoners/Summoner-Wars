@@ -11,7 +11,11 @@ class GuiTerminal : public Widget {
 	
 	public:
 		
-		GuiTerminal(sf::RenderWindow *_window);
+		GuiTerminal(
+			sf::RenderWindow *_window,
+			std::string _player_name,
+			int _width = 0,
+			int _height = 0);
 		~GuiTerminal();
 		
 		void draw();
@@ -23,11 +27,10 @@ class GuiTerminal : public Widget {
 		{
 		
 			std::vector<std::string> buff;
-			int head;
 			int size;
 			std::vector<std::string>::iterator act;
 			
-			Buffer(int _size=100) : head(0),size(_size),act(0){}
+			Buffer(int _size=100) : size(_size),act(0){}
 			
 			bool up();
 			std::string val();
@@ -36,8 +39,8 @@ class GuiTerminal : public Widget {
 			void enter(std::string _val);
 		};
 
-		int width;
-		int height;
+		std::string player_name;
+		sf::String name_pwd;
 		InputField *inputfield;
 		TextBox *textbox;
 		Terminal *term;

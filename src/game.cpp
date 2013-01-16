@@ -24,13 +24,12 @@ void Game::Start()
 		);
 
 	infobar = new InfoBar(mainWindow, "testplaya            ------ INFOBAR -------");
+	map = new Map(mainWindow);
 
 	//TESTLINES
 
 	for(int i=0; i<20 ;++i)
 		combat_log->add("combat log line");
-
-
 
 	mainWindow->SetFramerateLimit(60);
 	gameState = Game::Playing;
@@ -43,6 +42,9 @@ void Game::Start()
 	mainWindow->Close();
 	delete mainWindow;
 	delete terminal;
+	delete combat_log;
+	delete infobar;
+	delete map;
 }
 
 bool Game::IsExiting()
@@ -74,10 +76,7 @@ void Game::GameLoop()
 	terminal->draw();
 	combat_log->draw();
 	infobar->draw();
-
-	mainWindow->Draw(
-		sf::Shape::Rectangle(0,25,mainWindow->GetWidth(),
-			mainWindow->GetHeight()*2/3, sf::Color(128,128,128)));
+	map->draw();
 
 	mainWindow->Display();
 }
@@ -88,5 +87,6 @@ sf::RenderWindow *Game::mainWindow = NULL;
 GuiTerminal *Game::terminal = NULL;
 TextBox *Game::combat_log = NULL;
 InfoBar *Game::infobar = NULL;
+Map *Game::map = NULL;
 
 }

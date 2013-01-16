@@ -6,7 +6,8 @@
 namespace sum
 {
 
-class Widget{
+class Widget
+{
 
 public:
 

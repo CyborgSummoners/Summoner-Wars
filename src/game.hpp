@@ -3,6 +3,7 @@
 
 #include "guiterminal.hpp"
 #include "infobar.hpp"
+#include "map.hpp"
 
 namespace sum
 {
@@ -24,6 +25,7 @@ private:
 	static InfoBar *infobar;
 	static GuiTerminal *terminal;
 	static TextBox *combat_log;
+	static Map *map;
 };
 
 }

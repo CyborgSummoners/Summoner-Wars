@@ -1,7 +1,26 @@
 #include "game.hpp"
+#include "util/debug.hpp"
+#include <cstdio>
+#include <iostream>
 
 namespace sum
 {
+
+sf::SocketTCP Game::connection = sf::SocketTCP();
+
+void Game::Start(sf::IPAddress server_ip, unsigned short server_port) {
+	if(gameState != Uninitialized) return;
+	debugf("Trying to connect to server at %s:%d\n", server_ip.ToString().c_str(), server_port);
+	connection.SetBlocking(true);
+	std::cerr << connection.Connect(server_port, server_ip, 4.0f) << std::endl;
+	if(connection.Connect(server_port, server_ip, 4.0f) != sf::Socket::Done) {	//timeout of whopping 4 seconds
+		printf("Could not connect to remote server, exiting\n");
+		exit(0);
+	} else debugf("Connected.\n");
+
+	Start();
+}
+
 
 void Game::Start()
 {
@@ -34,7 +53,7 @@ void Game::Start()
 
 	mainWindow->SetFramerateLimit(60);
 	gameState = Game::Playing;
-  
+
 	while(!IsExiting())
 	{
 		GameLoop();
@@ -43,6 +62,7 @@ void Game::Start()
 	mainWindow->Close();
 	delete mainWindow;
 	delete terminal;
+	if(connection.IsValid()) connection.Close();
 }
 
 bool Game::IsExiting()

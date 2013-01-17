@@ -1,12 +1,12 @@
 CC = g++
-CFLAGS = -Wall -c
+CFLAGS = -Wall -c -DDEBUG_MACROS_ENABLED
 
 # - tobbi libraryt majd ide kell hozzaadni.
 # - fontos a sorrend: sfml-system kell az sfml-windownak, aki pedig kell
 # az sfml-graphicsnak
 # - sfml-graphics-nak kell freetype.
 # - sfml-audio-nak kell libsndfile es openal.
-LIBS = -lsfml-graphics -lsfml-window -lsfml-system
+LIBS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
 RM = /bin/rm -f
 

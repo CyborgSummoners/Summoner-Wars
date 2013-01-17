@@ -7,7 +7,8 @@
 
 namespace sum {
 
-class GuiTerminal : public Widget {
+class GuiTerminal : public Widget 
+{
 	
 	public:
 		

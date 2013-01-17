@@ -70,7 +70,6 @@ void Game::GameLoop()
 					gameState = Game::Exiting;
 				}
 				terminal->handleEvent(currentEvent);
-				std::cout<<currentEvent.Type<< ' ';
 				break;
 			}
 			default:

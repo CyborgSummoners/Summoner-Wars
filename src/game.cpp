@@ -55,8 +55,12 @@ bool Game::IsExiting()
 void Game::GameLoop()
 {
 	sf::Event currentEvent;
+
 	while(mainWindow->GetEvent(currentEvent))
 	{
+		if(currentEvent.Type==10 || currentEvent.Type==11 || currentEvent.Type==12)
+			return;
+
 		switch(gameState)
 		{
 			case Game::Playing:
@@ -66,6 +70,7 @@ void Game::GameLoop()
 					gameState = Game::Exiting;
 				}
 				terminal->handleEvent(currentEvent);
+				std::cout<<currentEvent.Type<< ' ';
 				break;
 			}
 			default:

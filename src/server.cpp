@@ -20,14 +20,17 @@ void sum::Server::Start() {
 }
 
 void sum::Server::Run() {
+	bool running = true;
+
 	sf::SocketTCP socket;
 	sf::IPAddress ip;
 	sf::SocketTCP client;
 	sf::Packet packet;
 	std::string msg;
+	Client client_descr;
 
 	debugf("Server started listening on port %d\n", port);
-	while(true) {
+	while(running) {
 		size_t sockets = selector.Wait();
 		for(size_t i=0; i<sockets; ++i) {
 			socket = selector.GetSocketReady(i);
@@ -35,16 +38,32 @@ void sum::Server::Run() {
 			if(socket == listener) { // new connection
 				listener.Accept(client, &ip);
 				debugf("Accepted connection from %s\n", ip.ToString().c_str());
+					client_descr.socket = client;
+					client_descr.ip = ip;
+				clients.push_back(client_descr);
 				selector.Add(client);
 			}
 			else {
 				if(socket.Receive(packet) == sf::Socket::Done) { // transmission ok
 					packet >> msg;
-					debugf("Client says: \"%s\"", msg.c_str());
+					debugf("A client says: \"%s\"", msg.c_str());
 				}
 				else {	// close or error
-					debugf("Connection closed\n");
 					selector.Remove(socket);
+
+					for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
+						if(lit->socket == socket) {
+							debugf("Client %s disconnected\n", lit->ip.ToString().c_str());
+							clients.erase(lit);
+							break;
+						}
+					}
+
+					// anybody left?
+					if(clients.empty()) {
+						debugf("No clients left, exiting.\n");
+						running = false;
+					}
 				}
 			}
 		}

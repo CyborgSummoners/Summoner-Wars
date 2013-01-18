@@ -2,15 +2,19 @@
 #define SERVER_HPP 1
 
 #include <SFML/Network.hpp>
-#include <vector>
+#include <list>
 
 
 namespace sum {
 
 class Server : public sf::Thread {
-	struct client {
+	struct Client {
 		sf::SocketTCP socket;
 		sf::IPAddress ip;
+
+		bool operator==(const Client& rhs) const {
+			return this->socket == rhs.socket;
+		}
 	};
 
 	private:
@@ -18,12 +22,15 @@ class Server : public sf::Thread {
 		sf::SelectorTCP selector;
 		unsigned short port;
 
+		std::list<Client> clients;
+
 	public:
 		Server(unsigned short port);
-		virtual void Start();
+		void Start();
 
 	private:
-		virtual void Run();
+		void Run();
+
 };
 
 }

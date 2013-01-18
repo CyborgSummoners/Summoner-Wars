@@ -1,7 +1,7 @@
 #ifndef GAME_HPP
 #define GAME_HPP
 
-#include <SFML/Network.hpp>
+#include "connection.hpp"
 #include "guiterminal.hpp"
 #include "infobar.hpp"
 #include "map.hpp"
@@ -12,11 +12,10 @@ namespace sum
 class Game
 {
 private:
-	static sf::SocketTCP connection; // connection to the server
+	static Connection connection; // connection to the server
 
 public:
-	static void Start();
-	static void Start(sf::IPAddress server_ip, unsigned short server_port);
+	static void Start(std::string server_ip, unsigned short server_port);
 
 private:
 	static bool IsExiting();

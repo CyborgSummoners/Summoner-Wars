@@ -93,14 +93,15 @@ int main(int argc, char** argv)
 			server.Wait();
 		}
 		else {
-			sum::Game::Start(sf::IPAddress(std::string(argv[1])), 1337);
+			sum::Game::Start(argv[1], 1337);
 		}
 	}
 	else {
 		sum::Server server(1337);
 		server.Start();
 		sf::Sleep(0.1f);
-		sum::Game::Start(sf::IPAddress("127.0.0.1"), 1337);
+		sum::Game::Start("127.0.0.1", 1337);
+		server.Wait();
 	}
     return EXIT_SUCCESS;
 }

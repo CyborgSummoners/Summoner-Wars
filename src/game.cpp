@@ -1,28 +1,13 @@
 #include "game.hpp"
 #include "util/debug.hpp"
 #include <cstdio>
-#include <iostream>
+#include <string>
+#include <sstream>
 
 namespace sum
 {
 
-sf::SocketTCP Game::connection = sf::SocketTCP();
-
-void Game::Start(sf::IPAddress server_ip, unsigned short server_port) {
-	if(gameState != Uninitialized) return;
-	debugf("Trying to connect to server at %s:%d\n", server_ip.ToString().c_str(), server_port);
-	connection.SetBlocking(true);
-	std::cerr << connection.Connect(server_port, server_ip, 4.0f) << std::endl;
-	if(connection.Connect(server_port, server_ip, 4.0f) != sf::Socket::Done) {	//timeout of whopping 4 seconds
-		printf("Could not connect to remote server, exiting\n");
-		exit(0);
-	} else debugf("Connected.\n");
-
-	Start();
-}
-
-
-void Game::Start()
+void Game::Start(std::string server_ip, unsigned short server_port)
 {
 	if(gameState != Uninitialized)
 		return;
@@ -50,13 +35,25 @@ void Game::Start()
 	for(int i=0; i<20 ;++i)
 		combat_log->add("combat log line");
 
-	mainWindow->SetFramerateLimit(60);
+	mainWindow->SetFramerateLimit(10);
 	gameState = Game::Playing;
+
+	// connecting:
+	if( connection.connect(server_ip, server_port) ) {
+		combat_log->add( "Connected to " + connection.get_address() );
+	}
+	else {
+		std::stringstream ss;
+		ss << "Could not connect to " << server_ip << ":" << server_port;
+		combat_log->add(ss.str());
+	}
 
 	while(!IsExiting())
 	{
 		GameLoop();
 	}
+
+	connection.disconnect();
 
 	mainWindow->Close();
 	delete mainWindow;
@@ -64,8 +61,6 @@ void Game::Start()
 	delete combat_log;
 	delete infobar;
 	delete map;
-
-	if(connection.IsValid()) connection.Close();
 }
 
 bool Game::IsExiting()
@@ -113,5 +108,6 @@ GuiTerminal *Game::terminal = NULL;
 TextBox *Game::combat_log = NULL;
 InfoBar *Game::infobar = NULL;
 Map *Game::map = NULL;
+Connection Game::connection;
 
 }

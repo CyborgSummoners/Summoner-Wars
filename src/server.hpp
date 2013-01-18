@@ -3,6 +3,7 @@
 
 #include <SFML/Network.hpp>
 #include <list>
+#include <string>
 
 
 namespace sum {
@@ -12,10 +13,11 @@ class Server : public sf::Thread {
 		sf::SocketTCP socket;
 		sf::IPAddress ip;
 
-		bool operator==(const Client& rhs) const {
-			return this->socket == rhs.socket;
-		}
+		bool operator==(const Client& rhs) const;
+		std::string toString() const;
 	};
+
+	static const Client nobody;
 
 	private:
 		sf::SocketTCP listener;
@@ -30,7 +32,7 @@ class Server : public sf::Thread {
 
 	private:
 		void Run();
-
+		void Broadcast(sf::Packet& packet, const Client& except);
 };
 
 }

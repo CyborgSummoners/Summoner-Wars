@@ -5,6 +5,16 @@
 #include <sstream>
 #include <cstdio>
 
+
+bool sum::Server::Client::operator==(const Client& rhs) const {
+	return this->socket == rhs.socket;
+}
+
+std::string sum::Server::Client::toString() const {
+	return this->ip.ToString();
+}
+
+
 sum::Server::Server(unsigned short port) : port(port) {
 	if(!listener.Listen(port)) {
 		std::stringstream s;
@@ -27,6 +37,7 @@ void sum::Server::Run() {
 	sf::SocketTCP client;
 	sf::Packet packet;
 	std::string msg;
+	std::stringstream ss;
 	Client client_descr;
 
 	debugf("Server started listening on port %d\n", port);
@@ -42,6 +53,12 @@ void sum::Server::Run() {
 					client_descr.ip = ip;
 				clients.push_back(client_descr);
 				selector.Add(client);
+
+				packet.Clear();
+				ss.str("");
+				ss << "New player connected from " << ip.ToString() << ".";
+				packet << ss.str();
+				Broadcast(packet, client_descr);
 			}
 			else {
 				if(socket.Receive(packet) == sf::Socket::Done) { // transmission ok
@@ -53,7 +70,15 @@ void sum::Server::Run() {
 
 					for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
 						if(lit->socket == socket) {
-							debugf("Client %s disconnected\n", lit->ip.ToString().c_str());
+							debugf("Client %s disconnected.\n", lit->ip.ToString().c_str());
+
+							ss.str("");
+							ss << "Client " << lit->toString() << " disconnected.";
+
+							packet.Clear();
+							packet << ss.str();
+							Broadcast(packet, *lit);
+
 							clients.erase(lit);
 							break;
 						}
@@ -70,3 +95,13 @@ void sum::Server::Run() {
 	}
 }
 
+
+void sum::Server::Broadcast(sf::Packet& packet, const Client& except = nobody) {
+	for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
+		if(except == *lit)  continue;
+
+		lit->socket.Send(packet);
+	}
+}
+
+const sum::Server::Client sum::Server::nobody;

@@ -31,14 +31,25 @@ sum::Connection::Connection() : connected(false), ip("255.255.255.255"), port(0)
 bool sum::Connection::connect(std::string address, unsigned short port) {
 	disconnect();
 	debugf("Trying to connect to server at %s:%d\n", address.c_str(), port);
-	sf::Socket::Status status = Connect(port, sf::IPAddress(address), 4.0f);
-	if( status != sf::Socket::Done ) {	//timeout of whopping 4 seconds
+	sf::Socket::Status status = Connect(port, sf::IPAddress(address), 4.0f); //timeout of whopping 4 seconds
+	if( status != sf::Socket::Done ) {
 		debugf("Could not connect to %s:%d\n", address.c_str(), port);
 		return false;
-	} else debugf("Connected.\n");
+	} else debugf("Connected. Sending scripts...\n");
 
 	this->ip = address;
 	this->port = port;
+
+	//sending scripts
+	sf::Packet packet;
+	packet << 25;
+	Send(packet);
+
+	//getting reply.
+	Receive(packet);
+	std::string repl;
+	packet >> repl;
+	debugf("Handshake finished: %s.\n", repl.c_str());
 
 	listener = new Listener(this);
 	listener->Launch();

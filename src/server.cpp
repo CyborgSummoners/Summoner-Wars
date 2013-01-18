@@ -49,31 +49,58 @@ void sum::Server::Run() {
 
 			if(socket == listener) { // new connection
 				listener.Accept(client, &ip);
-				debugf("Accepted connection from %s\n", ip.ToString().c_str());
-					client_descr.socket = client;
-					client_descr.ip = ip;
-				clients.push_back(client_descr);
-				selector.Add(client);
+				debugf("Got connection from %s, awaiting scripts\n", ip.ToString().c_str());
 
-				packet.Clear();
-				ss.str("");
-				ss << "New player connected from " << ip.ToString() << ".";
-				packet << ss.str();
-				Broadcast(packet, client_descr);
+				client_descr.socket = client;
+				client_descr.ip = ip;
+				waiting_list.push_back(client_descr);
+				selector.Add(client);
 			}
 			else {
 				if(socket.Receive(packet) == sf::Socket::Done) { // transmission ok
-					packet >> msg_type;
-					packet >> msg;
 					client_descr = find_client(socket);
-					debugf("%s says: \"%s\" (type %d)\n", client_descr.toString().c_str(), msg.c_str(), msg_type);
 
-					if(msg_type == 0) {	//akkor ez egy shout. hát, izé.
+					if(client_descr == nobody) { // connected, but no scripts yet, so this should be the push.
+						// is she really on the waiting list?
+						for(std::list<Client>::iterator lit = waiting_list.begin(); lit != waiting_list.end(); ++lit) {
+							if(lit->socket == socket) {
+								client_descr = *lit;
+								break;
+							}
+						}
+						if(client_descr == nobody) {
+							fprintf(stderr, "Message from unknown client, closing connection. This is an error.\n");
+							selector.Remove(socket);
+							socket.Close();
+						}
+
+						// so, this must be the push, okay.
+						int len;
+						packet >> len;	//this many subprograms, I guess
+						debugf("Got %d scripts from client @ %s.\n", len, client_descr.toString().c_str());
+
+						packet.Clear();
+						packet << "ack";
+						socket.Send(packet);
+
 						packet.Clear();
 						ss.str("");
-						ss << client_descr.toString() << " shouts: \"" << msg << "\"";
+						ss << "New player connected from " << ip.ToString() << ".";
 						packet << ss.str();
-						Broadcast(packet);
+						Broadcast(packet, client_descr);
+					}
+					else {
+						packet >> msg_type;
+						packet >> msg;
+						debugf("%s says: \"%s\" (type %d)\n", client_descr.toString().c_str(), msg.c_str(), msg_type);
+
+						if(msg_type == 0) {	//akkor ez egy shout. hát, izé.
+							packet.Clear();
+							ss.str("");
+							ss << client_descr.toString() << " shouts: \"" << msg << "\"";
+							packet << ss.str();
+							Broadcast(packet);
+						}
 					}
 				}
 				else {	// close or error
@@ -94,6 +121,7 @@ void sum::Server::Run() {
 							break;
 						}
 					}
+					socket.Close();
 
 					// anybody left?
 					if(clients.empty()) {

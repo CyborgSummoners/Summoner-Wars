@@ -24,6 +24,7 @@ class Server : public sf::Thread {
 		sf::SelectorTCP selector;
 		unsigned short port;
 
+		std::list<Client> waiting_list;
 		std::list<Client> clients;
 
 	public:

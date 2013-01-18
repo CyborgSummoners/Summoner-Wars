@@ -65,7 +65,16 @@ void sum::Server::Run() {
 				if(socket.Receive(packet) == sf::Socket::Done) { // transmission ok
 					packet >> msg_type;
 					packet >> msg;
-					debugf("A client says: \"%s\" (type %d)", msg.c_str(), msg_type);
+					client_descr = find_client(socket);
+					debugf("%s says: \"%s\" (type %d)\n", client_descr.toString().c_str(), msg.c_str(), msg_type);
+
+					if(msg_type == 0) {	//akkor ez egy shout. hát, izé.
+						packet.Clear();
+						ss.str("");
+						ss << client_descr.toString() << " shouts: \"" << msg << "\"";
+						packet << ss.str();
+						Broadcast(packet);
+					}
 				}
 				else {	// close or error
 					selector.Remove(socket);
@@ -98,12 +107,21 @@ void sum::Server::Run() {
 }
 
 
-void sum::Server::Broadcast(sf::Packet& packet, const Client& except = nobody) {
+void sum::Server::Broadcast(sf::Packet& packet, const Client& except) {
 	for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
 		if(except == *lit)  continue;
 
 		lit->socket.Send(packet);
 	}
+}
+
+sum::Server::Client sum::Server::find_client(sf::SocketTCP socket) {
+	for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
+		if(lit->socket == socket) {
+			return *lit;
+		}
+	}
+	return nobody;
 }
 
 const sum::Server::Client sum::Server::nobody;

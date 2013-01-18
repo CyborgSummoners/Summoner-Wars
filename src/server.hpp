@@ -32,7 +32,9 @@ class Server : public sf::Thread {
 
 	private:
 		void Run();
-		void Broadcast(sf::Packet& packet, const Client& except);
+		void Broadcast(sf::Packet& packet, const Client& except = nobody);
+
+		Client find_client(sf::SocketTCP socket);
 };
 
 }

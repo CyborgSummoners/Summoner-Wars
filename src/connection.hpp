@@ -7,10 +7,21 @@
 namespace sum {
 
 class Connection : private sf::SocketTCP {
+	class Listener : public sf::Thread {
+		bool running;
+		Connection* socket;
+		public:
+			Listener(Connection* socket);
+			void PleaseDoStop();
+		private:
+			void Run();
+	};
+
 	private:
 		bool connected;
 		sf::IPAddress ip;
 		unsigned short port;
+		Listener* listener;
 
 	public:
 		Connection();

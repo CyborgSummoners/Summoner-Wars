@@ -73,21 +73,25 @@ void sum::Server::Run() {
 							selector.Remove(socket);
 							socket.Close();
 						}
+						else {
+							// so, this must be the push, okay.
+							int len;
+							packet >> len;	//this many subprograms, I guess
+							debugf("Got %d scripts from client @ %s.\n", len, client_descr.toString().c_str());
 
-						// so, this must be the push, okay.
-						int len;
-						packet >> len;	//this many subprograms, I guess
-						debugf("Got %d scripts from client @ %s.\n", len, client_descr.toString().c_str());
+							packet.Clear();
+							packet << "ack";
+							socket.Send(packet);
 
-						packet.Clear();
-						packet << "ack";
-						socket.Send(packet);
+							waiting_list.remove(client_descr);
+							clients.push_back(client_descr);
 
-						packet.Clear();
-						ss.str("");
-						ss << "New player connected from " << ip.ToString() << ".";
-						packet << ss.str();
-						Broadcast(packet, client_descr);
+							packet.Clear();
+							ss.str("");
+							ss << "New player connected from " << ip.ToString() << ".";
+							packet << ss.str();
+							Broadcast(packet, client_descr);
+						}
 					}
 					else {
 						packet >> msg_type;

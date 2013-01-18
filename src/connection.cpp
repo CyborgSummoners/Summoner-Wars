@@ -64,3 +64,7 @@ std::string sum::Connection::get_address() const {
 	ss << ip.ToString() << ":" << port;
 	return ss.str();
 }
+
+void sum::Connection::send(sf::Packet& packet) {
+	Send(packet);
+}

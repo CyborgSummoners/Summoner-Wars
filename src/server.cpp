@@ -36,6 +36,7 @@ void sum::Server::Run() {
 	sf::IPAddress ip;
 	sf::SocketTCP client;
 	sf::Packet packet;
+	int msg_type;
 	std::string msg;
 	std::stringstream ss;
 	Client client_descr;
@@ -62,8 +63,9 @@ void sum::Server::Run() {
 			}
 			else {
 				if(socket.Receive(packet) == sf::Socket::Done) { // transmission ok
+					packet >> msg_type;
 					packet >> msg;
-					debugf("A client says: \"%s\"", msg.c_str());
+					debugf("A client says: \"%s\" (type %d)", msg.c_str(), msg_type);
 				}
 				else {	// close or error
 					selector.Remove(socket);

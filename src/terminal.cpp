@@ -1,23 +1,23 @@
 #include "terminal.hpp"
+#include "game.hpp"
 #include <sstream>
 
 namespace sum {
 	namespace {
-		std::string whitespace = " \t\n\r";	
+		std::string whitespace = " \t\n\r";
 	}
 
 
-	Terminal::Terminal() {		
+	Terminal::Terminal() {
 		// building fake filesystem:
 		using filesystem::Dir;
-		
+		using filesystem::File;
+
 		this->root = new Dir("");
 		Dir* dir;
 		dir = new Dir("bin");
 		root->subdirs.insert(dir);
-		dir = new Dir("stuff");
-		root->subdirs.insert(dir);
-		dir->subdirs.insert(new Dir("moar_stuff"));
+		dir->files.insert(new File("shout"));	// ezeket de jó lenne szebben, ilyen klassz funktorokként, de nincs rá nagyon idő
 
 		// set pwd to root
 		this->working_directory.push_back( root );
@@ -40,6 +40,7 @@ namespace sum {
 		if(std::string::npos != s) args.substr(s).swap(args);
 
 		using filesystem::Dir;
+		using filesystem::File;
 		using filesystem::Path;
 
 		if("pwd" == command) {
@@ -51,10 +52,15 @@ namespace sum {
 				path = string_to_path(args);
 				if(path.empty()) return args+": no such directory\n";
 			} else path = working_directory;
-			
+
 			std::string Result;
 			Dir* wd = path.back();
+
+			if(wd->subdirs.size() > 0) Result.append("Directories:\n");
 			for(std::set<Dir*>::const_iterator it=wd->subdirs.begin(); it!=wd->subdirs.end(); ++it) Result.append( (*it)->name + "\n" );
+
+			if(wd->files.size() > 0) Result.append("Files:\n");
+			for(std::set<File*>::const_iterator it=wd->files.begin(); it!=wd->files.end(); ++it) Result.append( (*it)->name + "\n" );
 			return Result;
 		}
 		else if("cd" == command) {
@@ -63,20 +69,28 @@ namespace sum {
 			working_directory = path;
 			return "";
 		}
+		else if("shout" == command) {
+			if(args.empty()) return "Usage: shout <message to shout>\n";
+
+			//sends the shout to the server:
+			Game::SendShout(args);
+
+			return "";
+		}
 
 		return command+": command not found\n";
-	}	
-	
+	}
+
 	std::string Terminal::get_working_directory() {
 		if(working_directory.size() < 2) return "/";
-		
+
 		std::string Result;
 		for(std::list<filesystem::Dir*>::const_iterator it = ++(working_directory.begin()); it!=working_directory.end(); ++it) {
 			Result.append("/").append( (*it)->name );
 		}
 		return Result;
 	}
-	
+
 	filesystem::Path Terminal::string_to_path(std::string str) {
 		using filesystem::Path;
 		using filesystem::Dir;
@@ -92,7 +106,7 @@ namespace sum {
 		std::string part;
 		while( getline(ss,part,'/') ) {
 			if(part.empty() || "." == part) continue;
-			if(".." == part) { 
+			if(".." == part) {
 				if(path.size() > 1) path.pop_back();
 				else continue;
 			}
@@ -108,7 +122,7 @@ namespace sum {
 				if(!found) return Path();
 			}
 		}
-		
+
 		return path;
 	}
 }

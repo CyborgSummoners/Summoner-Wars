@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <string>
 #include <sstream>
+#include <SFML/Network.hpp>
 
 namespace sum
 {
@@ -62,6 +63,14 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	delete infobar;
 	delete map;
 }
+
+void Game::SendShout(std::string msg) {
+	sf::Packet packet;
+	packet << 0;	//type, vagy valami. erősen fixme
+	packet << msg;
+	connection.send(packet);
+}
+
 
 bool Game::IsExiting()
 {

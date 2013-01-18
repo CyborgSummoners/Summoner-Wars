@@ -32,7 +32,7 @@ class Connection : private sf::SocketTCP {
 		bool is_connected() const;
 		std::string get_address() const;
 
-		//void send(sf::Packet& packet);
+		void send(sf::Packet& packet);
 };
 
 }

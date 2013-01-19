@@ -1,6 +1,7 @@
 #include "game.hpp"
 #include "bytecode.hpp"
 #include "util/debug.hpp"
+#include "parser.hpp"
 #include <cstdio>
 #include <string>
 #include <sstream>
@@ -8,9 +9,6 @@
 
 namespace sum
 {
-
-
-
 void Game::Start(std::string server_ip, unsigned short server_port)
 {
 	if(gameState != Uninitialized)
@@ -46,9 +44,10 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	bool success = false;
 	if( connection.connect(server_ip, server_port) ) {
 
-		//load scripts into a big bytearray.
+		//load scripts
+		sf::Packet scripts = Parser::packetize_scripts_from_file("script-samples/puppet_demo.summ");
 
-		if( connection.send_scripts() ) {
+		if( connection.send_scripts(scripts) ) {
 			connection.listen();
 			combat_log->add( "Connected to " + connection.get_address() );
 			success = true;

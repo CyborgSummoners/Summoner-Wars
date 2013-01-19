@@ -28,7 +28,7 @@ sum::Connection::Connection() : connected(false), ip("255.255.255.255"), port(0)
 	SetBlocking(true);
 }
 
-bool sum::Connection::connect(std::string address, unsigned short port) {
+bool sum::Connection::connect(const std::string& address, unsigned short port) {
 	disconnect();
 	debugf("Trying to connect to server at %s:%d\n", address.c_str(), port);
 	sf::Socket::Status status = Connect(port, sf::IPAddress(address), 4.0f); //timeout of whopping 4 seconds
@@ -43,13 +43,9 @@ bool sum::Connection::connect(std::string address, unsigned short port) {
 	return connected=true;
 }
 
-bool sum::Connection::send_scripts() {
-	//sending scripts
-	sf::Packet packet;
-	packet << 25;
+bool sum::Connection::send_scripts(sf::Packet& packet) {
 	Send(packet);
 
-	//getting reply.
 	Receive(packet);
 	std::string repl;
 	packet >> repl;

@@ -28,8 +28,8 @@ class Connection : private sf::SocketTCP {
 
 	public:
 		//call these in sequence.
-		bool connect(std::string address, unsigned short port);
-		bool send_scripts();
+		bool connect(const std::string& address, unsigned short port);
+		bool send_scripts(sf::Packet& packet);
 		void listen();
 
 		void disconnect();

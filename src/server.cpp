@@ -100,8 +100,13 @@ void sum::Server::Run() {
 						else {
 							// so, this must be the push, okay.
 							int len;
+							std::string msg;
 							packet >> len;	//this many subprograms, I guess
 							debugf("Got %d scripts from client @ %s.\n", len, client_descr.toString().c_str());
+							for(size_t i=0; i<len; ++i) {
+								packet >> msg;
+								debugf("%s\n",msg.c_str());
+							}
 
 							packet.Clear();
 							packet << "ack";

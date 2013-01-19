@@ -20,7 +20,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 		mainWindow->GetWidth()-(mainWindow->GetWidth()/3),
 		mainWindow->GetHeight()/3
 		);
-	combat_log = new TextBox(
+	combat_log = new CombatLog(
 		mainWindow,
 		terminal->getX() + terminal->getWidth() + 5,
 		terminal->getY(),

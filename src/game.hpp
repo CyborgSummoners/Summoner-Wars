@@ -5,6 +5,7 @@
 #include "guiterminal.hpp"
 #include "infobar.hpp"
 #include "map.hpp"
+#include "combatlog.hpp"
 
 namespace sum
 {

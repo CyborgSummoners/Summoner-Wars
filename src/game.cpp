@@ -1,4 +1,5 @@
 #include "game.hpp"
+#include "bytecode.hpp"
 #include "util/debug.hpp"
 #include <cstdio>
 #include <string>
@@ -7,6 +8,8 @@
 
 namespace sum
 {
+
+
 
 void Game::Start(std::string server_ip, unsigned short server_port)
 {
@@ -40,10 +43,19 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	gameState = Game::Playing;
 
 	// connecting:
+	bool success = false;
 	if( connection.connect(server_ip, server_port) ) {
-		combat_log->add( "Connected to " + connection.get_address() );
+
+		//load scripts into a big bytearray.
+
+		if( connection.send_scripts() ) {
+			connection.listen();
+			combat_log->add( "Connected to " + connection.get_address() );
+			success = true;
+		}
 	}
-	else {
+
+	if(!success) {
 		std::stringstream ss;
 		ss << "Could not connect to " << server_ip << ":" << server_port;
 		combat_log->add(ss.str());

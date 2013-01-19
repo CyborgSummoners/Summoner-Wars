@@ -43,7 +43,7 @@ namespace sum {
 			std::vector<bytecode::subprogram> programs;
 			std::map<std::string, size_t> program_map;
 
-			size_t get_program_id(const std::string& str) const;
+			size_t get_program_id(const std::string& str, const std::string& owner = "") const;
 
 		public:
 			Interpreter();

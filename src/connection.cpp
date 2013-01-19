@@ -40,6 +40,10 @@ bool sum::Connection::connect(std::string address, unsigned short port) {
 	this->ip = address;
 	this->port = port;
 
+	return connected=true;
+}
+
+bool sum::Connection::send_scripts() {
 	//sending scripts
 	sf::Packet packet;
 	packet << 25;
@@ -49,12 +53,20 @@ bool sum::Connection::connect(std::string address, unsigned short port) {
 	Receive(packet);
 	std::string repl;
 	packet >> repl;
-	debugf("Handshake finished: %s.\n", repl.c_str());
 
+	if("ack" == repl) {
+		debugf("Handshake finished: %s.\n", repl.c_str());
+		return true;
+	}
+
+	debugf("Handshake failed with reply: %s.\n", repl.c_str());
+	return false;
+}
+
+void sum::Connection::listen() {
+	debugf("Started listening to server\n");
 	listener = new Listener(this);
 	listener->Launch();
-
-	return connected=true;
 }
 
 void sum::Connection::disconnect() {

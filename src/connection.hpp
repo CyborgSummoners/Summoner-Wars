@@ -27,7 +27,11 @@ class Connection : private sf::SocketTCP {
 		Connection();
 
 	public:
+		//call these in sequence.
 		bool connect(std::string address, unsigned short port);
+		bool send_scripts();
+		void listen();
+
 		void disconnect();
 		bool is_connected() const;
 		std::string get_address() const;

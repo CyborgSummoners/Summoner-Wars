@@ -729,21 +729,24 @@ namespace sum {
 	}
 
 
-	size_t Interpreter::get_program_id(const std::string& str) const {
-		std::map<std::string, size_t>::const_iterator it = program_map.find(str);
+	size_t Interpreter::get_program_id(const std::string& str, const std::string& owner) const {
+		std::string nom = ("" == owner? str : owner+"'"+str);
+		std::map<std::string, size_t>::const_iterator it = program_map.find(owner + "'" + str);
 		if(it == program_map.end()) throw stack_machine::except::subprogram_does_not_exist();
 		return it->second;
 	}
 
 	bool Interpreter::register_subprogram(const bytecode::subprogram& prog) {
-		debugf("Registering subprogram %s...", prog.get_name().c_str());
+		std::string nom = ("" == prog.owner? prog.get_name() : prog.owner+"'"+prog.get_name());
+
+		debugf("Registering subprogram %s...", nom.c_str());
 
 		// do we already have a program with this name?
-		std::map<std::string, size_t>::iterator it = program_map.find(prog.get_name());
+		std::map<std::string, size_t>::iterator it = program_map.find(nom);
 		if(it != program_map.end()) return false;
 
 		// if not, let's register it.
-		program_map.insert( make_pair( prog.get_name(), programs.size() ) );
+		program_map.insert( make_pair( nom, programs.size() ) );
 		programs.push_back(prog);
 
 		debugf("done.\n");
@@ -873,7 +876,7 @@ namespace sum {
 				delete r1;
 				break;
 			case CALL:      //43
-				rs = get_program_id( programs[program_id].get_string(pc) );	// get callee's id.
+				rs = get_program_id( programs[program_id].get_string(pc), programs[program_id].owner );	// get callee's id.
 				// parameters are on the top of the stack. callee knows how many
 
 				// return to which program, at which point, and what was the base pointer?

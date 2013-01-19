@@ -88,6 +88,7 @@ namespace bytecode {
 		public:
 			byte const* code;
 			size_t len;
+			std::string owner; //namespace, if you really wish. kicsit hack, valójában külön deskriptor kéne a parsernek és a szervernek, de ez van.
 
 		void set_name(const std::string& str);
 

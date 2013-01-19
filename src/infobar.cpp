@@ -19,4 +19,17 @@ void InfoBar::draw()
 	window->Draw(text);
 }
 
+void InfoBar::update(ServerMessage &message)
+{
+	switch(message.type)
+	{
+		case ServerMessage::unknown:
+			std::cout<<message.msg;
+		break;
+		default:
+			std::cout<<"wtf";
+		break;
+	}
+}
+
 }

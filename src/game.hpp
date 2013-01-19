@@ -30,7 +30,7 @@ private:
 	static sf::RenderWindow *mainWindow;
 	static InfoBar *infobar;
 	static GuiTerminal *terminal;
-	static TextBox *combat_log;
+	static CombatLog *combat_log;
 	static Map *map;
 };
 

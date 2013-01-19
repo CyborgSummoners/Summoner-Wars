@@ -6,7 +6,7 @@
 namespace sum
 {
 	
-class CombatLog : public Textbox, public Observer<ServerMessage>
+class CombatLog : public TextBox, public Observer<ServerMessage>
 {
 
 public:

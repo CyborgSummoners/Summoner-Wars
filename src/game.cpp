@@ -113,7 +113,7 @@ void Game::GameLoop()
 Game::GameState Game::gameState = Uninitialized;
 sf::RenderWindow *Game::mainWindow = NULL;
 GuiTerminal *Game::terminal = NULL;
-TextBox *Game::combat_log = NULL;
+CombatLog *Game::combat_log = NULL;
 InfoBar *Game::infobar = NULL;
 Map *Game::map = NULL;
 Connection Game::connection;

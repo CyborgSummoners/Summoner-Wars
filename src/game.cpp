@@ -31,6 +31,15 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	infobar = new InfoBar(mainWindow, "testplaya            ------ INFOBAR -------");
 	map = new Map(mainWindow);
 
+	//CREATING CONNECTION WITH OBSERVERS
+
+	std::vector<Observer<ServerMessage>*> obss;
+	obss.push_back(combat_log);
+	obss.push_back(infobar);
+	obss.push_back(map);
+
+	connection = new Connection(obss);
+
 	//TESTLINES
 
 	for(int i=0; i<20 ;++i)
@@ -40,8 +49,8 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	gameState = Game::Playing;
 
 	// connecting:
-	if( connection.connect(server_ip, server_port) ) {
-		combat_log->add( "Connected to " + connection.get_address() );
+	if( connection->connect(server_ip, server_port) ) {
+		combat_log->add( "Connected to " + connection->get_address() );
 	}
 	else {
 		std::stringstream ss;
@@ -54,7 +63,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 		GameLoop();
 	}
 
-	connection.disconnect();
+	connection->disconnect();
 
 	mainWindow->Close();
 	delete mainWindow;
@@ -62,13 +71,14 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	delete combat_log;
 	delete infobar;
 	delete map;
+	delete connection;
 }
 
 void Game::SendShout(std::string msg) {
 	sf::Packet packet;
 	packet << 0;	//type, vagy valami. erősen fixme
 	packet << msg;
-	connection.send(packet);
+	connection->send(packet);
 }
 
 
@@ -116,6 +126,6 @@ GuiTerminal *Game::terminal = NULL;
 CombatLog *Game::combat_log = NULL;
 InfoBar *Game::infobar = NULL;
 Map *Game::map = NULL;
-Connection Game::connection;
+Connection *Game::connection = NULL;
 
 }

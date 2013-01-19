@@ -24,7 +24,12 @@ void sum::Connection::Listener::PleaseDoStop() {
 	this->running = false;
 }
 
-sum::Connection::Connection() : connected(false), ip("255.255.255.255"), port(0), listener(0)  {
+sum::Connection::Connection(std::vector<Observer<ServerMessage>*> &_observers) : 
+	connected(false), 
+	ip("255.255.255.255"), 
+	port(0), 
+	listener(0),
+	observers(_observers)  {
 	SetBlocking(true);
 }
 
@@ -52,6 +57,11 @@ bool sum::Connection::connect(std::string address, unsigned short port) {
 	debugf("Handshake finished: %s.\n", repl.c_str());
 
 	listener = new Listener(this);
+
+	//adding observers
+	for(int i=0 ; i<observers.size() ; ++i)
+		listener->addObs(observers[i]);
+
 	listener->Launch();
 
 	return connected=true;

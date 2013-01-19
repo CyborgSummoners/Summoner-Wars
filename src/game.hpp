@@ -12,8 +12,9 @@ namespace sum
 
 class Game
 {
+
 private:
-	static Connection connection; // connection to the server
+	static Connection *connection; // connection to the server
 
 public:
 	static void Start(std::string server_ip, unsigned short server_port);

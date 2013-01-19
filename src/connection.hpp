@@ -2,12 +2,14 @@
 #define CONNECTION_HPP 1
 
 #include <SFML/Network.hpp>
+#include "observable.hpp"
+#include "servermessage.hpp"
 #include <string>
 
 namespace sum {
 
 class Connection : private sf::SocketTCP {
-	class Listener : public sf::Thread {
+	class Listener : public sf::Thread, public Observable<ServerMessage> {
 		bool running;
 		Connection* socket;
 		public:
@@ -22,9 +24,10 @@ class Connection : private sf::SocketTCP {
 		sf::IPAddress ip;
 		unsigned short port;
 		Listener* listener;
+		std::vector<Observer<ServerMessage>*> observers;
 
 	public:
-		Connection();
+		Connection(std::vector<Observer<ServerMessage>*> &_observers);
 
 	public:
 		bool connect(std::string address, unsigned short port);

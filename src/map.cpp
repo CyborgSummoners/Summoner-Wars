@@ -29,6 +29,11 @@ void Map::draw()
 		draw_robots();
 }
 
+void Map::update(ServerMessage &message)
+{
+	
+}
+
 void Map::draw_robots()
 {
 	for(int i=0;i<robots.size();++i)

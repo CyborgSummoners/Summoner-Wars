@@ -81,7 +81,6 @@ void Game::GameLoop()
 	combat_log->draw();
 	infobar->draw();
 	map->draw();
-
 	mainWindow->Display();
 }
 

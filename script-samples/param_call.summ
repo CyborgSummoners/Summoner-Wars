@@ -1,0 +1,18 @@
+procedure main is
+	i:=10;
+	print_three_and_sum( 3, 5, i );
+	print(i);
+	print_three_and_sum( 3, 5, i*2 );
+end main;
+
+procedure print_three_and_sum(x, y, z) is
+	i := x+y+z;
+	if i > 20 then
+		return;
+	end if;
+	print(x);
+	print(y);
+	print(z);
+	print(i);
+	z := 100; -- observe the in mode
+end print_three_and_sum;

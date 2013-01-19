@@ -1,9 +1,14 @@
 #include "game.hpp"
+#include "util/debug.hpp"
+#include <cstdio>
+#include <string>
+#include <sstream>
+#include <SFML/Network.hpp>
 
 namespace sum
 {
 
-void Game::Start()
+void Game::Start(std::string server_ip, unsigned short server_port)
 {
 	if(gameState != Uninitialized)
 		return;
@@ -31,13 +36,25 @@ void Game::Start()
 	for(int i=0; i<20 ;++i)
 		combat_log->add("combat log line");
 
-	mainWindow->SetFramerateLimit(60);
+	mainWindow->SetFramerateLimit(10);
 	gameState = Game::Playing;
-  
+
+	// connecting:
+	if( connection.connect(server_ip, server_port) ) {
+		combat_log->add( "Connected to " + connection.get_address() );
+	}
+	else {
+		std::stringstream ss;
+		ss << "Could not connect to " << server_ip << ":" << server_port;
+		combat_log->add(ss.str());
+	}
+
 	while(!IsExiting())
 	{
 		GameLoop();
 	}
+
+	connection.disconnect();
 
 	mainWindow->Close();
 	delete mainWindow;
@@ -46,6 +63,14 @@ void Game::Start()
 	delete infobar;
 	delete map;
 }
+
+void Game::SendShout(std::string msg) {
+	sf::Packet packet;
+	packet << 0;	//type, vagy valami. erősen fixme
+	packet << msg;
+	connection.send(packet);
+}
+
 
 bool Game::IsExiting()
 {
@@ -91,5 +116,6 @@ GuiTerminal *Game::terminal = NULL;
 TextBox *Game::combat_log = NULL;
 InfoBar *Game::infobar = NULL;
 Map *Game::map = NULL;
+Connection Game::connection;
 
 }

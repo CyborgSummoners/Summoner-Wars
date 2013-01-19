@@ -1,0 +1,12 @@
+procedure demo is
+	i := 0;
+	while i < 8 loop
+		Self.turn_left;
+		Self.move;
+		i:=i+1;
+	end loop;
+end demo;
+
+procedure that is
+	print("It's doing THAT now. Returning to main.");
+end that;

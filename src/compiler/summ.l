@@ -1,26 +1,31 @@
-%option noyywrap c++ yylineno
+%option noyywrap yylineno c++ yyclass="Lexer"
 
 %{
 #include "summparse.h"
 %}
 
 
+%x STR
 %%
+
+		char str_buf[2048];
+		char* str_buf_ptr;
 
 
 --.*                    // comment
 procedure               return Parser::K_PROCEDURE;
+function                return Parser::K_FUNCTION;
 is                      return Parser::K_IS;
-begin                   return Parser::K_BEGIN;
 end                     return Parser::K_END;
+return                  return Parser::K_RETURN;
 null                    return Parser::K_NULL;
 
-integer                 return Parser::T_INTEGER;
-boolean                 return Parser::T_BOOLEAN;
+self                    return Parser::K_SELF;
 
 if                      return Parser::K_IF;
 then                    return Parser::K_THEN;
 else                    return Parser::K_ELSE;
+elsif                   return Parser::K_ELSIF;
 
 while                   return Parser::K_WHILE;
 loop                    return Parser::K_LOOP;
@@ -32,13 +37,16 @@ and                     return Parser::OP_AND;
 or                      return Parser::OP_OR;
 not                     return Parser::OP_NOT;
 
-do                      return Parser::K_DO;
+copy                    return Parser::OP_COPY;
 
+\.                      return Parser::OP_MEMBER;
 ;                       return Parser::SEMICOLON;
 :                       return Parser::COLON;
 ,                       return Parser::COMMA;
 \(                      return Parser::T_OPEN;
 \)                      return Parser::T_CLOSE;
+\[                      return Parser::T_BRACKET_OPEN;
+\]                      return Parser::T_BRACKET_CLOSE;
 :=                      return Parser::OP_ASSIGNMENT;
 =                       return Parser::OP_EQUALITY;
 \<                      return Parser::OP_LESS_THAN;
@@ -50,15 +58,44 @@ div                     return Parser::OP_DIV;
 mod                     return Parser::OP_MOD;
 &                       return Parser::OP_CONCAT;
 
-[a-zA-Z][a-zA-Z0-9_]*   return Parser::IDENTIFIER;
+\"                      {	// new string. pointer points at the start of the buffer.
+                            BEGIN(STR);
+                            str_buf_ptr = str_buf;
+                        }
+<STR>{
+    \"                  {	// end of string, go back to initial state
+                            BEGIN(INITIAL);
+                            *str_buf_ptr = 0;
+                            d_val->str = new std::string(str_buf);
+                            return Parser::L_STRING;
+                        }
+    \n                  {
+                            BEGIN(INITIAL);
+                            std::cerr << lineno() << "Unterminated string literal";
+                            return Parser::LEXICAL_ERROR;
+						}
+    "\\n"                   *str_buf_ptr++ = '\n';
+    [^\\\n\"]+          {
+                            char* yyptr = yytext;
+                            while(*yyptr) *str_buf_ptr++ = *yyptr++;
+                        }
+}
 
-[0-9]+                  return Parser::L_INTEGER;
+[a-zA-Z][a-zA-Z0-9_]*   {
+                        d_val->str = new std::string(YYText());
+                        return Parser::IDENTIFIER;
+                        }
+
+[0-9]+                  {
+                        d_val->str = new std::string(YYText());
+                        return Parser::L_INTEGER;
+                        }
 
 [ \n\t]
 
-.                       {
-	std::cerr << lineno()<<": lexical error: invalid character ('" << YYText() << "')." << std::endl;
-	exit(1);
-						}
+.                       {	//unknown character.
+                        std::cerr << lineno()<<": lexical error: invalid character ('" << YYText() << "')." << std::endl;
+                        return Parser::LEXICAL_ERROR;
+                        }
 
 %%

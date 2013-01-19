@@ -1,40 +1,60 @@
 CC = g++
-CFLAGS = -Wall -c
+CFLAGS = -Wall -c -DDEBUG_MACROS_ENABLED
 
 # - tobbi libraryt majd ide kell hozzaadni.
 # - fontos a sorrend: sfml-system kell az sfml-windownak, aki pedig kell
 # az sfml-graphicsnak
 # - sfml-graphics-nak kell freetype.
 # - sfml-audio-nak kell libsndfile es openal.
-LIBS = -lsfml-graphics -lsfml-window -lsfml-system
+LIBS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
 RM = /bin/rm -f
 
-SOURCES := $(wildcard src/*.cpp)
-HEADERS := $(wildcard src/*.hpp)
+SOURCES := $(wildcard src/*.cpp) $(wildcard src/compiler/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc
+SOURCES := $(filter-out src/konzoltest.cpp, $(SOURCES))
 OBJECTS := $(patsubst src/%.cpp,obj/%.o,$(SOURCES))
+OBJECTS := $(patsubst src/%.cc,obj/%.occ,$(OBJECTS))
+COMPILER_SOURCES := $(wildcard src/compiler/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc src/bytecode.cpp src/interpreter.cpp
+COMPILER_OBJECTS := $(patsubst src/%.cpp,obj/%.o,$(COMPILER_SOURCES))
+COMPILER_OBJECTS := $(patsubst src/%.cc,obj/%.occ,$(COMPILER_OBJECTS))
+COMPILER_OBJECTS := $(filter-out obj/main.o,$(COMPILER_OBJECTS)) obj/compiler/main-compiler.o
 
 PROG = sumwar
-
-COMPILER_DIR = src/compiler/
 
 $(PROG): $(OBJECTS)
 	$(CC) -o $(PROG) $(OBJECTS) $(LIBS)
 
-obj/%.o: src/%.cpp
-	$(CC) $(CFLAGS) -c -o $@ $< $(LIBS)
+obj/%.o: src/%.cpp | obj obj/compiler src/compiler/parse.cc
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
-compiler-demo: $(COMPILER_DIR)summ.yy.cc $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ_compiler.cpp
-	$(CC) -Wall $(COMPILER_DIR)summ_compiler.cpp $(COMPILER_DIR)bytecode.cpp $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ.yy.cc -o compiler-demo
+obj/%.occ: src/%.cc | obj obj/compiler
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
-$(COMPILER_DIR)summ.yy.cc: $(COMPILER_DIR)summ.l
-	flex -i -o $(COMPILER_DIR)summ.yy.cc $(COMPILER_DIR)summ.l
+obj/compiler/compiler.o: src/compiler/parse.cc
 
-$(COMPILER_DIR)parse.cc: src/compiler/summ.y
-	cd $(COMPILER_DIR) && bisonc++ --filenames=summparse summ.y
+obj/compiler/main-compiler.o: src/main.cpp
+	$(CC) $(CFLAGS) -o obj/compiler/main-compiler.o -DINTERPRETER_DEMO src/main.cpp
+
+obj:
+	mkdir -p obj
+
+obj/compiler:
+	mkdir -p obj/compiler
+
+compiler-demo: $(COMPILER_OBJECTS) src/compiler/parse.cc
+	$(CC) -Wall $(COMPILER_OBJECTS) -o compiler-demo
+
+konzoltest: src/konzoltest.cpp src/terminal.cpp src/terminal.hpp
+	$(CC) -Wall src/konzoltest.cpp src/terminal.cpp -o konzoltest
+
+src/compiler/summ.yy.cc: src/compiler/summ.l
+	flex -i -o src/compiler/summ.yy.cc src/compiler/summ.l
+
+src/compiler/parse.cc: src/compiler/summ.y src/compiler/summ.yy.cc
+	cd src/compiler && bisonc++ --filenames=summparse summ.y
 
 all:
 	$(PROG)
 
 clean:
-	$(RM) $(PROG) compiler-demo $(OBJECTS) $(COMPILER_DIR)*.o $(COMPILER_DIR)summparsebase.h $(COMPILER_DIR)summparse.ih $(COMPILER_DIR)parse.cc $(COMPILER_DIR)summ.yy.cc
+	$(RM) $(sort $(PROG) compiler-demo $(OBJECTS) $(COMPILER_OBJECTS) src/compiler/summparsebase.h src/compiler/parse.cc src/compiler/summ.yy.cc)

@@ -1,0 +1,11 @@
+procedure this is
+	i:= 3;
+	print( i );
+	that;
+	print( i );
+end this;
+
+procedure that is
+	i:=5;
+	print( i);
+end that;

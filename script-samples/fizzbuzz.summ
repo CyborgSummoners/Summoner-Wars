@@ -1,0 +1,15 @@
+procedure fizzbuzz is
+	i:=0;
+	while i<100 loop
+		if i mod 3 = 0 and i mod 5 = 0 then
+			print("fizzbuzz");
+		elsif i mod 3 = 0 then
+			print("fizz");
+		elsif i mod 5 = 0 then
+			print("buzz");
+		else
+			print(i);
+		end if;
+		i := i+1;
+	end loop;
+end fizzbuzz;

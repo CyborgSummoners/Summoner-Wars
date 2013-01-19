@@ -2,6 +2,7 @@
 *.slo
 *.lo
 *.o
+*.occ
 
 # contents of bin in general
 bin/*
@@ -17,11 +18,12 @@ bin/*
 # executables
 sumwar
 compiler-demo
+konzoltest
 
 # flex-generated lexer
 src/compiler/summ.yy.cc
 
 # bisonc++-generated parser
 parse.cc
-summparse.ih
+#summparse.ih
 summparsebase.h

@@ -29,9 +29,17 @@ void sum::Server::Start() {
 	Launch();
 }
 
+void sum::Server::Tick() {
+	bool result = interpreter.step(100);
+	sf::Packet packet;
+	packet << (result? "something happened!":"tick");
+	Broadcast(packet);
+}
+
 void sum::Server::Run() {
 	bool running = true;
 
+	size_t sockets;
 	sf::SocketTCP socket;
 	sf::IPAddress ip;
 	sf::SocketTCP client;
@@ -42,8 +50,24 @@ void sum::Server::Run() {
 	Client client_descr;
 
 	debugf("Server started listening on port %d\n", port);
+
+	float elapsed = 0.0f;
+	sf::Clock clock;
 	while(running) {
-		size_t sockets = selector.Wait();
+		elapsed = clock.GetElapsedTime();
+
+		if(elapsed >= tick) {
+			clock.Reset();
+			elapsed = 0.0f;
+
+			Tick();
+
+			elapsed = clock.GetElapsedTime();
+			clock.Reset();
+		}
+
+		sockets = selector.Wait(tick - elapsed);
+
 		for(size_t i=0; i<sockets; ++i) {
 			socket = selector.GetSocketReady(i);
 

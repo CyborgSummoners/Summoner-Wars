@@ -4,7 +4,7 @@
 #include <SFML/Network.hpp>
 #include <list>
 #include <string>
-
+#include "interpreter.hpp"
 
 namespace sum {
 
@@ -19,6 +19,8 @@ class Server : public sf::Thread {
 
 	static const Client nobody;
 
+	static const float tick = 1.0f;	// a tick is this many seconds.
+
 	private:
 		sf::SocketTCP listener;
 		sf::SelectorTCP selector;
@@ -27,11 +29,14 @@ class Server : public sf::Thread {
 		std::list<Client> waiting_list;
 		std::list<Client> clients;
 
+		Interpreter interpreter;
+
 	public:
 		Server(unsigned short port);
 		void Start();
 
 	private:
+		void Tick();
 		void Run();
 		void Broadcast(sf::Packet& packet, const Client& except = nobody);
 

@@ -19,7 +19,7 @@ void InfoBar::draw()
 	window->Draw(text);
 }
 
-void InfoBar::update(ServerMessage &message)
+void InfoBar::update(const ServerMessage &message)
 {
 	switch(message.type)
 	{

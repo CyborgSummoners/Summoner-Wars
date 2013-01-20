@@ -29,9 +29,9 @@ void Map::draw()
 		draw_robots();
 }
 
-void Map::update(ServerMessage &message)
+void Map::update(const ServerMessage &message)
 {
-	
+
 }
 
 void Map::draw_robots()

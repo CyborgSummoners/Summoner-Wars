@@ -16,7 +16,7 @@ public:
 	~Map();
 
 	void draw();
-	void update(ServerMessage &message);
+	void update(const ServerMessage &message);
 
 private:
 

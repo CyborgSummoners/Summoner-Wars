@@ -12,7 +12,7 @@ public:
 
 	InfoBar(sf::RenderWindow *_window, std::string _player_name);
 	void draw();
-	void update(ServerMessage &message);
+	void update(const ServerMessage &message);
 
 private:
 

@@ -5,7 +5,7 @@
 
 namespace sum
 {
-	
+
 class CombatLog : public TextBox, public Observer<ServerMessage>
 {
 
@@ -18,10 +18,10 @@ public:
 	int _width,
 	int _height,
 	int _size=200
-	) : 
+	) :
 	TextBox(_window,_x,_y,_width,_height){}
 
-	void update(ServerMessage &message);
+	void update(const ServerMessage &message);
 
 };
 

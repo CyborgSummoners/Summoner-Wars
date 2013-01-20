@@ -3,7 +3,7 @@
 namespace sum
 {
 
-void CombatLog::update(ServerMessage &message)
+void CombatLog::update(const ServerMessage &message)
 {
 
 }

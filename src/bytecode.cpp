@@ -126,6 +126,9 @@ namespace bytecode {
 	size_t subprogram::get_codelen() const {
 		return len;
 	}
+	const byte* subprogram::access_code() const {
+		return code;
+	}
 
 	int subprogram::get_int(size_t& program_counter) const {
 		int Result = ((code[program_counter] & 0xff) << 24) | ((code[program_counter+1] & 0xff) << 16) | ((code[program_counter+2] & 0xff) << 8) | (code[program_counter+3] & 0xff);
@@ -150,6 +153,32 @@ namespace bytecode {
 		++program_counter;
 		return Result;
 	}
+
+	void subprogram::get_bytecode(byte*& Result, size_t& length) {
+		length =   1                 // proc marker
+		         + get_name().size() // characters of the name
+		         + 1                 // null
+		         + 1                 // argc
+		         + 4                 // codelen
+		         + len;              // code
+		Result = new byte[length];
+
+		Result[0] = static_cast<byte>(bytecode::PROC);  // proc marker
+		size_t c = 1;
+		for(size_t i=0; i<get_name().size(); ++i, ++c) {     // name
+			Result[c] = get_name()[i];
+		}
+		Result[c++] = 0;
+		Result[c++] = static_cast<byte>(argc);
+		for(size_t i=0; i<4; ++i) {
+ 			Result[c+3-i] = (len >> (8*i));	// bigendian codelen
+		}
+		c+=4;
+		for(size_t i=0; i<len; ++i, ++c) {
+			Result[c] = code[i];
+		}
+	}
+
 
 	void subprogram::print_bytecode(std::ostream& out) {
 		// proc marker, followed by canonical name closed by a zero.

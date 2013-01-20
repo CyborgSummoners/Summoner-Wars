@@ -104,6 +104,7 @@ namespace bytecode {
 			const std::string& get_name() const;
 			byte get_argc() const;
 			size_t get_codelen() const;
+			const byte* access_code() const;
 
 			// fetches the byte at program_counter, and increments program_counter by one.
 			byte get_byte(size_t& program_counter) const;
@@ -115,6 +116,7 @@ namespace bytecode {
 			// this would be better given back as a proper cstring
 			std::string get_string(size_t& program_counter) const;
 
+			void get_bytecode(byte*& Result, size_t& length);
 
 			// prints as pure bytecode
 			void print_bytecode(std::ostream& out);

@@ -1,4 +1,5 @@
 #include "server.hpp"
+#include "parser.hpp"
 #include "util/debug.hpp"
 #include <stdexcept>
 #include <iostream>
@@ -31,9 +32,9 @@ void sum::Server::Start() {
 
 void sum::Server::Tick() {
 	bool result = interpreter.step(100);
-	sf::Packet packet;
-	packet << (result? "something happened!":"tick");
-	Broadcast(packet);
+	//sf::Packet packet;
+	//packet << (result? "something happened!":"tick");
+	//Broadcast(packet);
 }
 
 void sum::Server::Run() {
@@ -98,14 +99,17 @@ void sum::Server::Run() {
 							socket.Close();
 						}
 						else {
+							using namespace sum::Parser;	//vajon miért nem tudja kitalálni?
+
 							// so, this must be the push, okay.
-							int len;
+							sf::Uint32 len;
 							std::string msg;
-							packet >> len;	//this many subprograms, I guess
+							packet >> len;
 							debugf("Got %d scripts from client @ %s.\n", len, client_descr.toString().c_str());
+							bytecode::subprogram prog;
 							for(size_t i=0; i<len; ++i) {
-								packet >> msg;
-								debugf("%s\n",msg.c_str());
+								packet >> prog;
+								prog.print_assembly(std::cout);
 							}
 
 							packet.Clear();

@@ -67,7 +67,52 @@ namespace bytecode {
 		return str;
 	}
 
+	subprogram::subprogram() {
+		set_name("NOP");
+		argc = 0;
+		code = new byte[6];
+			code[0] = NOP;
+			code[1] = DELAY;
+			code[2] = code[3] = code[4] = 0;
+			code[5] = 100;	// default behaviour: delay 100;
+		len=6;
+		retval = false;
+	}
+
+	subprogram::subprogram(const subprogram& prog) {
+		set_name(prog.name);
+		argc = prog.argc;
+		len = prog.len;
+		retval = prog.retval;
+
+		code = new byte[len];
+		for(size_t i=0; i<len; ++i) {
+			code[i] = prog.code[i];
+		}
+	}
+
+	subprogram& subprogram::operator=(const subprogram& prog) {
+		set_name(prog.name);
+		argc = prog.argc;
+		len = prog.len;
+		retval = prog.retval;
+
+		if(this->code == prog.code) return *this; // selfassignment
+
+		delete[] code;
+		code = new byte[len];
+		for(size_t i=0; i<len; ++i) {
+			code[i] = prog.code[i];
+		}
+
+		return *this;
+	}
+
 	subprogram::subprogram(std::string name, byte argc, byte* code, size_t len, bool retval) : name(normalize_name(name)), argc(argc), retval(retval), code(code), len(len) {}
+
+	subprogram::~subprogram() {
+		delete[] code;
+	}
 
 	void subprogram::set_name(const std::string& str) {
 		name=normalize_name(str);
@@ -77,6 +122,9 @@ namespace bytecode {
 	}
 	byte subprogram::get_argc() const {
 		return argc;
+	}
+	size_t subprogram::get_codelen() const {
+		return len;
 	}
 
 	int subprogram::get_int(size_t& program_counter) const {

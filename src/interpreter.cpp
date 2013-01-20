@@ -767,7 +767,7 @@ namespace sum {
 			delay = 0;
 
 			while(delay == 0) {
-				if(puppet->program_counter >= programs[ puppet->program ].len) puppet->program_counter=0;
+				if(puppet->program_counter >= programs[ puppet->program ].get_codelen()) puppet->program_counter=0;
 				delay += execute_instruction(puppet->puppet, puppet->program, *(puppet->stack), puppet->program_counter, puppet->base_pointer);
 			}
 
@@ -797,7 +797,7 @@ namespace sum {
 		size_t pc=0;
 		size_t bp=0;
 
-		while(pc < programs[prog_id].len) {
+		while(pc < programs[prog_id].get_codelen()) {
 			execute_instruction(p, prog_id, stack, pc, bp);
 		}
 	}

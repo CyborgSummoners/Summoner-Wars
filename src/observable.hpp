@@ -23,7 +23,7 @@ public:
 		observers.clear();
 	}
 
-	void updateAll(T &message)
+	void updateAll(const T &message)
 	{
 		for(int i=0;i<observers.size();++i)
 		{

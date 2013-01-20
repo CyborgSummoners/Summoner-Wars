@@ -6,13 +6,13 @@
 namespace sum
 {
 
-class InfoBar : public Widget{
+class InfoBar : public Widget, public Observer<ServerMessage>{
 
 public:
 
 	InfoBar(sf::RenderWindow *_window, std::string _player_name);
 	void draw();
-	void update(){}
+	void update(const ServerMessage &message);
 
 private:
 

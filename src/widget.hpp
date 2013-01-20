@@ -2,6 +2,9 @@
 #define WIDGET_HPP
 
 #include "include.hpp"
+#include "servermessage.hpp"
+#include "observer.hpp"
+#include "observable.hpp"
 
 namespace sum
 {

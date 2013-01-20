@@ -21,7 +21,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 		mainWindow->GetWidth()-(mainWindow->GetWidth()/3),
 		mainWindow->GetHeight()/3
 		);
-	combat_log = new TextBox(
+	combat_log = new CombatLog(
 		mainWindow,
 		terminal->getX() + terminal->getWidth() + 5,
 		terminal->getY(),
@@ -31,6 +31,15 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 
 	infobar = new InfoBar(mainWindow, "testplaya            ------ INFOBAR -------");
 	map = new Map(mainWindow);
+
+	//CREATING CONNECTION WITH OBSERVERS
+
+	std::vector<Observer<ServerMessage>*> obss;
+	obss.push_back(combat_log);
+	obss.push_back(infobar);
+	obss.push_back(map);
+
+	connection = new Connection(obss);
 
 	//TESTLINES
 
@@ -42,14 +51,14 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 
 	// connecting:
 	bool success = false;
-	if( connection.connect(server_ip, server_port) ) {
+	if( connection->connect(server_ip, server_port) ) {
 
 		//load scripts
 		sf::Packet scripts = Parser::packetize_scripts_from_file("script-samples/functions.summ");
 
-		if( connection.send_scripts(scripts) ) {
-			connection.listen();
-			combat_log->add( "Connected to " + connection.get_address() );
+		if( connection->send_scripts(scripts) ) {
+			connection->listen();
+			combat_log->add( "Connected to " + connection->get_address() );
 			success = true;
 		}
 	}
@@ -65,7 +74,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 		GameLoop();
 	}
 
-	connection.disconnect();
+	connection->disconnect();
 
 	mainWindow->Close();
 	delete mainWindow;
@@ -73,13 +82,14 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	delete combat_log;
 	delete infobar;
 	delete map;
+	delete connection;
 }
 
 void Game::SendShout(std::string msg) {
 	sf::Packet packet;
 	packet << 0;	//type, vagy valami. erősen fixme
 	packet << msg;
-	connection.send(packet);
+	connection->send(packet);
 }
 
 
@@ -117,7 +127,6 @@ void Game::GameLoop()
 	combat_log->draw();
 	infobar->draw();
 	map->draw();
-
 	mainWindow->Display();
 }
 
@@ -125,9 +134,9 @@ void Game::GameLoop()
 Game::GameState Game::gameState = Uninitialized;
 sf::RenderWindow *Game::mainWindow = NULL;
 GuiTerminal *Game::terminal = NULL;
-TextBox *Game::combat_log = NULL;
+CombatLog *Game::combat_log = NULL;
 InfoBar *Game::infobar = NULL;
 Map *Game::map = NULL;
-Connection Game::connection;
+Connection *Game::connection = NULL;
 
 }

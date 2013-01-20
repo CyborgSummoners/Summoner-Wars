@@ -7,7 +7,7 @@
 namespace sum
 {
 
-class Map : public Widget
+class Map : public Widget, public Observer<ServerMessage>
 {
 
 public:
@@ -16,6 +16,7 @@ public:
 	~Map();
 
 	void draw();
+	void update(const ServerMessage &message);
 
 private:
 

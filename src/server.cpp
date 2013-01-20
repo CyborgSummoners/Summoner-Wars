@@ -114,7 +114,8 @@ void sum::Server::Run() {
 							bytecode::subprogram prog;
 							for(size_t i=0; i<len; ++i) {
 								packet >> prog;
-								prog.print_assembly(std::cout);
+								prog.owner = client_descr.client_id;
+								interpreter.register_subprogram(prog);
 							}
 
 							waiting_list.remove(client_descr);

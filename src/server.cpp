@@ -109,27 +109,35 @@ void sum::Server::Run() {
 							// ellenőrizni kéne...
 							sf::Uint32 len;
 							std::string msg;
-							packet >> len;
-							debugf("Got %d scripts from client #%s.\n", len, client_descr.toString().c_str());
-							bytecode::subprogram prog;
-							for(size_t i=0; i<len; ++i) {
-								packet >> prog;
-								prog.owner = client_descr.client_id;
-								interpreter.register_subprogram(prog);
+							try {
+								packet >> len;
+								bytecode::subprogram prog;
+								for(size_t i=0; i<len; ++i) {
+									packet >> prog;
+									prog.owner = client_descr.client_id;
+									interpreter.register_subprogram(prog);
+								}
+								debugf("Got %d scripts from client #%s.\n", len, client_descr.toString().c_str());
+
+								waiting_list.remove(client_descr);
+								clients.push_back(client_descr);
+
+								packet.Clear();
+								packet << "ack";
+								socket.Send(packet);
+
+								packet.Clear();
+								ss.str("");
+								ss << "New player connected from " << ip.ToString() << ".";
+								packet << ss.str();
+								Broadcast(packet, client_descr);
+							} catch(std::exception& e) {
+								debugf("Got malformed packet instead of scripts from client @%s, closing connection.\n", client_descr.ip.ToString().c_str());
+								packet.Clear();
+								packet << "nack";
+								socket.Send(packet);
+								socket.Close();
 							}
-
-							waiting_list.remove(client_descr);
-							clients.push_back(client_descr);
-
-							packet.Clear();
-							packet << "ack";
-							socket.Send(packet);
-
-							packet.Clear();
-							ss.str("");
-							ss << "New player connected from " << ip.ToString() << ".";
-							packet << ss.str();
-							Broadcast(packet, client_descr);
 						}
 					}
 					else {

@@ -10,18 +10,27 @@ struct ServerMessage
 {
 
 	enum Type{
-		unknown=0,
-		move,
+		// meta:
+		unknown    = 0,
+		connections,
+		disconnect,
+
+		// map related:
+		move       = 10,
 		attack,
 		spell,
 		death,
 		summon,
-		shout,
+
+		// chatting
+		shout      = 50,
 		chat,
-		win
+
+		// global
+		win        = 100,
 	};
 
-	ServerMessage(Type _type=unknown,std::string _msg="fakkyeah") :
+	ServerMessage(Type _type=unknown,std::string _msg="") :
 		type(_type), msg(_msg){}
 
 	Type type;

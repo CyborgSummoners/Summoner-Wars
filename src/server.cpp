@@ -12,7 +12,7 @@ bool sum::Server::Client::operator==(const Client& rhs) const {
 }
 
 std::string sum::Server::Client::toString() const {
-	return this->ip.ToString();
+	return client_id.empty()? this->ip.ToString() : client_id;
 }
 
 
@@ -101,23 +101,28 @@ void sum::Server::Run() {
 						else {
 							using namespace sum::Parser;	//vajon miért nem tudja kitalálni?
 
+							std::stringstream ss;
+							ss << ++Client::maxid;
+							client_descr.client_id = ss.str();
+
 							// so, this must be the push, okay.
+							// ellenőrizni kéne...
 							sf::Uint32 len;
 							std::string msg;
 							packet >> len;
-							debugf("Got %d scripts from client @ %s.\n", len, client_descr.toString().c_str());
+							debugf("Got %d scripts from client #%s.\n", len, client_descr.toString().c_str());
 							bytecode::subprogram prog;
 							for(size_t i=0; i<len; ++i) {
 								packet >> prog;
 								prog.print_assembly(std::cout);
 							}
 
+							waiting_list.remove(client_descr);
+							clients.push_back(client_descr);
+
 							packet.Clear();
 							packet << "ack";
 							socket.Send(packet);
-
-							waiting_list.remove(client_descr);
-							clients.push_back(client_descr);
 
 							packet.Clear();
 							ss.str("");
@@ -190,3 +195,4 @@ sum::Server::Client sum::Server::find_client(sf::SocketTCP socket) {
 }
 
 const sum::Server::Client sum::Server::nobody;
+int sum::Server::Client::maxid = 0;

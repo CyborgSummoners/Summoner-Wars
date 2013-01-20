@@ -10,6 +10,9 @@ namespace sum {
 
 class Server : public sf::Thread {
 	struct Client {
+		static int maxid;
+
+		std::string client_id;
 		sf::SocketTCP socket;
 		sf::IPAddress ip;
 

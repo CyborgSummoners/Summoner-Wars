@@ -62,7 +62,7 @@ void GuiTerminal::handleEvent(sf::Event &event)
 		buffer.enter(inputfield->val());
 		std::string term_user=player_name + term->get_working_directory() + "$";
 		textbox->add(term_user+inputfield->val());
-		std::vector<std::string> ret = explode(term->command(inputfield->val()), '\n');
+		std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
 		term_user=player_name + term->get_working_directory() + "$";
 		name_pwd.SetText(term_user);
 		inputfield->setX(x + name_pwd.GetRect().GetWidth());
@@ -116,25 +116,6 @@ void GuiTerminal::Buffer::enter(std::string _val)
 		buff.erase(buff.begin(), buff.begin() + (size/2));
 	buff.push_back(_val);
 	act=buff.end();
-}
-
-
-std::vector<std::string> GuiTerminal::explode(const std::string& str, const char& ch) {
-    std::string next = "";
-    std::vector<std::string> result;
-
-    for (std::string::const_iterator it = str.begin(); it != str.end(); it++) {
-    	if (*it == ch) {
-    		if (next.length() > 0) {
-    			result.push_back(next);
-    			next = "";
-    		}
-    	} else {
-    		next += *it;
-    	}
-    }
-
-    return result;
 }
 
 

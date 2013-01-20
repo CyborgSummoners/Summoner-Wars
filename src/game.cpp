@@ -58,6 +58,8 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 		combat_log->add(ss.str());
 	}
 
+	sfclock = new sf::Clock();
+
 	while(!IsExiting())
 	{
 		GameLoop();
@@ -72,6 +74,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	delete infobar;
 	delete map;
 	delete connection;
+	delete sfclock;
 }
 
 void Game::SendShout(std::string msg) {
@@ -111,6 +114,11 @@ void Game::GameLoop()
 			break;
 		}
 	}
+
+	float tick = sfclock->GetElapsedTime();
+	map->update(tick);
+	sfclock->Reset();
+
 	mainWindow->Clear();
 	terminal->draw();
 	combat_log->draw();
@@ -127,5 +135,6 @@ CombatLog *Game::combat_log = NULL;
 InfoBar *Game::infobar = NULL;
 Map *Game::map = NULL;
 Connection *Game::connection = NULL;
+sf::Clock *Game::sfclock = NULL;
 
 }

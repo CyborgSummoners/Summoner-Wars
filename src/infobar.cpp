@@ -24,7 +24,7 @@ void InfoBar::update(const ServerMessage &message)
 	switch(message.type)
 	{
 		case ServerMessage::unknown:
-			std::cout<<message.msg;
+			std::cout<<"infobar received unknown message: "<< message.msg;
 		break;
 		default:
 			std::cout<<"wtf";

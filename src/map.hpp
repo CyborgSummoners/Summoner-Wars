@@ -13,10 +13,10 @@ class Map : public Widget, public Observer<ServerMessage>
 public:
 
 	Map(sf::RenderWindow *_window);
-	~Map();
 
 	void draw();
 	void update(const ServerMessage &message);
+	void update(float tick);
 
 private:
 

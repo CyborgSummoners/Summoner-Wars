@@ -7,13 +7,20 @@ sum::Connection::Listener::Listener(Connection* socket) : running(true), socket(
 
 void sum::Connection::Listener::Run() {
 	sf::Packet packet;
+	sf::Socket::Status status;
 	std::string msg;
 	sf::SelectorTCP selector;
 	selector.Add(*socket);
 
 	while(running) {
 		if(selector.Wait(0.05f) > 0) {
-			socket->Receive(packet);
+			status = socket->Receive(packet);
+			if(status == sf::Socket::Disconnected) {
+				running = false;
+				debugf("Disconnected from server!\n");
+				updateAll( ServerMessage(ServerMessage::disconnect, "Lost connection to server!") );
+				break;
+			}
 			packet >> msg;
 			debugf("Message from server: %s\n",msg.c_str());
 		}
@@ -24,10 +31,10 @@ void sum::Connection::Listener::PleaseDoStop() {
 	this->running = false;
 }
 
-sum::Connection::Connection(std::vector<Observer<ServerMessage>*> &_observers) : 
-	connected(false), 
-	ip("255.255.255.255"), 
-	port(0), 
+sum::Connection::Connection(std::vector<Observer<ServerMessage>*> &_observers) :
+	connected(false),
+	ip("255.255.255.255"),
+	port(0),
 	listener(0),
 	observers(_observers)  {
 	SetBlocking(true);

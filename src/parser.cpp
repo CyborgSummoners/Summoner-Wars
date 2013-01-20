@@ -33,9 +33,13 @@ sf::Packet& sum::Parser::operator>>(sf::Packet& packet, bytecode::subprogram& pr
 	bytecode::byte* code = 0;
 
 	packet >> name;
-	packet >> argc;
-	packet >> codelen;
-	code = get_bytes_from_packet(packet, codelen);
+	if(packet) packet >> argc;
+	if(packet) packet >> codelen;
+	if(packet) code = get_bytes_from_packet(packet, codelen);
+
+	if(!packet) {
+		throw std::underflow_error("Packet underflow");
+	}
 
 	program = subprogram(name, argc, code, codelen);
 

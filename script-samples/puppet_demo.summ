@@ -5,6 +5,8 @@ procedure demo is
 		Self.move;
 		i:=i+1;
 	end loop;
+
+	that;
 end demo;
 
 procedure that is

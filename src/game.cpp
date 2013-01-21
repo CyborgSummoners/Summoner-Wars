@@ -54,7 +54,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	if( connection->connect(server_ip, server_port) ) {
 
 		//load scripts
-		sf::Packet scripts = Parser::packetize_scripts_from_file("script-samples/functions.summ");
+		sf::Packet scripts = Parser::packetize_scripts_from_file("script-samples/puppet_demo.summ");
 
 		if( connection->send_scripts(scripts) ) {
 			connection->listen();

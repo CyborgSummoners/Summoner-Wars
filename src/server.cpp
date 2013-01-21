@@ -7,6 +7,7 @@
 #include <sstream>
 #include <cstdio>
 
+#include "puppet.hpp"
 
 bool sum::Server::Client::operator==(const Client& rhs) const {
 	return this->socket == rhs.socket;
@@ -34,7 +35,7 @@ void sum::Server::Start() {
 
 bool sum::Server::Newgame(unsigned char num_of_players) {
 	if(state != Setup) return false;
-	this->num_of_players = num_of_players;
+	this->num_of_players = 1;
 	state = Joining;
 	return true;
 }
@@ -48,6 +49,8 @@ void sum::Server::Tick() {
 
 void sum::Server::Run() {
 	bool running = true;
+
+	std::vector<Puppet*> puppets;
 
 	size_t sockets;
 	sf::SocketTCP socket;
@@ -150,6 +153,10 @@ void sum::Server::Run() {
 								packet << "ack";
 								socket.Send(packet);
 
+								puppets.push_back(new Puppet("Puppet of "+client_descr.client_id));
+								interpreter.register_puppet(*(puppets.back()));
+								interpreter.set_behaviour(*puppets.back(), "DEMO", client_descr.client_id);
+
 								packet.Clear();
 								packet << ServerMessage(ServerMessage::connections, "join "+ip.ToString()+" "+client_descr.client_id);
 								Broadcast(packet, client_descr);
@@ -210,6 +217,10 @@ void sum::Server::Run() {
 				}
 			}
 		}
+	}
+
+	for(size_t i=0; i<puppets.size(); ++i) {
+		delete(puppets[i]);
 	}
 }
 

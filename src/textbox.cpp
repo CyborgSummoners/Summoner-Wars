@@ -11,10 +11,10 @@ TextBox::TextBox(
 	int _height,
 	int _size) :
 Widget(_window, _x, _y,_width,_height),
+size(_size),
 linesize(13),
 chopping(false),
-chopping_size(0),
-size(_size)
+chopping_size(0)
 {
 	text.SetX(x);
 	text.SetY(y);
@@ -25,7 +25,7 @@ size(_size)
 void TextBox::draw()
 {
 	text.SetColor(textColor);
-	int i(0),j(0);
+	size_t i(0),j(0);
 	int chopped(0);
 	for(
 		chopping == true ? chopped=i=lines.size()-chopping_size : i=0;
@@ -47,7 +47,7 @@ void TextBox::add(std::string _text)
 	{
 		std::string buff="";
 		int breaks(0);
-		for(int k=0; k<_text.size() ; ++k)
+		for(size_t k=0; k<_text.size() ; ++k)
 		{
 			buff+=_text[k];
 			tmp.SetText(buff);
@@ -57,7 +57,7 @@ void TextBox::add(std::string _text)
 				buff="";
 				++breaks;
 			}
-			
+
 		}
 		if(!buff.empty())
 		{
@@ -68,7 +68,7 @@ void TextBox::add(std::string _text)
 	{
 		lines.push_back(_text);
 	}
-	if(chopping ==false && lines.size()*linesize > height)
+	if(chopping ==false && lines.size()*linesize > static_cast<size_t>(height))
 	{
 		chopping=true;
 		chopping_size=lines.size();

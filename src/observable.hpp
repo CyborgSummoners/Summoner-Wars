@@ -25,7 +25,7 @@ public:
 
 	void updateAll(const T &message)
 	{
-		for(int i=0;i<observers.size();++i)
+		for(size_t i=0;i<observers.size();++i)
 		{
 			observers[i]->update(message);
 		}

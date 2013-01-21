@@ -52,7 +52,7 @@ void Map::update(const ServerMessage &message)
 
 void Map::draw_robots()
 {
-	for(int i=0;i<robots.size();++i)
+	for(size_t i=0;i<robots.size();++i)
 	{
 		robot_sprite.SetX(x+robots[i].x*SPRITE_SIZE);
 		robot_sprite.SetY(y+robots[i].y*SPRITE_SIZE);

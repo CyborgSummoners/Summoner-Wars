@@ -78,7 +78,7 @@ void sum::Connection::listen() {
 	listener = new Listener(this);
 
 	//adding observers
-	for(int i=0 ; i<observers.size() ; ++i)
+	for(size_t i=0 ; i<observers.size() ; ++i)
 		listener->addObs(observers[i]);
 
 	listener->Launch();

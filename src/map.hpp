@@ -30,9 +30,9 @@ private:
 	{
 		Robot(int _ID,int _team, int _x, int _y):
 			ID(_ID),
-			team(_team),
 			x(_x),
 			y(_y),
+			team(_team),
 			facing(down){}
 
 		int ID;

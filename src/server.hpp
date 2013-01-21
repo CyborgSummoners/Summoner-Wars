@@ -9,6 +9,8 @@
 namespace sum {
 
 class Server : public sf::Thread {
+	enum GameState { Starting, Setup, Joining, Playing, Done };
+
 	struct Client {
 		static int maxid;
 
@@ -27,6 +29,8 @@ class Server : public sf::Thread {
 	private:
 		sf::SocketTCP listener;
 		sf::SelectorTCP selector;
+		GameState state;
+		unsigned char num_of_players;
 		unsigned short port;
 
 		std::list<Client> waiting_list;
@@ -37,6 +41,8 @@ class Server : public sf::Thread {
 	public:
 		Server(unsigned short port);
 		void Start();
+
+		bool Newgame(unsigned char num_of_players);
 
 	private:
 		void Tick();

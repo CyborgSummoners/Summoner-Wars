@@ -1,4 +1,5 @@
 #include "server.hpp"
+#include "servermessage.hpp"
 #include "parser.hpp"
 #include "util/debug.hpp"
 #include <stdexcept>
@@ -16,7 +17,7 @@ std::string sum::Server::Client::toString() const {
 }
 
 
-sum::Server::Server(unsigned short port) : port(port) {
+sum::Server::Server(unsigned short port) : state(Starting), port(port) {
 	if(!listener.Listen(port)) {
 		std::stringstream s;
 		s << "Server could not listen on port " << port << std::endl;
@@ -24,17 +25,24 @@ sum::Server::Server(unsigned short port) : port(port) {
 	}
 
 	selector.Add(listener);
+	state = Setup;
 }
 
 void sum::Server::Start() {
 	Launch();
 }
 
+bool sum::Server::Newgame(unsigned char num_of_players) {
+	if(state != Setup) return false;
+	this->num_of_players = num_of_players;
+	state = Joining;
+}
+
 void sum::Server::Tick() {
 	bool result = interpreter.step(100);
-	//sf::Packet packet;
-	//packet << (result? "something happened!":"tick");
-	//Broadcast(packet);
+	sf::Packet packet;
+	packet << ServerMessage(ServerMessage::unknown,(result? "something happened!":"tick"));
+	Broadcast(packet);
 }
 
 void sum::Server::Run() {
@@ -55,17 +63,20 @@ void sum::Server::Run() {
 	float elapsed = 0.0f;
 	sf::Clock clock;
 	while(running) {
-		elapsed = clock.GetElapsedTime();
 
-		if(elapsed >= tick) {
-			clock.Reset();
-			elapsed = 0.0f;
-
-			Tick();
-
+		if(state == Playing) {
 			elapsed = clock.GetElapsedTime();
-			clock.Reset();
-		}
+
+			if(elapsed >= tick) {
+				clock.Reset();
+				elapsed = 0.0f;
+
+				Tick();
+
+				elapsed = clock.GetElapsedTime();
+				clock.Reset();
+			}
+		} else elapsed = 0.0f;
 
 		sockets = selector.Wait(tick - elapsed);
 
@@ -73,19 +84,31 @@ void sum::Server::Run() {
 			socket = selector.GetSocketReady(i);
 
 			if(socket == listener) { // new connection
-				listener.Accept(client, &ip);
-				debugf("Got connection from %s, awaiting scripts\n", ip.ToString().c_str());
+				if(state == Joining) {	// only if we're in the joining phase (no reconnects yet).
+					listener.Accept(client, &ip);
+					debugf("Got connection from %s, awaiting scripts\n", ip.ToString().c_str());
 
-				client_descr.socket = client;
-				client_descr.ip = ip;
-				waiting_list.push_back(client_descr);
-				selector.Add(client);
+					client_descr.socket = client;
+					client_descr.ip = ip;
+					waiting_list.push_back(client_descr);
+					selector.Add(client);
+				}
+				else {
+					listener.Accept(client, &ip);
+					debugf("Got connection from %s, but we're not in the joining phase\n", ip.ToString().c_str());
+					client.Close();
+				}
 			}
 			else {
 				if(socket.Receive(packet) == sf::Socket::Done) { // transmission ok
 					client_descr = find_client(socket);
 
-					if(client_descr == nobody) { // connected, but no scripts yet, so this should be the push.
+					if(state != Joining && client_descr == nobody) {
+						fprintf(stderr, "Unknown client tried to send something but we're already playing. This is likely an error. I wish we used proper logging.\n");
+						selector.Remove(socket);
+						socket.Close();
+					}
+					else if(client_descr == nobody) { // connected, but no scripts yet, so this should be the push.
 						// is she really on the waiting list?
 						for(std::list<Client>::iterator lit = waiting_list.begin(); lit != waiting_list.end(); ++lit) {
 							if(lit->socket == socket) {
@@ -127,10 +150,16 @@ void sum::Server::Run() {
 								socket.Send(packet);
 
 								packet.Clear();
-								ss.str("");
-								ss << "New player connected from " << ip.ToString() << ".";
-								packet << ss.str();
+								packet << ServerMessage(ServerMessage::connections, "join "+ip.ToString()+" "+client_descr.client_id);
 								Broadcast(packet, client_descr);
+
+								if(clients.size() >= num_of_players) {
+									debugf("%d players have gathered, we can now start playing.\n", clients.size());
+									state = Playing;
+									packet.Clear();
+									packet << ServerMessage(ServerMessage::start, "Game starts");
+									Broadcast(packet);
+								}
 							} catch(std::exception& e) {
 								debugf("Got malformed packet instead of scripts from client @%s, closing connection.\n", client_descr.ip.ToString().c_str());
 								packet.Clear();
@@ -147,9 +176,7 @@ void sum::Server::Run() {
 
 						if(msg_type == 0) {	//akkor ez egy shout. hát, izé.
 							packet.Clear();
-							ss.str("");
-							ss << client_descr.toString() << " shouts: \"" << msg << "\"";
-							packet << ss.str();
+							packet << ServerMessage(ServerMessage::shout, msg); //Todo: who shouts, where, etc
 							Broadcast(packet);
 						}
 					}

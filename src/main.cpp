@@ -89,6 +89,7 @@ int main(int argc, char** argv)
 	if(argc > 1) {
 		if(strcmp(argv[1],"serveronly") == 0) {
 			sum::Server server(1337);
+			server.Newgame(2);
 			server.Start();
 			server.Wait();
 		}
@@ -98,6 +99,7 @@ int main(int argc, char** argv)
 	}
 	else {
 		sum::Server server(1337);
+		server.Newgame(2);
 		server.Start();
 		sf::Sleep(0.1f);
 		sum::Game::Start("127.0.0.1", 1337);

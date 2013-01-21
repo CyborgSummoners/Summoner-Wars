@@ -8,7 +8,7 @@ sum::Connection::Listener::Listener(Connection* socket) : running(true), socket(
 void sum::Connection::Listener::Run() {
 	sf::Packet packet;
 	sf::Socket::Status status;
-	std::string msg;
+	ServerMessage msg;
 	sf::SelectorTCP selector;
 	selector.Add(*socket);
 
@@ -22,7 +22,9 @@ void sum::Connection::Listener::Run() {
 				break;
 			}
 			packet >> msg;
-			debugf("Message from server: %s\n",msg.c_str());
+			//printf("%s\n", msg.msg); //compiles, but generates an illegal instruction! Implicit is bad.
+			//printf("%s\n", msg.msg.c_str());
+			updateAll( msg );
 		}
 	}
 }

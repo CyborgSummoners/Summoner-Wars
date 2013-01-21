@@ -2,6 +2,7 @@
 #define SERVERMESSAGE_HPP
 
 #include "include.hpp"
+#include <SFML/Network.hpp>
 
 namespace sum
 {
@@ -26,8 +27,9 @@ struct ServerMessage
 		shout      = 50,
 		chat,
 
-		// global
+		// global state change
 		win        = 100,
+		start
 	};
 
 	ServerMessage(Type _type=unknown,std::string _msg="") :
@@ -37,6 +39,9 @@ struct ServerMessage
 	std::string msg;
 
 };
+
+sf::Packet& operator<<(sf::Packet& packet, const ServerMessage& message);
+sf::Packet& operator>>(sf::Packet& packet, ServerMessage& message);
 
 }
 

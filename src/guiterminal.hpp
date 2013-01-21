@@ -48,8 +48,6 @@ class GuiTerminal : public Widget
 		Buffer buffer;
 		const int inputfield_size;
 		
-		static std::vector<std::string> explode(const std::string& str, const char& ch);
-		
 };
 
 

@@ -79,16 +79,32 @@ int main(int argc, char** argv) {
 
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
+#include <SFML/Network.hpp>
 #include "game.hpp"
-#include "interpreter.hpp"
-#include "puppet.hpp"
-#include "compiler/summparse.h"
-#include <fstream>
-#include <iostream>
+#include "server.hpp"
+#include <cstring>
 
-int main()
+int main(int argc, char** argv)
 {
-    sum::Game::Start();
+	if(argc > 1) {
+		if(strcmp(argv[1],"serveronly") == 0) {
+			sum::Server server(1337);
+			server.Newgame(2);
+			server.Start();
+			server.Wait();
+		}
+		else {
+			sum::Game::Start(argv[1], 1337);
+		}
+	}
+	else {
+		sum::Server server(1337);
+		server.Newgame(2);
+		server.Start();
+		sf::Sleep(0.1f);
+		sum::Game::Start("127.0.0.1", 1337);
+		server.Wait();
+	}
     return EXIT_SUCCESS;
 }
 

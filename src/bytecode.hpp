@@ -85,17 +85,26 @@ namespace bytecode {
 			byte argc;
 			bool retval;
 
-		public:
-			byte const* code;
+			byte* code;
 			size_t len;
 
-		void set_name(const std::string& str);
+			void set_name(const std::string& str);
 
 		public:
+			std::string owner; //namespace, if you really wish. kicsit hack, valójában külön deskriptor kéne a parsernek és a szervernek, de ez van.
+
+		public:
+			// konstruktorok
+			subprogram();
 			subprogram(std::string name, byte argc, byte* code, size_t len, bool retval = false);
+			subprogram(const subprogram& prog);
+			subprogram& operator=(const subprogram& prog);
+			virtual ~subprogram();
 
 			const std::string& get_name() const;
 			byte get_argc() const;
+			size_t get_codelen() const;
+			const byte* access_code() const;
 
 			// fetches the byte at program_counter, and increments program_counter by one.
 			byte get_byte(size_t& program_counter) const;
@@ -107,6 +116,7 @@ namespace bytecode {
 			// this would be better given back as a proper cstring
 			std::string get_string(size_t& program_counter) const;
 
+			void get_bytecode(byte*& Result, size_t& length);
 
 			// prints as pure bytecode
 			void print_bytecode(std::ostream& out);
@@ -114,6 +124,7 @@ namespace bytecode {
 			// prints 'assembly'
 			void print_assembly(std::ostream& out);
 
+		friend class Parser;
 	};
 }
 

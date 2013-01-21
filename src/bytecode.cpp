@@ -67,7 +67,54 @@ namespace bytecode {
 		return str;
 	}
 
+	subprogram::subprogram() {
+		set_name("NOP");
+		argc = 0;
+		code = new byte[6];
+			code[0] = NOP;
+			code[1] = DELAY;
+			code[2] = code[3] = code[4] = 0;
+			code[5] = 100;	// default behaviour: delay 100;
+		len=6;
+		retval = false;
+	}
+
+	subprogram::subprogram(const subprogram& prog) {
+		set_name(prog.name);
+		argc = prog.argc;
+		len = prog.len;
+		retval = prog.retval;
+		owner = prog.owner;
+
+		code = new byte[len];
+		for(size_t i=0; i<len; ++i) {
+			code[i] = prog.code[i];
+		}
+	}
+
+	subprogram& subprogram::operator=(const subprogram& prog) {
+		set_name(prog.name);
+		argc = prog.argc;
+		len = prog.len;
+		retval = prog.retval;
+		owner = prog.owner;
+
+		if(this->code == prog.code) return *this; // selfassignment
+
+		delete[] code;
+		code = new byte[len];
+		for(size_t i=0; i<len; ++i) {
+			code[i] = prog.code[i];
+		}
+
+		return *this;
+	}
+
 	subprogram::subprogram(std::string name, byte argc, byte* code, size_t len, bool retval) : name(normalize_name(name)), argc(argc), retval(retval), code(code), len(len) {}
+
+	subprogram::~subprogram() {
+		delete[] code;
+	}
 
 	void subprogram::set_name(const std::string& str) {
 		name=normalize_name(str);
@@ -77,6 +124,12 @@ namespace bytecode {
 	}
 	byte subprogram::get_argc() const {
 		return argc;
+	}
+	size_t subprogram::get_codelen() const {
+		return len;
+	}
+	const byte* subprogram::access_code() const {
+		return code;
 	}
 
 	int subprogram::get_int(size_t& program_counter) const {
@@ -102,6 +155,32 @@ namespace bytecode {
 		++program_counter;
 		return Result;
 	}
+
+	void subprogram::get_bytecode(byte*& Result, size_t& length) {
+		length =   1                 // proc marker
+		         + get_name().size() // characters of the name
+		         + 1                 // null
+		         + 1                 // argc
+		         + 4                 // codelen
+		         + len;              // code
+		Result = new byte[length];
+
+		Result[0] = static_cast<byte>(bytecode::PROC);  // proc marker
+		size_t c = 1;
+		for(size_t i=0; i<get_name().size(); ++i, ++c) {     // name
+			Result[c] = get_name()[i];
+		}
+		Result[c++] = 0;
+		Result[c++] = static_cast<byte>(argc);
+		for(size_t i=0; i<4; ++i) {
+ 			Result[c+3-i] = (len >> (8*i));	// bigendian codelen
+		}
+		c+=4;
+		for(size_t i=0; i<len; ++i, ++c) {
+			Result[c] = code[i];
+		}
+	}
+
 
 	void subprogram::print_bytecode(std::ostream& out) {
 		// proc marker, followed by canonical name closed by a zero.

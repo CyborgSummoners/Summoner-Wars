@@ -43,7 +43,7 @@ namespace sum {
 			std::vector<bytecode::subprogram> programs;
 			std::map<std::string, size_t> program_map;
 
-			size_t get_program_id(const std::string& str) const;
+			size_t get_program_id(const std::string& str, const std::string& owner = "") const;
 
 		public:
 			Interpreter();
@@ -64,7 +64,7 @@ namespace sum {
 
 			// Puppet viselkedésének beállítása.
 			// True, ha sikeres, False ha a viselkedés nem létezik, vagy ha a Puppet nem regisztrált.
-			bool set_behaviour(Puppet& puppet, const std::string& behaviour);
+			bool set_behaviour(Puppet& puppet, const std::string& behaviour, const std::string& owner = "");
 
 			std::string get_behaviour(Puppet& puppet) const;
 

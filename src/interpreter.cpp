@@ -296,7 +296,7 @@ namespace sum {
 			stack.resize(stack.size()+num, 0);
 			for(size_t i=currsiz; i<num; ++i) stack[i] = new NullValue();
 
-			dout << "reserving " << num << " spaces, total " << stack.size() << std::endl;
+			//dout << "reserving " << num << " spaces, total " << stack.size() << std::endl;
 		}
 
 		void Stack::print(std::ostream& out) const {
@@ -729,21 +729,27 @@ namespace sum {
 	}
 
 
-	size_t Interpreter::get_program_id(const std::string& str) const {
-		std::map<std::string, size_t>::const_iterator it = program_map.find(str);
-		if(it == program_map.end()) throw stack_machine::except::subprogram_does_not_exist();
+	size_t Interpreter::get_program_id(const std::string& str, const std::string& owner) const {
+		std::string nom = ("" == owner? str : owner+"'"+str);
+		std::map<std::string, size_t>::const_iterator it = program_map.find(owner + "'" + str);
+		if(it == program_map.end()) {
+			debugf("Subprogram %s does not exist\n", nom.c_str());
+			throw stack_machine::except::subprogram_does_not_exist();
+		}
 		return it->second;
 	}
 
 	bool Interpreter::register_subprogram(const bytecode::subprogram& prog) {
-		debugf("Registering subprogram %s...", prog.get_name().c_str());
+		std::string nom = ("" == prog.owner? prog.get_name() : prog.owner+"'"+prog.get_name());
+
+		debugf("Registering subprogram %s...", nom.c_str());
 
 		// do we already have a program with this name?
-		std::map<std::string, size_t>::iterator it = program_map.find(prog.get_name());
+		std::map<std::string, size_t>::iterator it = program_map.find(nom);
 		if(it != program_map.end()) return false;
 
 		// if not, let's register it.
-		program_map.insert( make_pair( prog.get_name(), programs.size() ) );
+		program_map.insert( make_pair( nom, programs.size() ) );
 		programs.push_back(prog);
 
 		debugf("done.\n");
@@ -764,7 +770,7 @@ namespace sum {
 			delay = 0;
 
 			while(delay == 0) {
-				if(puppet->program_counter >= programs[ puppet->program ].len) puppet->program_counter=0;
+				if(puppet->program_counter >= programs[ puppet->program ].get_codelen()) puppet->program_counter=0;
 				delay += execute_instruction(puppet->puppet, puppet->program, *(puppet->stack), puppet->program_counter, puppet->base_pointer);
 			}
 
@@ -794,7 +800,7 @@ namespace sum {
 		size_t pc=0;
 		size_t bp=0;
 
-		while(pc < programs[prog_id].len) {
+		while(pc < programs[prog_id].get_codelen()) {
 			execute_instruction(p, prog_id, stack, pc, bp);
 		}
 	}
@@ -854,13 +860,11 @@ namespace sum {
 			// control flow
 			case JMP:      //40
 				pc = programs[program_id].get_int(pc);
-				dout << "jumping to " << pc <<std::endl;
 				break;
 			case JMPTRUE:  //41
 				r1 = stack.pop();
 				if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == true) {
 					pc = programs[program_id].get_int(pc);
-					dout << "jumping to " << pc <<std::endl;
 				} else programs[program_id].get_int(pc);	//mindenképp be kell olvasni
 				delete r1;
 				break;
@@ -868,12 +872,11 @@ namespace sum {
 				r1 = stack.pop();
 				if(r1->tag == boolean && dynamic_cast<BooleanValue*>(r1)->value == false) {
 					pc = programs[program_id].get_int(pc);
-					dout << "jumping to " << pc <<std::endl;
 				} else programs[program_id].get_int(pc);
 				delete r1;
 				break;
 			case CALL:      //43
-				rs = get_program_id( programs[program_id].get_string(pc) );	// get callee's id.
+				rs = get_program_id( programs[program_id].get_string(pc), programs[program_id].owner );	// get callee's id.
 				// parameters are on the top of the stack. callee knows how many
 
 				// return to which program, at which point, and what was the base pointer?
@@ -982,18 +985,22 @@ namespace sum {
 	bool Interpreter::unregister_puppet(Puppet& puppet) {
 		return true;
 	}
-	bool Interpreter::set_behaviour(Puppet& puppet, const std::string& behaviour) {
+	bool Interpreter::set_behaviour(Puppet& puppet, const std::string& behaviour, const std::string& owner) {
+		debugf("Setting behaviour of puppet %s to %s'%s...", puppet.get_name().c_str(), owner.c_str(), behaviour.c_str());
 		try {
 			for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 				if( (*it)->puppet == puppet ) {
-					(*it)->overrides[0] = get_program_id(behaviour);
+					(*it)->overrides[0] = get_program_id(behaviour, owner);
 					if( (*it)->program == 0 )  (*it)->program = (*it)->overrides[0];
+					debugf("done\n");
 					return true;
 				}
 			}
 		} catch(stack_machine::except::subprogram_does_not_exist& e) {
+			debugf("failed: no such program\n");
 			return false;
 		}
+		debugf("failed: no such puppet\n");
 		return false;
 	}
 

@@ -1,9 +1,15 @@
 #include "game.hpp"
+#include "bytecode.hpp"
+#include "util/debug.hpp"
+#include "parser.hpp"
+#include <cstdio>
+#include <string>
+#include <sstream>
+#include <SFML/Network.hpp>
 
 namespace sum
 {
-
-void Game::Start()
+void Game::Start(std::string server_ip, unsigned short server_port)
 {
 	if(gameState != Uninitialized)
 		return;
@@ -15,7 +21,7 @@ void Game::Start()
 		mainWindow->GetWidth()-(mainWindow->GetWidth()/3),
 		mainWindow->GetHeight()/3
 		);
-	combat_log = new TextBox(
+	combat_log = new CombatLog(
 		mainWindow,
 		terminal->getX() + terminal->getWidth() + 5,
 		terminal->getY(),
@@ -24,26 +30,68 @@ void Game::Start()
 		);
 
 	infobar = new InfoBar(mainWindow, "testplaya            ------ INFOBAR -------");
+	map = new Map(mainWindow);
+
+	//CREATING CONNECTION WITH OBSERVERS
+
+	std::vector<Observer<ServerMessage>*> obss;
+	obss.push_back(combat_log);
+	obss.push_back(infobar);
+	obss.push_back(map);
+
+	connection = new Connection(obss);
 
 	//TESTLINES
 
 	for(int i=0; i<20 ;++i)
 		combat_log->add("combat log line");
 
-
-
-	mainWindow->SetFramerateLimit(60);
+	mainWindow->SetFramerateLimit(10);
 	gameState = Game::Playing;
-  
+
+	// connecting:
+	bool success = false;
+	if( connection->connect(server_ip, server_port) ) {
+
+		//load scripts
+		sf::Packet scripts = Parser::packetize_scripts_from_file("script-samples/functions.summ");
+
+		if( connection->send_scripts(scripts) ) {
+			connection->listen();
+			combat_log->add( "Connected to " + connection->get_address() );
+			success = true;
+		}
+	}
+
+	if(!success) {
+		std::stringstream ss;
+		ss << "Could not connect to " << server_ip << ":" << server_port;
+		combat_log->add(ss.str());
+	}
+
 	while(!IsExiting())
 	{
 		GameLoop();
 	}
 
+	connection->disconnect();
+
 	mainWindow->Close();
 	delete mainWindow;
 	delete terminal;
+	delete combat_log;
+	delete infobar;
+	delete map;
+	delete connection;
 }
+
+void Game::SendShout(std::string msg) {
+	sf::Packet packet;
+	packet << 0;	//type, vagy valami. erősen fixme
+	packet << msg;
+	connection->send(packet);
+}
+
 
 bool Game::IsExiting()
 {
@@ -53,8 +101,12 @@ bool Game::IsExiting()
 void Game::GameLoop()
 {
 	sf::Event currentEvent;
+
 	while(mainWindow->GetEvent(currentEvent))
 	{
+		if(currentEvent.Type==10 || currentEvent.Type==11 || currentEvent.Type==12)
+			return;
+
 		switch(gameState)
 		{
 			case Game::Playing:
@@ -74,11 +126,7 @@ void Game::GameLoop()
 	terminal->draw();
 	combat_log->draw();
 	infobar->draw();
-
-	mainWindow->Draw(
-		sf::Shape::Rectangle(0,25,mainWindow->GetWidth(),
-			mainWindow->GetHeight()*2/3, sf::Color(128,128,128)));
-
+	map->draw();
 	mainWindow->Display();
 }
 
@@ -86,7 +134,9 @@ void Game::GameLoop()
 Game::GameState Game::gameState = Uninitialized;
 sf::RenderWindow *Game::mainWindow = NULL;
 GuiTerminal *Game::terminal = NULL;
-TextBox *Game::combat_log = NULL;
+CombatLog *Game::combat_log = NULL;
 InfoBar *Game::infobar = NULL;
+Map *Game::map = NULL;
+Connection *Game::connection = NULL;
 
 }

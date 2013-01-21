@@ -38,6 +38,8 @@ class Server : public sf::Thread {
 
 		Interpreter interpreter;
 
+		size_t step_size;
+
 	public:
 		Server(unsigned short port);
 		void Start();

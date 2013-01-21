@@ -17,7 +17,7 @@ std::string sum::Server::Client::toString() const {
 }
 
 
-sum::Server::Server(unsigned short port) : state(Starting), port(port) {
+sum::Server::Server(unsigned short port) : state(Starting), port(port), step_size(30) {
 	if(!listener.Listen(port)) {
 		std::stringstream s;
 		s << "Server could not listen on port " << port << std::endl;
@@ -36,10 +36,11 @@ bool sum::Server::Newgame(unsigned char num_of_players) {
 	if(state != Setup) return false;
 	this->num_of_players = num_of_players;
 	state = Joining;
+	return true;
 }
 
 void sum::Server::Tick() {
-	bool result = interpreter.step(100);
+	bool result = interpreter.step(step_size);
 	sf::Packet packet;
 	packet << ServerMessage(ServerMessage::unknown,(result? "something happened!":"tick"));
 	Broadcast(packet);

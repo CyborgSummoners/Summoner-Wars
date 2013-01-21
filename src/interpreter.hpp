@@ -64,7 +64,7 @@ namespace sum {
 
 			// Puppet viselkedésének beállítása.
 			// True, ha sikeres, False ha a viselkedés nem létezik, vagy ha a Puppet nem regisztrált.
-			bool set_behaviour(Puppet& puppet, const std::string& behaviour);
+			bool set_behaviour(Puppet& puppet, const std::string& behaviour, const std::string& owner = "");
 
 			std::string get_behaviour(Puppet& puppet) const;
 

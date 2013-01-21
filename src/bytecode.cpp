@@ -84,6 +84,7 @@ namespace bytecode {
 		argc = prog.argc;
 		len = prog.len;
 		retval = prog.retval;
+		owner = prog.owner;
 
 		code = new byte[len];
 		for(size_t i=0; i<len; ++i) {
@@ -96,6 +97,7 @@ namespace bytecode {
 		argc = prog.argc;
 		len = prog.len;
 		retval = prog.retval;
+		owner = prog.owner;
 
 		if(this->code == prog.code) return *this; // selfassignment
 

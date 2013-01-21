@@ -3,12 +3,15 @@
 
 #include "observable.hpp"
 #include "widget.hpp"
+#include <queue>
 
 namespace sum
 {
 
 class Map : public Widget, public Observer<ServerMessage>
 {
+
+friend class Robot;
 
 public:
 
@@ -20,30 +23,71 @@ public:
 
 private:
 
-	sf::Image robot_image;
-	sf::Sprite robot_sprite;
+	enum Facing {down=0,left,right,up};
 	static const int SPRITE_SIZE=32;
 
-	enum Facing {down=0,left,right,up};
-
-	struct Robot
+	struct Moving
 	{
-		Robot(int _ID,int _team, int _x, int _y):
-			ID(_ID),
-			team(_team),
-			x(_x),
-			y(_y),
-			facing(down){}
+		Moving(Facing _way, int source_x, int source_y) :
+			way(_way), dest_x(0),dest_y(0), speed(30)
+		{
+			switch(_way)
+			{
+				case down:
+					dest_x=source_x;
+					dest_y=source_y+SPRITE_SIZE;
+					break;
+				case left:
+					dest_x=source_x-SPRITE_SIZE;
+					dest_y=source_y;
+					break;
+				case right:
+					dest_x=source_x+SPRITE_SIZE;
+					dest_y=source_y;
+					break;
+				case up:
+					dest_x=source_x;
+					dest_y=source_y-SPRITE_SIZE;
+					break;
+				default:
+					break;
+			}
+		} 	
+
+		Facing way;
+		int dest_x;
+		int dest_y;
+	};
+
+	class Robot : public Widget
+	{
+
+	public:
+
+		Robot(int _ID,int _team, int _x, int _y, Map *_map);
+
+	private:
 
 		int ID;
-		int x,y;
 		int team;
+		float speed;
 		Facing facing;
+		sf::Sprite sprite;
+		std::queue<Moving> movings;
+
+	public:
+
+		void draw();
+		void update(float tick);
+
+	private:
+
+		static sf::Image robot_image;
+		static bool initiated;
+		const Map *map;
 	};
 
 	std::vector<Robot> robots;
-
-	void draw_robots();
 
 };
 

@@ -45,6 +45,8 @@ protected:
 	static int textSize;
 
 	void draw_borders();
+
+	std::vector<std::string> string_explode(const std::string& str, const char& ch);
 };
 
 }

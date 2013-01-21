@@ -9,8 +9,8 @@ GuiTerminal::GuiTerminal(
 	int _width,
 	int _height) :
 Widget(_window),
-inputfield_size(25),
-player_name(_player_name)
+player_name(_player_name),
+inputfield_size(25)
 {
 	window=_window;
 
@@ -37,7 +37,7 @@ player_name(_player_name)
 		width-x-name_pwd.GetRect().GetWidth()-x,
 		inputfield_size);
 	textbox=new TextBox(_window,x,y,width,height-(inputfield_size*2));
-	
+
 }
 
 GuiTerminal::~GuiTerminal()
@@ -62,12 +62,12 @@ void GuiTerminal::handleEvent(sf::Event &event)
 		buffer.enter(inputfield->val());
 		std::string term_user=player_name + term->get_working_directory() + "$";
 		textbox->add(term_user+inputfield->val());
-		std::vector<std::string> ret = explode(term->command(inputfield->val()), '\n');
+		std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
 		term_user=player_name + term->get_working_directory() + "$";
 		name_pwd.SetText(term_user);
 		inputfield->setX(x + name_pwd.GetRect().GetWidth());
 		inputfield->setWidth(width-x-name_pwd.GetRect().GetWidth()-x);
-		for(int i=0; i<ret.size(); ++i)
+		for(size_t i=0; i<ret.size(); ++i)
 			textbox->add(ret[i]);
 		inputfield->reset();
 	}
@@ -96,12 +96,12 @@ std::string GuiTerminal::Buffer::val()
 {
 	return *act;
 }
-			
+
 bool GuiTerminal::Buffer::is_end()
 {
 	return act==buff.end();
 }
-			
+
 bool GuiTerminal::Buffer::down()
 {
 	bool not_end=act!=buff.end();
@@ -112,29 +112,10 @@ bool GuiTerminal::Buffer::down()
 
 void GuiTerminal::Buffer::enter(std::string _val)
 {
-	if(buff.size()>size)
+	if(buff.size()>static_cast<size_t>(size))
 		buff.erase(buff.begin(), buff.begin() + (size/2));
 	buff.push_back(_val);
 	act=buff.end();
-}
-
-
-std::vector<std::string> GuiTerminal::explode(const std::string& str, const char& ch) {
-    std::string next = "";
-    std::vector<std::string> result;
-
-    for (std::string::const_iterator it = str.begin(); it != str.end(); it++) {
-    	if (*it == ch) {
-    		if (next.length() > 0) {
-    			result.push_back(next);
-    			next = "";
-    		}
-    	} else {
-    		next += *it;
-    	}
-    }
-
-    return result;
 }
 
 

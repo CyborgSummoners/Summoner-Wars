@@ -13,11 +13,9 @@ Map::Map(sf::RenderWindow *_window) :
 	Robot rob(2,0,0,0);
 
 	robots.push_back(rob);
-
-
 }
 
-Map::~Map()
+void Map::update(float tick)
 {
 
 }
@@ -31,12 +29,30 @@ void Map::draw()
 
 void Map::update(const ServerMessage &message)
 {
+	switch(message.type)
+	{
+		case ServerMessage::unknown:
+			std::cout<<"Map received unknown message: "<<message.msg;
+			break;
+		case ServerMessage::summon:
 
+			break;
+		case ServerMessage::move:
+
+			break;
+		case ServerMessage::shout:
+
+			break;
+		default:
+			break;
+	}
 }
+
+
 
 void Map::draw_robots()
 {
-	for(int i=0;i<robots.size();++i)
+	for(size_t i=0;i<robots.size();++i)
 	{
 		robot_sprite.SetX(x+robots[i].x*SPRITE_SIZE);
 		robot_sprite.SetY(y+robots[i].y*SPRITE_SIZE);

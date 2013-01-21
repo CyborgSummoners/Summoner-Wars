@@ -33,6 +33,7 @@ private:
 	static GuiTerminal *terminal;
 	static CombatLog *combat_log;
 	static Map *map;
+	static sf::Clock *sfclock;
 };
 
 }

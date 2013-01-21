@@ -55,7 +55,7 @@ void InputField::handleEvent(sf::Event &event)
 	}
 	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Right))
 	{
-		if(pos<value.size())
+		if(static_cast<size_t>(pos)<value.size())
 			++pos;
 		return;
 	}

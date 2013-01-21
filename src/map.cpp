@@ -22,9 +22,9 @@ void Map::update(float tick)
 
 void Map::draw()
 {
-		window->Draw(
-			sf::Shape::Rectangle(x,y,width,height, sf::Color(128,128,128)));
-		draw_robots();
+	window->Draw(
+		sf::Shape::Rectangle(x,y,width,height, sf::Color(128,128,128)));
+	draw_robots();
 }
 
 void Map::update(const ServerMessage &message)

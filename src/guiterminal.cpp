@@ -10,7 +10,8 @@ GuiTerminal::GuiTerminal(
 	int _height) :
 Widget(_window),
 inputfield_size(25),
-player_name(_player_name)
+player_name(_player_name),
+frozen(false)
 {
 	window=_window;
 
@@ -47,6 +48,18 @@ GuiTerminal::~GuiTerminal()
 	delete term;
 }
 
+void GuiTerminal::update(const ServerMessage &message)
+{
+	switch(message.type)
+	{
+		case ServerMessage::reply:
+			frozen=false;
+			break;
+		default:
+			break;
+	}
+}
+
 void GuiTerminal::draw()
 {
 	inputfield->draw();
@@ -57,31 +70,44 @@ void GuiTerminal::draw()
 
 void GuiTerminal::handleEvent(sf::Event &event)
 {
-	if((event.Key.Code == sf::Key::Return) && (event.Type == sf::Event::KeyPressed))
+	if(!frozen)
 	{
-		buffer.enter(inputfield->val());
-		std::string term_user=player_name + term->get_working_directory() + "$";
-		textbox->add(term_user+inputfield->val());
-		std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
-		term_user=player_name + term->get_working_directory() + "$";
-		name_pwd.SetText(term_user);
-		inputfield->setX(x + name_pwd.GetRect().GetWidth());
-		inputfield->setWidth(width-x-name_pwd.GetRect().GetWidth()-x);
-		for(int i=0; i<ret.size(); ++i)
-			textbox->add(ret[i]);
-		inputfield->reset();
+		if((event.Key.Code == sf::Key::Return) && (event.Type == sf::Event::KeyPressed))
+		{
+			buffer.enter(inputfield->val());
+			std::string term_user=player_name + term->get_working_directory() + "$";
+			textbox->add(term_user+inputfield->val());
+			std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
+			
+			if(ret[0] == "//") frozen=true;
+
+			term_user=player_name + term->get_working_directory() + "$";
+			name_pwd.SetText(term_user);
+			inputfield->setX(x + name_pwd.GetRect().GetWidth());
+			inputfield->setWidth(width-x-name_pwd.GetRect().GetWidth()-x);
+
+			if(frozen)
+				textbox->add("Waiting for server to reply...");
+			else
+			{
+				for(int i=0; i<ret.size(); ++i)
+					textbox->add(ret[i]);
+			}
+			
+			inputfield->reset();
+		}
+		if((event.Key.Code == sf::Key::Up) && (event.Type == sf::Event::KeyPressed))
+		{
+			if(buffer.up())
+				inputfield->set(buffer.val());
+		}
+		if((event.Key.Code == sf::Key::Down) && (event.Type == sf::Event::KeyPressed))
+		{
+			if(buffer.down())
+				inputfield->set(buffer.is_end() ? "" : buffer.val());
+		}
+		inputfield->handleEvent(event);
 	}
-	if((event.Key.Code == sf::Key::Up) && (event.Type == sf::Event::KeyPressed))
-	{
-		if(buffer.up())
-			inputfield->set(buffer.val());
-	}
-	if((event.Key.Code == sf::Key::Down) && (event.Type == sf::Event::KeyPressed))
-	{
-		if(buffer.down())
-			inputfield->set(buffer.is_end() ? "" : buffer.val());
-	}
-	inputfield->handleEvent(event);
 }
 
 bool GuiTerminal::Buffer::up()

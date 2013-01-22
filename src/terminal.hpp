@@ -7,10 +7,16 @@
 namespace sum {
 
 namespace filesystem {
+	const std::string freezing_return = "\\";
+
 	struct File {
 		const std::string name;
 
 		File(const std::string& name) : name(name) {}
+
+		virtual std::string execute(const std::string& args) {
+			return "Not an executable file.";
+		}
 	};
 
 	struct Dir {
@@ -28,10 +34,12 @@ namespace filesystem {
 class Terminal {
 	private:
 		filesystem::Dir* root;
+		filesystem::Dir* bin;
 		filesystem::Path working_directory;
 
 	private:
 		filesystem::Path string_to_path(std::string path);
+		filesystem::File* get_file(filesystem::Path& path, std::string fname);
 
 	public:
 		Terminal();

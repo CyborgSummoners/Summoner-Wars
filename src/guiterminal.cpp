@@ -10,8 +10,7 @@ GuiTerminal::GuiTerminal(
 	int _height) :
 Widget(_window),
 player_name(_player_name),
-inputfield_size(25)
-player_name(_player_name),
+inputfield_size(25),
 frozen(false)
 {
 	window=_window;
@@ -79,7 +78,7 @@ void GuiTerminal::handleEvent(sf::Event &event)
 			std::string term_user=player_name + term->get_working_directory() + "$";
 			textbox->add(term_user+inputfield->val());
 			std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
-			
+
 			if(ret[0] == "//") frozen=true;
 
 			term_user=player_name + term->get_working_directory() + "$";
@@ -94,7 +93,7 @@ void GuiTerminal::handleEvent(sf::Event &event)
 				for(int i=0; i<ret.size(); ++i)
 					textbox->add(ret[i]);
 			}
-			
+
 			inputfield->reset();
 		}
 		if((event.Key.Code == sf::Key::Up) && (event.Type == sf::Event::KeyPressed))

@@ -29,7 +29,7 @@ private:
 	struct Moving
 	{
 		Moving(Facing _way, int source_x, int source_y) :
-			way(_way), dest_x(0),dest_y(0), speed(30)
+			way(_way), dest_x(0),dest_y(0)
 		{
 			switch(_way)
 			{
@@ -52,7 +52,7 @@ private:
 				default:
 					break;
 			}
-		} 	
+		}
 
 		Facing way;
 		int dest_x;

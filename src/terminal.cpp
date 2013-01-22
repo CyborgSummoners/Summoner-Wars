@@ -1,5 +1,6 @@
 #include "terminal.hpp"
 #include "game.hpp"
+#include "util/debug.hpp"
 #include <sstream>
 
 namespace sum {
@@ -7,6 +8,19 @@ namespace sum {
 		std::string whitespace = " \t\n\r";
 	}
 
+	namespace filesystem {
+
+		struct Executable : public File {
+			std::string server_handle;
+			Executable(const std::string& fname, const std::string& handle) : File(fname), server_handle(handle) {
+			}
+			virtual std::string execute(const std::string& args) {
+				Game::SendRequest(server_handle, args);
+				return freezing_return;
+			}
+		};
+
+	}
 
 	Terminal::Terminal() {
 		// building fake filesystem:
@@ -14,11 +28,14 @@ namespace sum {
 		using filesystem::File;
 
 		this->root = new Dir("");
-		Dir* dir;
-		dir = new Dir("bin");
-		root->subdirs.insert(dir);
-		dir->files.insert(new File("shout"));	// ezeket de jó lenne szebben, ilyen klassz funktorokként, de nincs rá nagyon idő
+		Dir* bin;
+		bin = new Dir("bin");
+		root->subdirs.insert(bin);
+		bin->files.insert(new filesystem::Executable("shout", "shout"));
 
+		Dir* dir;
+		dir = new Dir("scripts");
+		root->subdirs.insert(dir);
 		// set pwd to root
 		this->working_directory.push_back( root );
 	}
@@ -69,13 +86,47 @@ namespace sum {
 			working_directory = path;
 			return "";
 		}
-		else if("shout" == command) {
-			if(args.empty()) return "Usage: shout <message to shout>\n";
+		else { // We're trying to execute a program.
+			Path path;
+			File* file = 0;
 
-			//sends the shout to the server:
-			Game::SendShout(args);
+			// the actual program is the bit after the last /, if there's one
+			std::string prog_name;
+			std::string pathstr;
 
-			return "";
+			size_t found = command.find_last_of('/');
+			if(std::string::npos != found) {
+				prog_name = command.substr(found+1);
+				pathstr = command.substr(0,found);
+			} else {
+				prog_name = command;
+				pathstr = "";
+			}
+
+			if(command[0] == '/') { // is it an absolute path?
+				path = string_to_path(pathstr);
+				if(!path.empty()) file = get_file(path, prog_name);
+
+			}
+			else if(command[0] == '.') { // or relative to here?
+				path = string_to_path(get_working_directory() + pathstr);
+				if(!path.empty()) file = get_file(path, prog_name);
+			}
+			else {
+				// maybe it's relative anyway?
+				path = string_to_path(get_working_directory() + pathstr);
+				if(!path.empty()) file = get_file(path, prog_name);
+
+				if(!file) {
+					//then maybe it's relative to bin?
+					path = string_to_path("/bin/"+pathstr);
+					if(!path.empty()) file = get_file(path, prog_name);
+				}
+			}
+
+			if(file) {
+				return file->execute(args);
+			}
 		}
 
 		return command+": command not found\n";
@@ -124,5 +175,16 @@ namespace sum {
 		}
 
 		return path;
+	}
+
+
+	filesystem::File* Terminal::get_file(filesystem::Path& path, std::string fname) {
+		if(path.empty()) return 0;
+		for(std::set<filesystem::File*>::const_iterator it=path.back()->files.begin(); it!=path.back()->files.end(); ++it) {
+			if( (*it)->name == fname ) {
+				return *it;
+			}
+		}
+		return 0;
 	}
 }

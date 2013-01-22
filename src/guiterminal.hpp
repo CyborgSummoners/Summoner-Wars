@@ -7,7 +7,7 @@
 
 namespace sum {
 
-class GuiTerminal : public Widget 
+class GuiTerminal : public Widget, public Observer<ServerMessage>
 {
 	
 	public:
@@ -21,6 +21,8 @@ class GuiTerminal : public Widget
 		
 		void draw();
 		void handleEvent(sf::Event &event);
+		void update(const ServerMessage &message);
+		
 		
 	private:
 	
@@ -47,6 +49,7 @@ class GuiTerminal : public Widget
 		Terminal *term;
 		Buffer buffer;
 		const int inputfield_size;
+		bool frozen;
 		
 };
 

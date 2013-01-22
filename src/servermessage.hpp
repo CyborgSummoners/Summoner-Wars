@@ -16,6 +16,7 @@ struct ServerMessage
 		unknown    = 0,
 		connections,
 		disconnect,
+		reply,
 
 		// map related:
 		move       = 10,

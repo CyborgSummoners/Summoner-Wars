@@ -16,7 +16,7 @@ namespace sum {
 			}
 			virtual std::string execute(const std::string& args) {
 				Game::SendRequest(server_handle, args);
-				return freezing_return;
+				return Terminal::freezing_return;
 			}
 		};
 
@@ -125,7 +125,7 @@ namespace sum {
 			}
 
 			if(file) {
-				return file->execute(args);
+				return file->execute(args) + "\n";
 			}
 		}
 
@@ -187,4 +187,6 @@ namespace sum {
 		}
 		return 0;
 	}
+
+	const std::string Terminal::freezing_return = "\\";
 }

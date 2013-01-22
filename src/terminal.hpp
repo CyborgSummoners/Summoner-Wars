@@ -7,8 +7,6 @@
 namespace sum {
 
 namespace filesystem {
-	const std::string freezing_return = "\\";
-
 	struct File {
 		const std::string name;
 
@@ -32,6 +30,9 @@ namespace filesystem {
 
 
 class Terminal {
+	public:
+		static const std::string freezing_return;
+
 	private:
 		filesystem::Dir* root;
 		filesystem::Dir* bin;

@@ -53,7 +53,7 @@ void sum::Server::Run() {
 	sf::IPAddress ip;
 	sf::SocketTCP client;
 	sf::Packet packet;
-	int msg_type;
+	std::string msg_handle;
 	std::string msg;
 	std::stringstream ss;
 	Client client_descr;
@@ -79,7 +79,6 @@ void sum::Server::Run() {
 		} else elapsed = 0.0f;
 
 		sockets = selector.Wait(tick - elapsed);
-
 		for(size_t i=0; i<sockets; ++i) {
 			socket = selector.GetSocketReady(i);
 
@@ -171,15 +170,16 @@ void sum::Server::Run() {
 						}
 					}
 					else {
-						packet >> msg_type;
+						packet >> msg_handle;
 						packet >> msg;
-						debugf("%s says: \"%s\" (type %d)\n", client_descr.toString().c_str(), msg.c_str(), msg_type);
-
+						debugf("%s says: \"%s\" (handle %s)\n", client_descr.toString().c_str(), msg.c_str(), msg_handle.c_str());
+/*
 						if(msg_type == 0) {	//akkor ez egy shout. hát, izé.
 							Broadcast(
 								ServerMessage(ServerMessage::shout) << msg	//Todo: who shouts, where, etc
 							);
-						}
+						 }
+*/
 					}
 				}
 				else {	// close or error

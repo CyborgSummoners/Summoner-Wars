@@ -32,6 +32,7 @@ namespace sum {
 		bin = new Dir("bin");
 		root->subdirs.insert(bin);
 		bin->files.insert(new filesystem::Executable("shout", "shout"));
+		bin->files.insert(new filesystem::Executable("serverdate", "date"));
 
 		Dir* dir;
 		dir = new Dir("scripts");

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdio>
+#include <ctime>
 
 
 bool sum::Server::Client::operator==(const Client& rhs) const {
@@ -264,10 +265,23 @@ const std::string sum::Server::shout(Client& client, std::string args) {
 	return "";
 }
 
+const std::string sum::Server::serverdate(Client& client, std::string args) {
+	time_t raw;
+	struct tm* tms;
+	char buf[80];
+
+	time(&raw);
+	tms = localtime(&raw);
+
+	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S %Z", tms);
+
+	return std::string(buf);
+}
 
 const std::map<std::string, sum::Server::server_function> sum::Server::initialize_server_functions() {
 	std::map<std::string, server_function> Result;
 	Result.insert( make_pair("shout", &Server::shout) );
+	Result.insert( make_pair("date", &Server::serverdate) );
 	return Result;
 }
 

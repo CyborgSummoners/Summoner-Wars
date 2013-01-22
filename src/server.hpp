@@ -65,6 +65,7 @@ class Server : public sf::Thread {
 		typedef std::map<std::string, server_function>::const_iterator server_fun_iter;
 
 		const std::string shout(Client& client, std::string args);
+		const std::string serverdate(Client& client, std::string args);
 };
 
 }

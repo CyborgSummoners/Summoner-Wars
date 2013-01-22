@@ -5,6 +5,7 @@
 #include <list>
 #include <string>
 #include "interpreter.hpp"
+#include "servermessage.hpp"
 
 namespace sum {
 
@@ -50,6 +51,9 @@ class Server : public sf::Thread {
 		void Tick();
 		void Run();
 		void Broadcast(sf::Packet& packet, const Client& except = nobody);
+
+		void Broadcast(ServerMessage msg, const Client& except = nobody);
+		void Send(Client& to, ServerMessage msg);
 
 		Client find_client(sf::SocketTCP socket);
 };

@@ -1,5 +1,4 @@
 #include "server.hpp"
-#include "servermessage.hpp"
 #include "parser.hpp"
 #include "util/debug.hpp"
 #include <stdexcept>
@@ -41,9 +40,9 @@ bool sum::Server::Newgame(unsigned char num_of_players) {
 
 void sum::Server::Tick() {
 	bool result = interpreter.step(step_size);
-	sf::Packet packet;
-	packet << ServerMessage(ServerMessage::unknown,(result? "something happened!":"tick"));
-	Broadcast(packet);
+	Broadcast(
+		ServerMessage(ServerMessage::unknown, result? "something happened!" : "tick")
+	);
 }
 
 void sum::Server::Run() {
@@ -150,16 +149,17 @@ void sum::Server::Run() {
 								packet << "ack";
 								socket.Send(packet);
 
-								packet.Clear();
-								packet << ServerMessage(ServerMessage::connections, "join "+ip.ToString()+" "+client_descr.client_id);
-								Broadcast(packet, client_descr);
+								Broadcast(
+									ServerMessage(ServerMessage::unknown) << "join" << ip.ToString() << client_descr.client_id,
+									client_descr
+								);
 
 								if(clients.size() >= num_of_players) {
 									debugf("%d players have gathered, we can now start playing.\n", clients.size());
 									state = Playing;
-									packet.Clear();
-									packet << ServerMessage(ServerMessage::start, "Game starts");
-									Broadcast(packet);
+									Broadcast(
+										ServerMessage(ServerMessage::start) << "10" << "10" << "2"
+									);
 								}
 							} catch(std::exception& e) {
 								debugf("Got malformed packet instead of scripts from client @%s, closing connection.\n", client_descr.ip.ToString().c_str());
@@ -176,9 +176,9 @@ void sum::Server::Run() {
 						debugf("%s says: \"%s\" (type %d)\n", client_descr.toString().c_str(), msg.c_str(), msg_type);
 
 						if(msg_type == 0) {	//akkor ez egy shout. hát, izé.
-							packet.Clear();
-							packet << ServerMessage(ServerMessage::shout, msg); //Todo: who shouts, where, etc
-							Broadcast(packet);
+							Broadcast(
+								ServerMessage(ServerMessage::shout) << msg	//Todo: who shouts, where, etc
+							);
 						}
 					}
 				}
@@ -189,12 +189,9 @@ void sum::Server::Run() {
 						if(lit->socket == socket) {
 							debugf("Client %s disconnected.\n", lit->ip.ToString().c_str());
 
-							ss.str("");
-							ss << "Client " << lit->toString() << " disconnected.";
-
-							packet.Clear();
-							packet << ss.str();
-							Broadcast(packet, *lit);
+							Broadcast(
+								ServerMessage(ServerMessage::connections) << "leave" << lit->toString()
+							);
 
 							clients.erase(lit);
 							break;
@@ -230,6 +227,18 @@ sum::Server::Client sum::Server::find_client(sf::SocketTCP socket) {
 	}
 	return nobody;
 }
+
+void sum::Server::Broadcast(ServerMessage msg, const Client& except) {
+	sf::Packet packet;
+	packet << msg;
+	Broadcast(packet, except);
+}
+void sum::Server::Send(Client& to, ServerMessage msg) {
+	sf::Packet packet;
+	packet << msg;
+	to.socket.Send(packet);
+}
+
 
 const sum::Server::Client sum::Server::nobody;
 int sum::Server::Client::maxid = 0;

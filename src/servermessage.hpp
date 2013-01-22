@@ -9,6 +9,7 @@ namespace sum
 
 struct ServerMessage
 {
+	static const char SEP;
 
 	enum Type{
 		// meta:
@@ -38,6 +39,8 @@ struct ServerMessage
 	Type type;
 	std::string msg;
 
+	ServerMessage& operator<<(const std::string& str);	// for some convenience
+	ServerMessage& operator<<(const char* str);	// to avoid double conversion
 };
 
 sf::Packet& operator<<(sf::Packet& packet, const ServerMessage& message);

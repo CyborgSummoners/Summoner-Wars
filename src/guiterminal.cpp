@@ -50,10 +50,12 @@ GuiTerminal::~GuiTerminal()
 
 void GuiTerminal::update(const ServerMessage &message)
 {
+	sf::Lock Lock(mutex);
 	switch(message.type)
 	{
 		case ServerMessage::reply:
 			frozen=false;
+			if(!message.msg.empty()) textbox->add(message.msg);
 			break;
 		default:
 			break;
@@ -70,6 +72,7 @@ void GuiTerminal::draw()
 
 void GuiTerminal::handleEvent(sf::Event &event)
 {
+	sf::Lock Lock(mutex);
 	if(!frozen)
 	{
 		if((event.Key.Code == sf::Key::Return) && (event.Type == sf::Event::KeyPressed))

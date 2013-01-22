@@ -38,6 +38,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	obss.push_back(combat_log);
 	obss.push_back(infobar);
 	obss.push_back(map);
+	obss.push_back(terminal);
 
 	connection = new Connection(obss);
 

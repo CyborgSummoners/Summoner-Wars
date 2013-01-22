@@ -180,7 +180,7 @@ void sum::Server::Run() {
 							debugf("No such handle: %s\n", msg_handle.c_str());
 							Send(
 								client_descr,
-								ServerMessage(ServerMessage::reply) << "Fatal: no function called " << msg_handle << " found\n"
+								ServerMessage(ServerMessage::reply) << "Fatal: no function called " << msg_handle << " found"
 							);
 						}
 						else {
@@ -255,7 +255,7 @@ const std::string sum::Server::shout(Client& client, std::string args) {
 
 	// todo: trim args
 	if(args.empty()) {
-		return "Usage: shout <thing to shout>\n";
+		return "Usage: shout <thing to shout>";
 	}
 
 	Broadcast(

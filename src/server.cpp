@@ -173,13 +173,19 @@ void sum::Server::Run() {
 						packet >> msg_handle;
 						packet >> msg;
 						debugf("%s says: \"%s\" (handle %s)\n", client_descr.toString().c_str(), msg.c_str(), msg_handle.c_str());
-/*
-						if(msg_type == 0) {	//akkor ez egy shout. hát, izé.
-							Broadcast(
-								ServerMessage(ServerMessage::shout) << msg	//Todo: who shouts, where, etc
+
+						server_fun_iter callee = server_functions.find(msg_handle);
+						if(callee == server_functions.end()) {
+							debugf("No such handle: %s\n", msg_handle.c_str());
+							Send(
+								client_descr,
+								ServerMessage(ServerMessage::reply) << "Fatal: no function called " << msg_handle << " found\n"
 							);
-						 }
-*/
+						}
+						else {
+							const std::string repl = (this->*(callee->second))(client_descr, msg);	// hadd nyújtsam még át zárójelek e szerény csokrát: ((()))
+							Send( client_descr,ServerMessage(ServerMessage::reply, repl) );
+						}
 					}
 				}
 				else {	// close or error
@@ -239,6 +245,33 @@ void sum::Server::Send(Client& to, ServerMessage msg) {
 	to.socket.Send(packet);
 }
 
+//************************
+//*** server functions ***
+//************************
+
+const std::string sum::Server::shout(Client& client, std::string args) {
+	debugf("SHOUT from %s: %s\n", client.toString().c_str(), args.c_str());
+
+	// todo: trim args
+	if(args.empty()) {
+		return "Usage: shout <thing to shout>\n";
+	}
+
+	Broadcast(
+		ServerMessage(ServerMessage::shout) << client.client_id << args	//Todo: who shouts, where, etc
+	);
+
+	return "";
+}
+
+
+const std::map<std::string, sum::Server::server_function> sum::Server::initialize_server_functions() {
+	std::map<std::string, server_function> Result;
+	Result.insert( make_pair("shout", &Server::shout) );
+	return Result;
+}
+
 
 const sum::Server::Client sum::Server::nobody;
 int sum::Server::Client::maxid = 0;
+const std::map<std::string, sum::Server::server_function> sum::Server::server_functions = sum::Server::initialize_server_functions();

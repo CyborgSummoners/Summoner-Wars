@@ -4,6 +4,7 @@
 #include <SFML/Network.hpp>
 #include <list>
 #include <string>
+#include <map>
 #include "interpreter.hpp"
 #include "servermessage.hpp"
 
@@ -56,6 +57,14 @@ class Server : public sf::Thread {
 		void Send(Client& to, ServerMessage msg);
 
 		Client find_client(sf::SocketTCP socket);
+
+		// server functions the client can call
+		typedef const std::string (sum::Server::*server_function)(Client&, std::string);
+		static const std::map<std::string, server_function> server_functions;
+		static const std::map<std::string, server_function> initialize_server_functions();
+		typedef std::map<std::string, server_function>::const_iterator server_fun_iter;
+
+		const std::string shout(Client& client, std::string args);
 };
 
 }

@@ -1,5 +1,14 @@
 CC = g++
-CFLAGS = -Wall -c -DDEBUG_MACROS_ENABLED
+CFLAGS = -Wall -c
+DEBUG_SYMBOLS = true
+DEBUG_LOGGING = true
+ifeq ($(DEBUG_SYMBOLS),true)
+	CFLAGS += -ggdb
+endif
+ifeq ($(DEBUG_LOGGING),true)
+	CFLAGS += -DDEBUG_MACROS_ENABLED
+endif
+
 
 # - tobbi libraryt majd ide kell hozzaadni.
 # - fontos a sorrend: sfml-system kell az sfml-windownak, aki pedig kell

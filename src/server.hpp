@@ -21,6 +21,10 @@ class Server : public sf::Thread {
 		sf::SocketTCP socket;
 		sf::IPAddress ip;
 
+		Logic::pup_template_map summonables;
+
+		Client();
+
 		bool operator==(const Client& rhs) const;
 		std::string toString() const;
 	};

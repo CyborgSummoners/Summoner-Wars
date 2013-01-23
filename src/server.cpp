@@ -9,6 +9,8 @@
 #include <vector>
 
 
+sum::Server::Client::Client() : summonables(sum::Logic::default_templates) {};
+
 bool sum::Server::Client::operator==(const Client& rhs) const {
 	return this->socket == rhs.socket;
 }
@@ -323,23 +325,30 @@ const std::string sum::Server::serverdate(Client& client, std::string args) {
 const std::string sum::Server::summon(Client& client, std::string args) {
 	std::string Result = "";
 	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
-	// expecting format "summon <actor-type> [<coord_x> <coord_y>]";
+	// expecting format "summon <summonable> [<coord_x> <coord_y>]";
 	std::string actor_type;
 	size_t x;
 	size_t y;
 	bool success = true;
 	size_t bit = 0;
+
+	// gather args
 	for(size_t i=0; i<parts.size(); ++i) {
 		if(parts[i].empty()) continue;
 		if(bit == 0) {
 			actor_type = parts[i];
+			//does it exsist?
+			if(client.summonables.find(actor_type) == client.summonables.end()) {
+				Result = "Error: first argument does not name a valid summonable.\n";
+				success=false;
+			}
+
 			++bit;
 		}
 		else if(bit == 1) {
 			if(!stringutils::to_unsigned(parts[i], x)) {
 				Result = "Error: second argument should be the x coordinate.\n";
 				success=false;
-				break;
 			}
 			++bit;
 		}
@@ -347,12 +356,12 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 			if(!stringutils::to_unsigned(parts[i], y)) {
 				Result = "Error: third argument should be the y coordinate.\n";
 				success=false;
-				break;
 			}
 			++bit;
 		}
 	}
 
+	// enough args?
 	if(success) {
 		if(bit < 1) {
 			Result = "Error: too few arguments to function.\n";
@@ -367,12 +376,13 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 			success=false;
 		}
 	}
+
 	if(success) {
 		std::stringstream ss;
 		ss << "Summoned " << actor_type << " " << x << " " << y;
 		return ss.str();
 	}
-	return Result.append("Usage: summon <actor-type> [<x-coord> <y-coord>]");
+	return Result.append("Usage: summon <summonable> [<x-coord> <y-coord>]");
 }
 
 

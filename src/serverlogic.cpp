@@ -61,7 +61,7 @@ size_t Actor::gen_id() {
 	return ++maxid;
 }
 
-Actor::Actor(World& my_world, size_t hp) : id(gen_id()), my_world(my_world), hp(hp), facing(north) {
+Actor::Actor(World& my_world, attribute hp) : id(gen_id()), my_world(my_world), hp(hp), facing(north) {
 }
 
 size_t Actor::get_id() {
@@ -72,10 +72,30 @@ coord Actor::get_pos() {
 }
 
 
-Puppet::Puppet(World& my_world, const Summoner& owner) : Actor(my_world, 30), owner(owner) {
+Puppet::Puppet(World& my_world, const Summoner& owner, const Puppet_template& attributes) : Actor(my_world, 30), owner(owner), attributes(attributes) {
+	this->hp = attributes.maxhp;
 }
 
 Summoner::Summoner(World& my_world) : Actor(my_world, 20), magic(100) {
+}
+
+
+const std::map<std::string, Puppet_template> init_default_templates() {
+	std::map<std::string, Puppet_template> Result;
+	//made up values, mostly.
+	Puppet_template pup;
+		pup.mana_cost = 10;
+		pup.maxhp = 20;
+		pup.move_cost = 40;
+		pup.turn_left_cost = pup.turn_right_cost = 20;
+	Result.insert( std::make_pair("robot", pup) );
+		pup.mana_cost = 15;
+		pup.maxhp = 40;
+		pup.move_cost = 60;
+		pup.turn_left_cost = pup.turn_right_cost = 30;
+	Result.insert( std::make_pair("big_robot", pup) );
+
+	return Result;
 }
 
 }

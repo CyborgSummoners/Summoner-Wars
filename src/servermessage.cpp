@@ -1,4 +1,5 @@
 #include "servermessage.hpp"
+#include <sstream>
 
 sum::ServerMessage& sum::ServerMessage::operator<<(const std::string& str) {
 	if(!this->msg.empty()) this->msg.append(1, ServerMessage::SEP);
@@ -8,6 +9,13 @@ sum::ServerMessage& sum::ServerMessage::operator<<(const std::string& str) {
 sum::ServerMessage& sum::ServerMessage::operator<<(const char* str) {
 	if(!this->msg.empty()) this->msg.append(1, ServerMessage::SEP);
 	this->msg.append(str);
+	return *this;
+}
+
+sum::ServerMessage& sum::ServerMessage::operator<<(int i) {	// convenience-ish
+	std::stringstream ss;
+	ss << i;
+	this->msg.append( ss.str() );
 	return *this;
 }
 

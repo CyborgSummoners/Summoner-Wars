@@ -42,6 +42,8 @@ struct ServerMessage
 
 	ServerMessage& operator<<(const std::string& str);	// for some convenience
 	ServerMessage& operator<<(const char* str);	// to avoid double conversion
+
+	ServerMessage& operator<<(int i);	// convenience-ish
 };
 
 sf::Packet& operator<<(sf::Packet& packet, const ServerMessage& message);

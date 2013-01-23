@@ -28,6 +28,11 @@ sum::Server::Server(unsigned short port) : state(Starting), port(port), step_siz
 	state = Setup;
 }
 
+sum::Server::~Server() {
+	delete world;
+}
+
+
 void sum::Server::Start() {
 	Launch();
 }
@@ -155,11 +160,7 @@ void sum::Server::Run() {
 								);
 
 								if(clients.size() >= num_of_players) {
-									debugf("%d players have gathered, we can now start playing.\n", clients.size());
-									state = Playing;
-									Broadcast(
-										ServerMessage(ServerMessage::start) << "10" << "10" << "2"
-									);
+									gamestart();
 								}
 							} catch(std::exception& e) {
 								debugf("Got malformed packet instead of scripts from client @%s, closing connection.\n", client_descr.ip.ToString().c_str());
@@ -204,6 +205,7 @@ void sum::Server::Run() {
 							break;
 						}
 					}
+
 					socket.Close();
 
 					// anybody left?
@@ -246,10 +248,27 @@ void sum::Server::Send(Client& to, ServerMessage msg) {
 	to.socket.Send(packet);
 }
 
+void sum::Server::gamestart() {
+	debugf("%d players have gathered, we can now start playing.\n", clients.size());
+	ServerMessage sm(ServerMessage::start);
+
+	world = new Logic::World(50,50);
+
+	// generic data
+	sm << clients.size() // játékosok száma
+	   << 50             // map x
+	   << 50             // map y
+	;
+	//
+
+	state = Playing;
+	Broadcast(sm);
+}
+
+
 //************************
 //*** server functions ***
 //************************
-
 const std::string sum::Server::shout(Client& client, std::string args) {
 	debugf("SHOUT from %s: %s\n", client.toString().c_str(), args.c_str());
 

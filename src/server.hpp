@@ -7,6 +7,7 @@
 #include <map>
 #include "interpreter.hpp"
 #include "servermessage.hpp"
+#include "serverlogic.hpp"
 
 namespace sum {
 
@@ -42,21 +43,25 @@ class Server : public sf::Thread {
 
 		size_t step_size;
 
+		Logic::World* world;
+
 	public:
 		Server(unsigned short port);
-		void Start();
+		~Server();
 
+		void Start();
 		bool Newgame(unsigned char num_of_players);
 
 	private:
 		void Tick();
 		void Run();
 		void Broadcast(sf::Packet& packet, const Client& except = nobody);
-
 		void Broadcast(ServerMessage msg, const Client& except = nobody);
 		void Send(Client& to, ServerMessage msg);
 
 		Client find_client(sf::SocketTCP socket);
+
+		void gamestart();
 
 		// server functions the client can call
 		typedef const std::string (sum::Server::*server_function)(Client&, std::string);

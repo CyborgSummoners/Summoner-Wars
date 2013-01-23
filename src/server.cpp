@@ -6,6 +6,7 @@
 #include <sstream>
 #include <cstdio>
 #include <ctime>
+#include <vector>
 
 
 bool sum::Server::Client::operator==(const Client& rhs) const {
@@ -317,13 +318,69 @@ const std::string sum::Server::serverdate(Client& client, std::string args) {
 	return std::string(buf);
 }
 
+const std::string sum::Server::summon(Client& client, std::string args) {
+	std::string Result = "";
+	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
+	// expecting format "summon <actor-type> [<coord_x> <coord_y>]";
+	std::string actor_type;
+	size_t x;
+	size_t y;
+	bool success = true;
+	size_t bit = 0;
+	for(size_t i=0; i<parts.size(); ++i) {
+		if(parts[i].empty()) continue;
+		if(bit == 0) {
+			actor_type = parts[i];
+			++bit;
+		}
+		else if(bit == 1) {
+			if(!stringutils::to_unsigned(parts[i], x)) {
+				Result = "Error: second argument should be the x coordinate.\n";
+				success=false;
+				break;
+			}
+			++bit;
+		}
+		else if(bit == 2) {
+			if(!stringutils::to_unsigned(parts[i], y)) {
+				Result = "Error: third argument should be the y coordinate.\n";
+				success=false;
+				break;
+			}
+			++bit;
+		}
+	}
+
+	if(success) {
+		if(bit < 1) {
+			Result = "Error: too few arguments to function.\n";
+			success=false;
+		}
+		else if(bit > 3) {
+			Result = "Error: too many arguments to function.\n";
+			success=false;
+		}
+		else if(bit > 1 && bit < 3) {
+			Result = "Error: too few arguments to function.\n";
+			success=false;
+		}
+	}
+	if(success) {
+		std::stringstream ss;
+		ss << "Summoned " << actor_type << " " << x << " " << y;
+		return ss.str();
+	}
+	return Result.append("Usage: summon robot <x-coord> <y-coord>");
+}
+
+
 const std::map<std::string, sum::Server::server_function> sum::Server::initialize_server_functions() {
 	std::map<std::string, server_function> Result;
 	Result.insert( make_pair("shout", &Server::shout) );
 	Result.insert( make_pair("serverdate", &Server::serverdate) );
+	Result.insert( make_pair("summon", &Server::summon) );
 	return Result;
 }
-
 
 const sum::Server::Client sum::Server::nobody;
 int sum::Server::Client::maxid = 0;

@@ -44,6 +44,21 @@ std::vector<std::string> string_explode(const std::string& str, const std::strin
     return result;
 }
 
+std::string trim(const std::string& str) {
+	std::string Result = "";
+	//ltrim:
+	size_t pos = str.find_first_not_of(whitespace);
+	if(std::string::npos == pos) Result = "";
+	else Result=str.substr(pos);
+
+	//rtrim:
+	pos = Result.find_last_not_of(whitespace);
+	if(std::string::npos == pos) Result = "";
+	else Result = Result.substr(0, pos+1);
+
+	return Result;
+}
+
 bool to_unsigned(const std::string& str, unsigned int& Result) {
 	Result = 0;
 

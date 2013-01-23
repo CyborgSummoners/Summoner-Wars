@@ -40,12 +40,11 @@ class Terminal {
 	public:
 		static const std::string freezing_return;
 
-	private:
 		filesystem::Dir* root;
 		filesystem::Dir* bin;
-		filesystem::Path working_directory;
 
 	public:
+		filesystem::Path working_directory;
 		filesystem::Path string_to_path(std::string path);
 		filesystem::File* get_file(const filesystem::Path& path, std::string fname);
 		filesystem::File* get_file(std::string path);

@@ -34,7 +34,7 @@ namespace sum {
 
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
 				if(0 == context) return "Fatal: could not access filesystem.";
-				std::vector<std::string> fnames = stringutils::string_explode(args, whitespace);
+				std::vector<std::string> fnames = stringutils::string_explode(stringutils::trim(args), whitespace);
 
 				std::string Result = "";
 				File* f;
@@ -56,14 +56,11 @@ namespace sum {
 
 	}
 
-	Terminal::Terminal() {
+	Terminal::Terminal() : root(new filesystem::Dir("")), bin(new filesystem::Dir("bin")) {
 		// building fake filesystem:
 		using filesystem::Dir;
 		using filesystem::File;
 
-		this->root = new Dir("");
-		Dir* bin;
-		bin = new Dir("bin");
 		root->subdirs.insert(bin);
 		bin->files.insert( new filesystem::Print("cat") );
 		bin->files.insert( new filesystem::Echo() );

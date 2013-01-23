@@ -53,6 +53,8 @@ class Terminal {
 
 		// Visszaadja az aktuális patht, pl "/bin" vagy "/spells/buffs" vagy "/"
 		std::string get_working_directory();
+
+		bool add_server_exe(std::string path, std::string fname, std::string handle);
 	};
 }
 

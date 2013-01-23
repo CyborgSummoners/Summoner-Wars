@@ -154,6 +154,14 @@ void sum::Server::Run() {
 								packet << "ack";
 								socket.Send(packet);
 
+								// send available server functions to client:
+								for(server_fun_iter fit = server_functions.begin(); fit != server_functions.end(); ++fit) {
+									Send(
+										client_descr,
+										ServerMessage(ServerMessage::server_fun) << fit->first
+									);
+								}
+
 								Broadcast(
 									ServerMessage(ServerMessage::unknown) << "join" << ip.ToString() << client_descr.client_id,
 									client_descr
@@ -312,7 +320,7 @@ const std::string sum::Server::serverdate(Client& client, std::string args) {
 const std::map<std::string, sum::Server::server_function> sum::Server::initialize_server_functions() {
 	std::map<std::string, server_function> Result;
 	Result.insert( make_pair("shout", &Server::shout) );
-	Result.insert( make_pair("date", &Server::serverdate) );
+	Result.insert( make_pair("serverdate", &Server::serverdate) );
 	return Result;
 }
 

@@ -14,12 +14,31 @@ namespace sum {
 			std::string server_handle;
 			Executable(const std::string& fname, const std::string& handle) : File(fname), server_handle(handle) {
 			}
-			virtual std::string execute(const std::string& args) {
+			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
 				Game::SendRequest(server_handle, args);
 				return Terminal::freezing_return;
 			}
 			virtual std::string read() const {
 				return "Fatal: not a readable file.";
+			}
+		};
+
+		// catlike. Args is supposed to be a space-delimited list of filenames.
+		struct Print : public Executable {	// should have used different inheritance, but meh
+			Print(const std::string& fname) : Executable(fname, "") {}
+
+			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
+				if(0 == context) return "Fatal: could not access filesystem.";
+				std::vector<std::string> fnames = stringutils::string_explode(args, whitespace);
+
+				std::string Result = "";
+				File* f;
+				for(size_t i=0; i<fnames.size(); ++i) {
+					f = context->get_file(fnames[i]);
+					if(f) Result.append(f->content);
+					else Result.append(fnames[i] + ": no such file.");
+				}
+				return Result;
 			}
 		};
 
@@ -34,6 +53,7 @@ namespace sum {
 		Dir* bin;
 		bin = new Dir("bin");
 		root->subdirs.insert(bin);
+		bin->files.insert( new filesystem::Print("cat") );
 
 		Dir* dir;
 		dir = new Dir("scripts");
@@ -130,7 +150,7 @@ namespace sum {
 			}
 
 			if(file) {
-				return file->execute(args) + "\n";
+				return file->execute(args, this) + "\n";
 			}
 		}
 
@@ -214,7 +234,7 @@ namespace sum {
 	}
 
 
-	filesystem::File* Terminal::get_file(filesystem::Path& path, std::string fname) {
+	filesystem::File* Terminal::get_file(const filesystem::Path& path, std::string fname) {
 		if(path.empty()) return 0;
 		for(std::set<filesystem::File*>::const_iterator it=path.back()->files.begin(); it!=path.back()->files.end(); ++it) {
 			if( (*it)->name == fname ) {
@@ -222,6 +242,21 @@ namespace sum {
 			}
 		}
 		return 0;
+	}
+
+	filesystem::File* Terminal::get_file(std::string path) {
+		if(path.empty()) return 0;
+		std::string fname = "";
+		size_t found = path.find_last_of('/');
+		if(std::string::npos != found) {
+			fname = path.substr(found+1);
+			path = path.substr(0,found);
+		}
+		else return get_file(working_directory, path);
+
+		if(path[0] == '/') return get_file(string_to_path(path), fname);	//absolute?
+
+		return get_file( string_to_path( path+"/"+get_working_directory() ), fname );
 	}
 
 	const std::string Terminal::freezing_return = "\\";

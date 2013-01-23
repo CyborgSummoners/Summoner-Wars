@@ -6,6 +6,8 @@
 
 namespace sum {
 
+	class Terminal;
+
 namespace filesystem {
 	struct File {
 		const std::string name;
@@ -13,7 +15,7 @@ namespace filesystem {
 
 		File(const std::string& name, const std::string& content = "") : name(name), content(content) {}
 
-		virtual std::string execute(const std::string& args) {
+		virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
 			return "Not an executable file.";
 		}
 
@@ -43,11 +45,12 @@ class Terminal {
 		filesystem::Dir* bin;
 		filesystem::Path working_directory;
 
-	private:
-		filesystem::Path string_to_path(std::string path);
-		filesystem::File* get_file(filesystem::Path& path, std::string fname);
-
 	public:
+		filesystem::Path string_to_path(std::string path);
+		filesystem::File* get_file(const filesystem::Path& path, std::string fname);
+		filesystem::File* get_file(std::string path);
+
+
 		Terminal();
 
 		// Bemenetként kap egy stringet, ez a sor, amit a user beírt.

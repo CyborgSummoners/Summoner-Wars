@@ -1,6 +1,7 @@
 #include "serverlogic.hpp"
 #include <cassert>
 #include <stdexcept>
+#include "util/debug.hpp"
 
 namespace sum {
 namespace Logic {
@@ -8,7 +9,8 @@ namespace Logic {
 coord::coord(size_t x, size_t y) : x(x), y(y) {}
 
 bool coord::operator<(const coord& rhs) const {
-	return x<rhs.x && y<rhs.y;
+	if(x < rhs.x) return true;
+	return y < rhs.y;
 }
 
 coord default_startpos(coord map_size, size_t player_num, size_t which) {
@@ -41,7 +43,7 @@ World::World(size_t width, size_t height) : width(width), height(height) {
 
 Summoner& World::create_summoner(coord pos) {
 	Summoner* Result = new Summoner(*this);
-	puppets.insert( std::make_pair(pos, Result) );
+	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
 	return *Result;
 }
 

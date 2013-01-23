@@ -17,6 +17,7 @@ std::vector<std::string> string_explode(const std::string& str, const char& ch) 
     		next += *it;
     	}
     }
+    result.push_back(next);
 
     return result;
 }

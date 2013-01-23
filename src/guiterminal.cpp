@@ -96,8 +96,8 @@ void GuiTerminal::handleEvent(sf::Event &event)
 				textbox->add("Waiting for server to reply...");
 			else
 			{
-				for(int i=0; i<ret.size(); ++i)
-					textbox->add(ret[i]);
+				for(size_t i=0; i<ret.size(); ++i)
+					if(i != ret.size() -1 || !ret[i].empty()) textbox->add(ret[i]);
 			}
 
 			inputfield->reset();

@@ -3,6 +3,8 @@
 
 #include "include.hpp"
 #include <SFML/Network.hpp>
+#include <vector>
+#include <string>
 
 namespace sum
 {
@@ -47,6 +49,8 @@ struct ServerMessage
 	ServerMessage& operator<<(const char* str);	// to avoid double conversion
 
 	ServerMessage& operator<<(int i);	// convenience-ish
+
+	std::vector<std::string> get_parsed_msg();	// explode wrapper
 };
 
 sf::Packet& operator<<(sf::Packet& packet, const ServerMessage& message);

@@ -20,6 +20,10 @@ sum::ServerMessage& sum::ServerMessage::operator<<(int i) {	// convenience-ish
 	return *this;
 }
 
+std::vector<std::string> sum::ServerMessage::get_parsed_msg() {
+	return string_explode(msg, SEP);
+}
+
 sf::Packet& sum::operator<<(sf::Packet& packet, const ServerMessage& message) {
 	packet << static_cast<sf::Uint32>(message.type);
 	packet << message.msg;

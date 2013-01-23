@@ -31,7 +31,10 @@ struct ServerMessage
 
 		// global state change
 		win        = 100,
-		start
+		start,
+
+		// terminal
+		server_fun = 150 // register server functions
 	};
 
 	ServerMessage(Type _type=unknown,std::string _msg="") :

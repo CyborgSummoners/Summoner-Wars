@@ -53,6 +53,9 @@ void GuiTerminal::update(const ServerMessage &message)
 	sf::Lock Lock(mutex);
 	switch(message.type)
 	{
+		case ServerMessage::server_fun:
+			term->add_server_exe("/bin", message.msg, message.msg);
+			break;
 		case ServerMessage::reply:
 			frozen=false;
 			if(!message.msg.empty()) textbox->add(message.msg);

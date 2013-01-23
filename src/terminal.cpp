@@ -31,8 +31,6 @@ namespace sum {
 		Dir* bin;
 		bin = new Dir("bin");
 		root->subdirs.insert(bin);
-		bin->files.insert(new filesystem::Executable("shout", "shout"));
-		bin->files.insert(new filesystem::Executable("serverdate", "date"));
 
 		Dir* dir;
 		dir = new Dir("scripts");
@@ -141,6 +139,22 @@ namespace sum {
 			Result.append("/").append( (*it)->name );
 		}
 		return Result;
+	}
+
+	bool Terminal::add_server_exe(std::string path, std::string fname, std::string handle) {
+		debugf("Registering serverfun %s named %s in %s...", handle.c_str(), fname.c_str(), path.c_str() );
+		filesystem::Path p = string_to_path(path);
+		if(p.empty()) {
+			debugf("failed: no such path\n");
+			return false;
+		}
+
+		if((p.back()->files.insert(new filesystem::Executable(fname, handle))).second) {
+			debugf("done.\n");
+			return true;
+		}
+		debugf("failed: could not insert.\n");
+		return false;
 	}
 
 	filesystem::Path Terminal::string_to_path(std::string str) {

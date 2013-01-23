@@ -36,7 +36,8 @@ struct ServerMessage
 		start,
 
 		// terminal
-		server_fun = 150 // register server functions
+		server_fun = 150, // register server functions
+		register_mons     // add summonable monster by name
 	};
 
 	ServerMessage(Type _type=unknown,std::string _msg="") :
@@ -50,7 +51,7 @@ struct ServerMessage
 
 	ServerMessage& operator<<(int i);	// convenience-ish
 
-	std::vector<std::string> get_parsed_msg();	// explode wrapper
+	std::vector<std::string> get_parsed_msg() const;	// explode wrapper
 };
 
 sf::Packet& operator<<(sf::Packet& packet, const ServerMessage& message);

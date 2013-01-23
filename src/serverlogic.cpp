@@ -1,6 +1,7 @@
 #include "serverlogic.hpp"
 #include <cassert>
 #include <stdexcept>
+#include <sstream>
 #include "util/debug.hpp"
 
 namespace sum {
@@ -69,6 +70,18 @@ size_t Actor::get_id() {
 }
 coord Actor::get_pos() {
 	return my_world.get_pos(*this);
+}
+
+std::string Puppet_template::toString() const {
+	std::stringstream ss;
+	ss << "mana_cost = " << mana_cost << "\n"
+	   << "maxhp = " << maxhp << "\n"
+	   << "move_cost = " << move_cost << "\n"
+	   << "turn_left_cost = " << turn_left_cost << "\n"
+	   << "turn_right_cost = " << turn_right_cost << "\n"
+	;
+
+	return ss.str();
 }
 
 

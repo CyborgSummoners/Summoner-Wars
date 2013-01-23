@@ -164,6 +164,13 @@ void sum::Server::Run() {
 										ServerMessage(ServerMessage::server_fun) << fit->first
 									);
 								}
+								// send available puppet types to client:
+								for(Logic::pup_template_map::const_iterator fit = client_descr.summonables.begin(); fit != client_descr.summonables.end(); ++fit) {
+									Send(
+										client_descr,
+										ServerMessage(ServerMessage::register_mons) << fit->first << fit->second.toString()
+									);
+								}
 
 								Broadcast(
 									ServerMessage(ServerMessage::unknown) << "join" << ip.ToString() << client_descr.client_id,
@@ -339,7 +346,7 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 			actor_type = parts[i];
 			//does it exsist?
 			if(client.summonables.find(actor_type) == client.summonables.end()) {
-				Result = "Error: first argument does not name a valid summonable.\n";
+				Result = "Error: first argument does not name a valid summonable (check your /mon directory for creatures you can summon).\n";
 				success=false;
 			}
 

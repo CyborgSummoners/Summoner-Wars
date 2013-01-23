@@ -18,6 +18,9 @@ namespace sum {
 				Game::SendRequest(server_handle, args);
 				return Terminal::freezing_return;
 			}
+			virtual std::string read() const {
+				return "Fatal: not a readable file.";
+			}
 		};
 
 	}
@@ -34,6 +37,9 @@ namespace sum {
 
 		Dir* dir;
 		dir = new Dir("scripts");
+		root->subdirs.insert(dir);
+
+		dir = new Dir("mon");
 		root->subdirs.insert(dir);
 		// set pwd to root
 		this->working_directory.push_back( root );
@@ -150,6 +156,21 @@ namespace sum {
 		}
 
 		if((p.back()->files.insert(new filesystem::Executable(fname, handle))).second) {
+			debugf("done.\n");
+			return true;
+		}
+		debugf("failed: could not insert.\n");
+		return false;
+	}
+
+	bool Terminal::add_readable(std::string path, std::string fname, std::string content) {
+		debugf("Adding catable file %s in %s...", fname.c_str(), path.c_str() );
+		filesystem::Path p = string_to_path(path);
+		if(p.empty()) {
+			debugf("failed: no such path\n");
+			return false;
+		}
+		if((p.back()->files.insert(new filesystem::File(fname, content))).second) {
 			debugf("done.\n");
 			return true;
 		}

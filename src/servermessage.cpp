@@ -20,7 +20,7 @@ sum::ServerMessage& sum::ServerMessage::operator<<(int i) {	// convenience-ish
 	return *this;
 }
 
-std::vector<std::string> sum::ServerMessage::get_parsed_msg() {
+std::vector<std::string> sum::ServerMessage::get_parsed_msg() const {
 	return string_explode(msg, SEP);
 }
 

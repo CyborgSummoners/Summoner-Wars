@@ -9,11 +9,16 @@ namespace sum {
 namespace filesystem {
 	struct File {
 		const std::string name;
+		const std::string content;
 
-		File(const std::string& name) : name(name) {}
+		File(const std::string& name, const std::string& content = "") : name(name), content(content) {}
 
 		virtual std::string execute(const std::string& args) {
 			return "Not an executable file.";
+		}
+
+		virtual std::string read() const {
+			return content;
 		}
 	};
 
@@ -55,6 +60,7 @@ class Terminal {
 		std::string get_working_directory();
 
 		bool add_server_exe(std::string path, std::string fname, std::string handle);
+		bool add_readable(std::string path, std::string fname, std::string content);
 	};
 }
 

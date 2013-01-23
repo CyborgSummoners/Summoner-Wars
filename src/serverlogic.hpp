@@ -81,6 +81,8 @@ namespace Logic {
 		step turn_left_cost;
 		step turn_right_cost;
 		// map of default overrides, eventually
+
+		std::string toString() const;
 	};
 
 

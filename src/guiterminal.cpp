@@ -58,7 +58,10 @@ void GuiTerminal::update(const ServerMessage &message)
 			break;
 		case ServerMessage::reply:
 			frozen=false;
-			if(!message.msg.empty()) textbox->add(message.msg);
+			if(!message.msg.empty()) {
+				std::vector<std::string> ret = string_explode(message.msg, "\n");
+				for(size_t i=0; i<ret.size(); ++i) if(i != ret.size() -1 || !ret[i].empty()) textbox->add(ret[i]);
+			}
 			break;
 		default:
 			break;

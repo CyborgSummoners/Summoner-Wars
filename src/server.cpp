@@ -370,7 +370,7 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 		ss << "Summoned " << actor_type << " " << x << " " << y;
 		return ss.str();
 	}
-	return Result.append("Usage: summon robot <x-coord> <y-coord>");
+	return Result.append("Usage: summon <actor-type> [<x-coord> <y-coord>]");
 }
 
 

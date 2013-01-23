@@ -11,21 +11,26 @@ namespace sum {
 	namespace filesystem {
 
 		struct Executable : public File {
-			std::string server_handle;
-			Executable(const std::string& fname, const std::string& handle) : File(fname), server_handle(handle) {
-			}
-			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
-				Game::SendRequest(server_handle, args);
-				return Terminal::freezing_return;
-			}
+			Executable(const std::string& fname) : File(fname) {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) = 0;
 			virtual std::string read() const {
 				return "Fatal: not a readable file.";
 			}
 		};
 
+		struct Server_executable : public Executable {
+			std::string server_handle;
+			Server_executable(const std::string& fname, const std::string& handle) : Executable(fname), server_handle(handle) {
+			}
+			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
+				Game::SendRequest(server_handle, args);
+				return Terminal::freezing_return;
+			}
+		};
+
 		// catlike. Args is supposed to be a space-delimited list of filenames.
-		struct Print : public Executable {	// should have used different inheritance, but meh
-			Print(const std::string& fname) : Executable(fname, "") {}
+		struct Print : public Executable {
+			Print(const std::string& fname) : Executable(fname) {}
 
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
 				if(0 == context) return "Fatal: could not access filesystem.";
@@ -42,6 +47,13 @@ namespace sum {
 			}
 		};
 
+		struct Echo : public Executable {
+			Echo() : Executable("echo") {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
+				return args;
+			}
+		};
+
 	}
 
 	Terminal::Terminal() {
@@ -54,6 +66,7 @@ namespace sum {
 		bin = new Dir("bin");
 		root->subdirs.insert(bin);
 		bin->files.insert( new filesystem::Print("cat") );
+		bin->files.insert( new filesystem::Echo() );
 
 		Dir* dir;
 		dir = new Dir("scripts");
@@ -175,7 +188,7 @@ namespace sum {
 			return false;
 		}
 
-		if((p.back()->files.insert(new filesystem::Executable(fname, handle))).second) {
+		if((p.back()->files.insert(new filesystem::Server_executable(fname, handle))).second) {
 			debugf("done.\n");
 			return true;
 		}

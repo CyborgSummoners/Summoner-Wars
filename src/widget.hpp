@@ -22,7 +22,7 @@ public:
 		int _height=0
 		);
 	virtual ~Widget(){}
-	
+
 	virtual void draw()=0;
 	virtual void handleEvent(sf::Event &event){}
 	virtual void setX(int _x) {x=_x;}
@@ -32,8 +32,8 @@ public:
 	int getX() {return x;}
 	int getY() {return y;}
 	int getWidth() {return width;}
-	int getHeight() {return height;} 
- 
+	int getHeight() {return height;}
+
 protected:
 
 	sf::RenderWindow *window;
@@ -45,8 +45,6 @@ protected:
 	static int textSize;
 
 	void draw_borders();
-
-	std::vector<std::string> string_explode(const std::string& str, const char& ch);
 };
 
 }

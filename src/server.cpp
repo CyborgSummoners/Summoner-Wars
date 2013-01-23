@@ -158,16 +158,16 @@ void sum::Server::Run() {
 									ServerMessage(ServerMessage::unknown) << "join" << ip.ToString() << client_descr.client_id,
 									client_descr
 								);
-
-								if(clients.size() >= num_of_players) {
-									gamestart();
-								}
 							} catch(std::exception& e) {
 								debugf("Got malformed packet instead of scripts from client @%s, closing connection.\n", client_descr.ip.ToString().c_str());
 								packet.Clear();
 								packet << "nack";
 								socket.Send(packet);
 								socket.Close();
+							}
+
+						if(clients.size() >= num_of_players) {
+								gamestart();
 							}
 						}
 					}
@@ -255,11 +255,23 @@ void sum::Server::gamestart() {
 	world = new Logic::World(50,50);
 
 	// generic data
-	sm << clients.size() // játékosok száma
-	   << 50             // map x
+	sm << 50             // map x
 	   << 50             // map y
+	   << clients.size() // játékosok száma
 	;
-	//
+	// create summoners;
+	size_t num = 0;
+	for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
+		Logic::Summoner& s = world->create_summoner(Logic::default_startpos(Logic::coord(50,50), clients.size(), num++));
+		sm << lit->client_id // client's id
+		   << s.get_id()     // summoner's actor id
+		   << s.get_pos().x  // pos_x
+		   << s.get_pos().y  // pos_y
+		;
+
+		debugf("Created summoner for %s...\n", lit->toString().c_str());
+	}
+
 
 	state = Playing;
 	Broadcast(sm);

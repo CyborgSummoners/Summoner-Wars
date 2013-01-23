@@ -12,8 +12,11 @@ namespace Logic {
 		size_t x;
 		size_t y;
 
-		bool operator<(const coord& rhs);
+		coord(size_t x, size_t y);
+		bool operator<(const coord& rhs) const;
 	};
+
+	coord default_startpos(coord map_size, size_t player_num, size_t which);
 
 	enum Facing {
 		north,
@@ -34,21 +37,31 @@ namespace Logic {
 		public:
 			World(size_t width, size_t height);
 
-			Summoner& create_summoner(size_t x_pos, size_t y_pos);
-			Puppet& create_puppet(size_t x_pos, size_t y_pos);
+			Summoner& create_summoner(coord pos);
+			Puppet& create_puppet(coord pos);
+
+			coord get_pos(Actor& actor);
 	};
 
 
 	class Actor {
+		static size_t maxid;
+		public:
+			static size_t gen_id();
+
 		protected:
+			const size_t id;
 			World& my_world;
 			size_t hp;
 			Facing facing;
 
 		public:
-			virtual tick move() = 0;
-			virtual tick turn_left() = 0;
-			virtual tick turn_right() = 0;
+			virtual tick move() { return 10; };
+			virtual tick turn_left() { return 10; };
+			virtual tick turn_right() { return 10; };
+
+			size_t get_id();
+			coord get_pos();
 
 		protected:
 			Actor(World& my_world, size_t hp);

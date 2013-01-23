@@ -15,6 +15,7 @@ sum::ServerMessage& sum::ServerMessage::operator<<(const char* str) {
 sum::ServerMessage& sum::ServerMessage::operator<<(int i) {	// convenience-ish
 	std::stringstream ss;
 	ss << i;
+	if(!this->msg.empty()) this->msg.append(1, ServerMessage::SEP);
 	this->msg.append( ss.str() );
 	return *this;
 }

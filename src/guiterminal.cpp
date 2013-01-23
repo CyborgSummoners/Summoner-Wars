@@ -85,7 +85,7 @@ void GuiTerminal::handleEvent(sf::Event &event)
 			textbox->add(term_user+inputfield->val());
 			std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
 
-			if(ret[0] == Terminal::freezing_return) frozen=true;
+			if(ret.size() > 0 && ret[0] == Terminal::freezing_return) frozen=true;
 
 			term_user=player_name + term->get_working_directory() + "$";
 			name_pwd.SetText(term_user);

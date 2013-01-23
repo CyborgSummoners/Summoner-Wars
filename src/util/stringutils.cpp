@@ -1,5 +1,6 @@
 #include "stringutils.hpp"
 #include <stdexcept>
+#include <sstream>
 
 namespace sum {
 namespace stringutils {
@@ -52,6 +53,13 @@ bool to_unsigned(const std::string& str, unsigned int& Result) {
 	}
 
 	return true;
+}
+
+
+std::string float_to_string(float f) {
+	std::stringstream ss;
+	ss<<f;
+	return ss.str();
 }
 
 }

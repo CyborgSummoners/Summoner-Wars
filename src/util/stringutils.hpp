@@ -14,6 +14,8 @@ std::vector<std::string> string_explode(const std::string& str, const std::strin
 
 bool to_unsigned(const std::string& str, unsigned int& Result);
 
+std::string float_to_string(float f);
+
 }
 }
 

@@ -264,9 +264,11 @@ void sum::Server::gamestart() {
 	world = new Logic::World(50,50);
 
 	// generic data
-	sm << 50             // map x
-	   << 50             // map y
-	   << clients.size() // játékosok száma
+	sm << stringutils::float_to_string(tick) // a tick is this many seconds
+	   << step_size       // this many steps are in a tick.
+	   << 50              // map x
+	   << 50              // map y
+	   << clients.size()  // játékosok száma
 	;
 	// create summoners;
 	size_t num = 0;

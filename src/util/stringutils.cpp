@@ -1,4 +1,5 @@
 #include "stringutils.hpp"
+#include <stdexcept>
 
 namespace sum {
 namespace stringutils {
@@ -40,6 +41,17 @@ std::vector<std::string> string_explode(const std::string& str, const std::strin
     result.push_back(next);
 
     return result;
+}
+
+bool to_unsigned(const std::string& str, unsigned int& Result) {
+	Result = 0;
+
+	for(size_t i=0; i<str.size(); ++i) {
+		if(str[i]<'0' || str[i]>'9') return false;
+		Result = Result*10 + (str[i] - '0');
+	}
+
+	return true;
 }
 
 }

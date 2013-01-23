@@ -54,6 +54,45 @@ namespace sum {
 			}
 		};
 
+		struct Pwd : public Executable {
+			Pwd() : Executable("pwd") {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context) {
+				if(0 == context) return "Fatal: could not access filesystem.";
+				return context->get_working_directory();
+			}
+		};
+		struct Cd : public Executable {
+			Cd() : Executable("cd") {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context) {
+				if(0 == context) return "Fatal: could not access filesystem.";
+				Path path = context->string_to_path(args);
+				if(path.empty()) return args+": no such directory";
+				context->working_directory = path;
+				return "";
+			}
+		};
+		struct Ls : public Executable {
+			Ls() : Executable("ls") {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context) {
+				if(0 == context) return "Fatal: could not access filesystem.";
+				Path path;
+				if(!args.empty()) {
+					path = context->string_to_path(args);
+					if(path.empty()) return args+": no such directory\n";
+				} else path = context->working_directory;
+
+				std::string Result;
+				Dir* wd = path.back();
+
+				if(wd->subdirs.size() > 0) Result.append("Directories:\n");
+				for(std::set<Dir*>::const_iterator it=wd->subdirs.begin(); it!=wd->subdirs.end(); ++it) Result.append( (*it)->name + "\n" );
+
+				if(wd->files.size() > 0) Result.append("Files:\n");
+				for(std::set<File*>::const_iterator it=wd->files.begin(); it!=wd->files.end(); ++it) Result.append( (*it)->name + "\n" );
+				return Result;
+			}
+		};
+
 	}
 
 	Terminal::Terminal() : root(new filesystem::Dir("")), bin(new filesystem::Dir("bin")) {
@@ -64,6 +103,9 @@ namespace sum {
 		root->subdirs.insert(bin);
 		bin->files.insert( new filesystem::Print("cat") );
 		bin->files.insert( new filesystem::Echo() );
+		bin->files.insert( new filesystem::Pwd() );
+		bin->files.insert( new filesystem::Cd() );
+		bin->files.insert( new filesystem::Ls() );
 
 		Dir* dir;
 		dir = new Dir("scripts");
@@ -71,6 +113,7 @@ namespace sum {
 
 		dir = new Dir("mon");
 		root->subdirs.insert(dir);
+
 		// set pwd to root
 		this->working_directory.push_back( root );
 	}
@@ -95,33 +138,7 @@ namespace sum {
 		using filesystem::File;
 		using filesystem::Path;
 
-		if("pwd" == command) {
-			return get_working_directory()+"\n";
-		}
-		else if("ls" == command) {
-			Path path;
-			if(!args.empty()) {
-				path = string_to_path(args);
-				if(path.empty()) return args+": no such directory\n";
-			} else path = working_directory;
-
-			std::string Result;
-			Dir* wd = path.back();
-
-			if(wd->subdirs.size() > 0) Result.append("Directories:\n");
-			for(std::set<Dir*>::const_iterator it=wd->subdirs.begin(); it!=wd->subdirs.end(); ++it) Result.append( (*it)->name + "\n" );
-
-			if(wd->files.size() > 0) Result.append("Files:\n");
-			for(std::set<File*>::const_iterator it=wd->files.begin(); it!=wd->files.end(); ++it) Result.append( (*it)->name + "\n" );
-			return Result;
-		}
-		else if("cd" == command) {
-			Path path = string_to_path(args);
-			if(path.empty()) return args+": no such directory\n";
-			working_directory = path;
-			return "";
-		}
-		else { // We're trying to execute a program.
+		{ // We're trying to execute a program.
 			Path path;
 			File* file = 0;
 

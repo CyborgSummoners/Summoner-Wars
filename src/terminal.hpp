@@ -40,6 +40,7 @@ class Terminal {
 	public:
 		static const std::string freezing_return;
 
+	private:
 		filesystem::Dir* root;
 		filesystem::Dir* bin;
 

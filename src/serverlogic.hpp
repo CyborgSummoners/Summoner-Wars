@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <map>
 #include <string>
+#include <deque>
 #include "interpreter.hpp"
 #include "measurements.hpp"
 #include "servermessage.hpp"
@@ -22,11 +23,12 @@ namespace Logic {
 
 	coord default_startpos(coord map_size, size_t player_num, size_t which);
 
-	enum Facing {
+	enum Facing {	// careful, we're doing math with it
 		north,
 		west,
 		south,
-		east
+		east,
+		FACING_SIZE
 	};
 
 	class Actor;
@@ -42,7 +44,7 @@ namespace Logic {
 		std::map<coord, Actor*> puppets;
 		std::map<std::string, Summoner*> summoners;
 
-		std::vector<ServerMessage> outbox;
+		std::deque<ServerMessage> outbox;
 
 		public:
 			World(size_t width, size_t height);
@@ -51,7 +53,10 @@ namespace Logic {
 			Summoner& create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success);
 			Puppet* create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, std::string& failure_reason);
 
-			std::vector<ServerMessage> advance(step steps);
+			const std::deque<ServerMessage>& advance(step steps);
+
+			void post_message(const ServerMessage& msg);
+			step move_me(Puppet& actor);
 
 			coord get_pos(Actor& actor);
 	};

@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <ctime>
 #include <vector>
+#include <deque>
 
 
 sum::Server::Client::Client(const sf::SocketTCP socket, const sf::IPAddress ip) : client_id(nextid()), socket(socket), ip(ip), summonables(sum::Logic::default_templates) {}
@@ -57,9 +58,9 @@ bool sum::Server::Newgame(unsigned char num_of_players) {
 }
 
 void sum::Server::Tick() {
-	std::vector<ServerMessage> res = world->advance(step_size);
-	for(size_t i=0; i<res.size(); ++i) {
-		Broadcast(res[i]);
+	const std::deque<ServerMessage>& outbox = world->advance(step_size);
+	for(size_t i=0; i<outbox.size(); ++i) {
+		Broadcast(outbox[i]);
 	}
 }
 

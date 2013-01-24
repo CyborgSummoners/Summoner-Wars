@@ -47,13 +47,14 @@ World::~World() {
 	}
 };
 
-std::vector<ServerMessage> World::advance(step steps) {
+const std::deque<ServerMessage>& World::advance(step steps) {
 	outbox.clear();
-/*	outbox.push_back(
-		ServerMessage(ServerMessage::unknown, "hey")
-	);*/
 	interpreter.advance(steps);
 	return outbox;
+}
+
+void World::post_message(const ServerMessage& msg) {
+	outbox.push_back(msg);
 }
 
 Summoner& World::create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success) {
@@ -159,12 +160,30 @@ step Puppet::move() {
 	return attributes.move_cost;
 }
 step Puppet::turn_left() {
-	debugf("%d wants to turn left.\n", this->get_id());
-	return attributes.turn_left_cost;
+	Facing orig = this->facing;
+	this->facing = static_cast<Facing>((this->facing + 1) % FACING_SIZE);
+	debugf("%d turns left, facing %d.\n", this->get_id(), this->facing);
+	my_world.post_message(
+		ServerMessage(ServerMessage::turn) << this->id     // id of actor turning
+		                                   << 0            // left or right? 0 or 1?
+		                                   << orig         // from
+		                                   << this->facing // to
+		                                   << attributes.turn_right_cost //in this many steps
+	);
+	return attributes.turn_right_cost;
 }
 step Puppet::turn_right() {
-	debugf("%d wants to turn right.\n", this->get_id());
-	return attributes.turn_right_cost;
+	Facing orig = this->facing;
+	this->facing = static_cast<Facing>((static_cast<unsigned>(this->facing) - 1) % FACING_SIZE);
+	debugf("%d turns left, facing %d.\n", this->get_id(), this->facing);
+	my_world.post_message(
+		ServerMessage(ServerMessage::turn) << this->id     // id of actor turning
+		                                   << 1            // left or right?
+		                                   << orig         // from
+		                                   << this->facing // to
+		                                   << attributes.turn_right_cost //in this many steps
+	);
+	return attributes.turn_left_cost;
 }
 std::string Puppet::get_name() {
 	std::stringstream ss;

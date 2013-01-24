@@ -22,6 +22,7 @@ struct ServerMessage
 
 		// map related:
 		move       = 10,
+		turn,
 		attack,
 		spell,
 		death,

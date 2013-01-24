@@ -404,6 +404,9 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 			return "Error: " + Result;
 		}
 
+		interpreter.register_puppet(*p);
+		interpreter.set_behaviour(*p, "DEMO", client.client_id);
+
 		debugf("%s summoned %s to (%d,%d)\n", client.toString().c_str(), actor_type.c_str(), x, y);
 		return "";
 	}

@@ -65,6 +65,7 @@ namespace Logic {
 			virtual step turn_right() { return 10; };
 
 			size_t get_id();
+			std::string get_name();
 			coord get_pos();
 
 		protected:
@@ -94,6 +95,12 @@ namespace Logic {
 		private:
 			Puppet(World& my_world, const Summoner& owner, const Puppet_template& attributes);
 
+		public:
+			step move();
+			step turn_left();
+			step turn_right();
+
+			bool operator==(const Puppet& that);
 		friend class World;
 	};
 

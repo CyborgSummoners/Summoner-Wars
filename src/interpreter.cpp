@@ -7,6 +7,7 @@
 
 namespace sum {
 	using namespace bytecode;
+	using sum::Logic::Puppet;
 
 	namespace stack_machine {
 		namespace except {
@@ -793,6 +794,8 @@ namespace sum {
 		return Result;
 	}
 
+/*
+	// ezt valahogy muszáj lesz visszahozni.
 	void Interpreter::execute(const std::string& program) const {
 		Puppet p("Hamis Baba");
 		size_t prog_id = get_program_id(program);
@@ -804,7 +807,7 @@ namespace sum {
 			execute_instruction(p, prog_id, stack, pc, bp);
 		}
 	}
-
+*/
 
 	unsigned int Interpreter::execute_instruction(Puppet& self, size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const {
 		using namespace stack_machine;
@@ -977,7 +980,7 @@ namespace sum {
 
 	bool Interpreter::register_puppet(Puppet& puppet) {
 		for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
-			if( (*it)->puppet == puppet) return false;
+			if( ((*it)->puppet) == puppet) return false;
 		}
 		puppets.push_front( new puppet_brain(puppet) );
 		return true;

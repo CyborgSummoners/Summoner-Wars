@@ -6,9 +6,10 @@
 #include <list>
 #include <string>
 #include "bytecode.hpp"
-#include "puppet.hpp"
+#include "serverlogic.hpp"
 
 namespace sum {
+	using sum::Logic::Puppet;
 
 	namespace stack_machine{
 		class Stack;
@@ -52,7 +53,7 @@ namespace sum {
 			bool step(unsigned int ticks);
 
 			bool register_subprogram(const bytecode::subprogram& prog);
-			void execute(const std::string& program) const;
+			//void execute(const std::string& program) const;	// valahogy meg kéne oldani
 
 			// Puppet regisztrációja: a puppet bekerül a végrehajtási sorba. A Puppet viselkedése végtelen NOP
 			// True, ha sikeres, False, ha a puppet már regisztrálva volt.

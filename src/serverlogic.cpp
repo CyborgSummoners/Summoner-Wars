@@ -98,6 +98,11 @@ Actor::Actor(World& my_world, attribute hp) : id(gen_id()), my_world(my_world), 
 size_t Actor::get_id() {
 	return id;
 }
+std::string Actor::get_name() {
+	std::stringstream ss;
+	ss << this->get_id();
+	return ss.str();
+}
 coord Actor::get_pos() {
 	return my_world.get_pos(*this);
 }
@@ -118,6 +123,23 @@ std::string Puppet_template::toString() const {
 Puppet::Puppet(World& my_world, const Summoner& owner, const Puppet_template& attributes) : Actor(my_world, 30), owner(owner), attributes(attributes) {
 	this->hp = attributes.maxhp;
 }
+
+step Puppet::move() {
+	debugf("%d wants to move.\n", this->get_id());
+	return attributes.move_cost;
+}
+step Puppet::turn_left() {
+	debugf("%d wants to turn left.\n", this->get_id());
+	return attributes.turn_left_cost;
+}
+step Puppet::turn_right() {
+	debugf("%d wants to turn right.\n", this->get_id());
+	return attributes.turn_right_cost;
+}
+bool Puppet::operator==(const Puppet& that) {
+	return this == &that;
+}
+
 
 Summoner::Summoner(World& my_world) : Actor(my_world, 20), mana(100) {
 }

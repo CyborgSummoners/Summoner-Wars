@@ -11,6 +11,7 @@ coord::coord(size_t x, size_t y) : x(x), y(y) {}
 
 bool coord::operator<(const coord& rhs) const {
 	if(x < rhs.x) return true;
+	if(rhs.x < x) return false;
 	return y < rhs.y;
 }
 
@@ -94,8 +95,9 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 	}
 
 	Puppet* Result = new Puppet(*this, *owner, attributes);
-	if( puppets.insert( std::make_pair(pos, Result) ).second == false) { //for weirdness...
-		failure_reason = "Position already occupied.";
+	if( puppets.insert( std::make_pair(pos, Result) ).second == false) { //should not be true
+		assert(false);
+		failure_reason = "Position already occupied. This should never happen.";
 		debugf("failed: %s\n", failure_reason.c_str());
 		delete Result;
 		return 0;

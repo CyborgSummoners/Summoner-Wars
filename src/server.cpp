@@ -58,10 +58,11 @@ bool sum::Server::Newgame(unsigned char num_of_players) {
 }
 
 void sum::Server::Tick() {
-	const std::deque<ServerMessage>& outbox = world->advance(step_size);
+	std::deque<ServerMessage>& outbox = world->advance(step_size);
 	for(size_t i=0; i<outbox.size(); ++i) {
 		Broadcast(outbox[i]);
 	}
+	outbox.clear();
 }
 
 void sum::Server::Run() {

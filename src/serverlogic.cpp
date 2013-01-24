@@ -47,8 +47,8 @@ World::~World() {
 	}
 };
 
-const std::deque<ServerMessage>& World::advance(step steps) {
-	outbox.clear();
+std::deque<ServerMessage>& World::advance(step steps) {
+	// outbox.clear(); // clearing the outbox is the responsibility of the postman.
 	interpreter.advance(steps);
 	return outbox;
 }
@@ -110,7 +110,15 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 
 	debugf("Created puppet id %d.\n", Result->get_id());
 
-	//post messages...
+	post_message(
+		ServerMessage(ServerMessage::summon) << client_id            // this summoner-soul
+		                                     << Result->get_id()     // summoned this creature
+		                                     << pos.x                // to these coordinates
+		                                     << pos.y
+		                                     << attributes.mana_cost // losing this much mana,
+		                                     << owner->mana          // now she has thus much.
+	);
+
 	return Result;
 }
 

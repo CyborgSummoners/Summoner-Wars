@@ -53,7 +53,7 @@ namespace Logic {
 			Summoner& create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success);
 			Puppet* create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, std::string& failure_reason);
 
-			const std::deque<ServerMessage>& advance(step steps);
+			std::deque<ServerMessage>& advance(step steps);
 
 			void post_message(const ServerMessage& msg);
 			step move_me(Puppet& actor);

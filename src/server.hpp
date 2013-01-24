@@ -21,6 +21,7 @@ class Server : public sf::Thread {
 		sf::SocketTCP socket;
 		sf::IPAddress ip;
 
+		Logic::Summoner* summoner;
 		Logic::pup_template_map summonables;
 
 		Client();

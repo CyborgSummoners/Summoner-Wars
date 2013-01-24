@@ -9,7 +9,7 @@
 #include <vector>
 
 
-sum::Server::Client::Client() : summonables(sum::Logic::default_templates) {};
+sum::Server::Client::Client() : summoner(0), summonables(sum::Logic::default_templates) {};
 
 bool sum::Server::Client::operator==(const Client& rhs) const {
 	return this->socket == rhs.socket;
@@ -49,9 +49,9 @@ bool sum::Server::Newgame(unsigned char num_of_players) {
 
 void sum::Server::Tick() {
 	bool result = interpreter.step(step_size);
-	Broadcast(
-		ServerMessage(ServerMessage::unknown, result? "something happened!" : "tick")
-	);
+//	Broadcast(
+//		ServerMessage(ServerMessage::unknown, result? "something happened!" : "tick")
+//	);
 }
 
 void sum::Server::Run() {
@@ -288,6 +288,7 @@ void sum::Server::gamestart() {
 		   << s.get_pos().x  // pos_x
 		   << s.get_pos().y  // pos_y
 		;
+		lit->summoner = &s;
 
 		debugf("Created summoner for %s...\n", lit->toString().c_str());
 	}
@@ -330,6 +331,8 @@ const std::string sum::Server::serverdate(Client& client, std::string args) {
 }
 
 const std::string sum::Server::summon(Client& client, std::string args) {
+	if(state != Playing) return "Fatal: you can only summon things while playing.";
+
 	std::string Result = "";
 	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
 	// expecting format "summon <summonable> [<coord_x> <coord_y>]";
@@ -385,9 +388,24 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 	}
 
 	if(success) {
-		std::stringstream ss;
-		ss << "Summoned " << actor_type << " " << x << " " << y;
-		return ss.str();
+		if(bit == 1) {
+			x = y = 0; // Fixme: set x,y to target. once target is implemented, that is.
+		}
+
+		Logic::Puppet* p = world->create_puppet(
+			Logic::coord(x, y),
+			*(client.summoner),
+			client.summonables.find(actor_type)->second,
+			Result
+		);
+
+		if(!p) {
+			debugf("Summon failed: %s\n", Result.c_str());
+			return "Error: " + Result;
+		}
+
+		debugf("%s summoned %s to (%d,%d)\n", client.toString().c_str(), actor_type.c_str(), x, y);
+		return "";
 	}
 	return Result.append("Usage: summon <summonable> [<x-coord> <y-coord>]");
 }

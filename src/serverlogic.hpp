@@ -39,9 +39,10 @@ namespace Logic {
 
 		public:
 			World(size_t width, size_t height);
+			~World();
 
 			Summoner& create_summoner(coord pos);
-			Puppet& create_puppet(coord pos, Summoner& owner);
+			Puppet* create_puppet(coord pos, Summoner& owner, const Puppet_template& attributes, std::string& failure_reason);
 
 			coord get_pos(Actor& actor);
 	};
@@ -96,9 +97,8 @@ namespace Logic {
 		friend class World;
 	};
 
-
 	class Summoner : public Actor {
-		attribute magic;
+		attribute mana;
 
 		private:
 			Summoner(World& my_world);

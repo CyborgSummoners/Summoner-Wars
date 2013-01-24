@@ -39,13 +39,43 @@ coord default_startpos(coord map_size, size_t player_num, size_t which) {
 }
 
 
-World::World(size_t width, size_t height) : width(width), height(height) {
-}
+World::World(size_t width, size_t height) : width(width), height(height) {}
+World::~World() {
+	for(std::map<coord, Actor*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+		delete it->second;
+	}
+};
 
 Summoner& World::create_summoner(coord pos) {
 	Summoner* Result = new Summoner(*this);
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
 	return *Result;
+}
+
+Puppet* World::create_puppet(coord pos, Summoner& owner, const Puppet_template& attributes, std::string& failure_reason) {
+	if(attributes.mana_cost > owner.mana) {
+		failure_reason = "Not enough mana!";
+		return 0;
+	}
+
+	// is anyone at pos?
+	if( puppets.count( pos ) > 0 ) {
+		failure_reason = "Position already occupied.";
+		return 0;
+	}
+
+	Puppet* Result = new Puppet(*this, owner, attributes);
+	if( puppets.insert( std::make_pair(pos, Result) ).second == false) { //for weirdness...
+		failure_reason = "Position already occupied.";
+		delete Result;
+		return 0;
+	}
+
+	owner.mana -= attributes.mana_cost;
+	debugf("Created puppet id %d.\n", Result->get_id());
+
+	//post messages...
+	return Result;
 }
 
 coord World::get_pos(Actor& actor) {
@@ -89,7 +119,7 @@ Puppet::Puppet(World& my_world, const Summoner& owner, const Puppet_template& at
 	this->hp = attributes.maxhp;
 }
 
-Summoner::Summoner(World& my_world) : Actor(my_world, 20), magic(100) {
+Summoner::Summoner(World& my_world) : Actor(my_world, 20), mana(100) {
 }
 
 

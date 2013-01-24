@@ -76,7 +76,7 @@ void sum::Server::Run() {
 		if(state == Playing) {
 			elapsed = clock.GetElapsedTime();
 
-			if(elapsed >= tick) {
+			if(elapsed >= sec_per_tick) {
 				clock.Reset();
 				elapsed = 0.0f;
 
@@ -87,7 +87,7 @@ void sum::Server::Run() {
 			}
 		} else elapsed = 0.0f;
 
-		sockets = selector.Wait(tick - elapsed);
+		sockets = selector.Wait(sec_per_tick - elapsed);
 		for(size_t i=0; i<sockets; ++i) {
 			socket = selector.GetSocketReady(i);
 
@@ -273,7 +273,7 @@ void sum::Server::gamestart() {
 	world = new Logic::World(50,50);
 
 	// generic data
-	sm << stringutils::float_to_string(tick) // a tick is this many seconds
+	sm << stringutils::float_to_string(sec_per_tick) // a tick is this many seconds
 	   << step_size       // this many steps are in a tick.
 	   << 50              // map x
 	   << 50              // map y

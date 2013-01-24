@@ -119,15 +119,15 @@ Puppet::Puppet(World& my_world, const Summoner& owner, const Puppet_template& at
 	this->hp = attributes.maxhp;
 }
 
-Interpreter::step Puppet::move() {
+step Puppet::move() {
 	debugf("%d wants to move.\n", this->get_id());
 	return attributes.move_cost;
 }
-Interpreter::step Puppet::turn_left() {
+step Puppet::turn_left() {
 	debugf("%d wants to turn left.\n", this->get_id());
 	return attributes.turn_left_cost;
 }
-Interpreter::step Puppet::turn_right() {
+step Puppet::turn_right() {
 	debugf("%d wants to turn right.\n", this->get_id());
 	return attributes.turn_right_cost;
 }

@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include "interpreter.hpp"
+#include "measurements.hpp"
 
 namespace sum {
 namespace Logic {
@@ -74,9 +75,9 @@ namespace Logic {
 		attribute mana_cost;
 		attribute maxhp;
 		// los range, firing range, shooting power, melee attributes...
-		Interpreter::step move_cost;
-		Interpreter::step turn_left_cost;
-		Interpreter::step turn_right_cost;
+		step move_cost;
+		step turn_left_cost;
+		step turn_right_cost;
 		// map of default overrides, eventually
 
 		std::string toString() const;
@@ -91,9 +92,9 @@ namespace Logic {
 			Puppet(World& my_world, const Summoner& owner, const Puppet_template& attributes);
 
 		public:
-			Interpreter::step move();
-			Interpreter::step turn_left();
-			Interpreter::step turn_right();
+			step move();
+			step turn_left();
+			step turn_right();
 			std::string get_name();
 
 			bool operator==(const Interpreter::Puppet& that);

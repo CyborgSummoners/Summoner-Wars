@@ -8,6 +8,7 @@
 #include "interpreter.hpp"
 #include "servermessage.hpp"
 #include "serverlogic.hpp"
+#include "measurements.hpp"
 
 namespace sum {
 
@@ -32,7 +33,7 @@ class Server : public sf::Thread {
 
 	static const Client nobody;
 
-	static const float tick = 1.0f;	// a tick is this many seconds.
+	static const tick sec_per_tick = 1.0f;	// a tick is this many seconds.
 
 	private:
 		sf::SocketTCP listener;
@@ -46,7 +47,7 @@ class Server : public sf::Thread {
 
 		Interpreter interpreter;
 
-		size_t step_size;
+		step step_size;
 
 		Logic::World* world;
 

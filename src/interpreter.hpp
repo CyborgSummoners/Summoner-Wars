@@ -6,6 +6,7 @@
 #include <list>
 #include <string>
 #include "bytecode.hpp"
+#include "measurements.hpp"
 
 namespace sum {
 	namespace stack_machine{
@@ -14,8 +15,6 @@ namespace sum {
 
 	class Interpreter {
 		public:
-			typedef size_t step;
-
 			// interface. sum::Logic::Puppet will implement this
 			struct Puppet {
 				virtual std::string get_name() = 0;

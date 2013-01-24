@@ -48,7 +48,7 @@ bool sum::Server::Newgame(unsigned char num_of_players) {
 }
 
 void sum::Server::Tick() {
-	bool result = interpreter.step(step_size);
+	bool result = interpreter.advance(step_size);
 //	Broadcast(
 //		ServerMessage(ServerMessage::unknown, result? "something happened!" : "tick")
 //	);

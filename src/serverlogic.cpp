@@ -98,11 +98,6 @@ Actor::Actor(World& my_world, attribute hp) : id(gen_id()), my_world(my_world), 
 size_t Actor::get_id() {
 	return id;
 }
-std::string Actor::get_name() {
-	std::stringstream ss;
-	ss << this->get_id();
-	return ss.str();
-}
 coord Actor::get_pos() {
 	return my_world.get_pos(*this);
 }
@@ -124,19 +119,27 @@ Puppet::Puppet(World& my_world, const Summoner& owner, const Puppet_template& at
 	this->hp = attributes.maxhp;
 }
 
-step Puppet::move() {
+Interpreter::step Puppet::move() {
 	debugf("%d wants to move.\n", this->get_id());
 	return attributes.move_cost;
 }
-step Puppet::turn_left() {
+Interpreter::step Puppet::turn_left() {
 	debugf("%d wants to turn left.\n", this->get_id());
 	return attributes.turn_left_cost;
 }
-step Puppet::turn_right() {
+Interpreter::step Puppet::turn_right() {
 	debugf("%d wants to turn right.\n", this->get_id());
 	return attributes.turn_right_cost;
 }
+std::string Puppet::get_name() {
+	std::stringstream ss;
+	ss << this->get_id();
+	return ss.str();
+}
 bool Puppet::operator==(const Puppet& that) {
+	return this == &that;
+}
+bool Puppet::operator==(const Interpreter::Puppet& that) {
 	return this == &that;
 }
 

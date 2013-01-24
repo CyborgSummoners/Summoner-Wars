@@ -4,10 +4,10 @@
 #include <cstdlib>
 #include <map>
 #include <string>
+#include "interpreter.hpp"
 
 namespace sum {
 namespace Logic {
-	typedef size_t step;
 	typedef int attribute;
 
 	struct coord {
@@ -60,12 +60,7 @@ namespace Logic {
 			Facing facing;
 
 		public:
-			virtual step move() { return 10; };
-			virtual step turn_left() { return 10; };
-			virtual step turn_right() { return 10; };
-
 			size_t get_id();
-			std::string get_name();
 			coord get_pos();
 
 		protected:
@@ -79,16 +74,16 @@ namespace Logic {
 		attribute mana_cost;
 		attribute maxhp;
 		// los range, firing range, shooting power, melee attributes...
-		step move_cost;
-		step turn_left_cost;
-		step turn_right_cost;
+		Interpreter::step move_cost;
+		Interpreter::step turn_left_cost;
+		Interpreter::step turn_right_cost;
 		// map of default overrides, eventually
 
 		std::string toString() const;
 	};
 
 
-	class Puppet : public Actor {
+	class Puppet : public Actor, public Interpreter::Puppet {
 		const Summoner& owner;
 		Puppet_template attributes; // buffs would modify these, I think.
 
@@ -96,10 +91,12 @@ namespace Logic {
 			Puppet(World& my_world, const Summoner& owner, const Puppet_template& attributes);
 
 		public:
-			step move();
-			step turn_left();
-			step turn_right();
+			Interpreter::step move();
+			Interpreter::step turn_left();
+			Interpreter::step turn_right();
+			std::string get_name();
 
+			bool operator==(const Interpreter::Puppet& that);
 			bool operator==(const Puppet& that);
 		friend class World;
 	};

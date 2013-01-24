@@ -7,7 +7,6 @@
 
 namespace sum {
 	using namespace bytecode;
-	using sum::Logic::Puppet;
 
 	namespace stack_machine {
 		namespace except {
@@ -47,12 +46,12 @@ namespace sum {
 		};
 
 		struct PuppetValue : public Cell {
-			Puppet& value;
-			PuppetValue(Puppet& value) : value(value) {
+			Interpreter::Puppet& value;
+			PuppetValue(Interpreter::Puppet& value) : value(value) {
 				this->tag = puppet;
 			}
 			virtual std::string to_str() const {
-				return "Puppet '" + value.get_name() + "'";
+				return "Interpreter::Puppet '" + value.get_name() + "'";
 			}
 			virtual PuppetValue* clone() const {
 				return new PuppetValue(value);
@@ -703,7 +702,7 @@ namespace sum {
 //*******************
 //*** Interpreter ***
 //*******************
-	Interpreter::puppet_brain::puppet_brain(Puppet& puppet) : puppet(puppet), program(0), program_counter(0), base_pointer(0), delay(0) {
+	Interpreter::puppet_brain::puppet_brain(Interpreter::Puppet& puppet) : puppet(puppet), program(0), program_counter(0), base_pointer(0), delay(0) {
 		stack = new stack_machine::Stack();
 	}
 	Interpreter::puppet_brain::~puppet_brain() {
@@ -758,9 +757,9 @@ namespace sum {
 	}
 
 
-	bool Interpreter::step(unsigned int ticks) {
+	bool Interpreter::advance(step steps) {
 		if(puppets.empty()) return false;
-		clock += ticks;
+		clock += steps;
 
 		if(puppets.front()->delay > clock) return false;
 
@@ -797,7 +796,7 @@ namespace sum {
 /*
 	// ezt valahogy muszáj lesz visszahozni.
 	void Interpreter::execute(const std::string& program) const {
-		Puppet p("Hamis Baba");
+		Interpreter::Puppet p("Hamis Baba");
 		size_t prog_id = get_program_id(program);
 		stack_machine::Stack stack;
 		size_t pc=0;
@@ -809,7 +808,7 @@ namespace sum {
 	}
 */
 
-	unsigned int Interpreter::execute_instruction(Puppet& self, size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const {
+	unsigned int Interpreter::execute_instruction(Interpreter::Puppet& self, size_t& program_id, stack_machine::Stack& stack, size_t& pc, size_t& bp) const {
 		using namespace stack_machine;
 		using namespace bytecode;
 
@@ -978,17 +977,17 @@ namespace sum {
 		return delay;
 	}
 
-	bool Interpreter::register_puppet(Puppet& puppet) {
+	bool Interpreter::register_puppet(Interpreter::Puppet& puppet) {
 		for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 			if( ((*it)->puppet) == puppet) return false;
 		}
 		puppets.push_front( new puppet_brain(puppet) );
 		return true;
 	}
-	bool Interpreter::unregister_puppet(Puppet& puppet) {
+	bool Interpreter::unregister_puppet(Interpreter::Puppet& puppet) {
 		return true;
 	}
-	bool Interpreter::set_behaviour(Puppet& puppet, const std::string& behaviour, const std::string& owner) {
+	bool Interpreter::set_behaviour(Interpreter::Puppet& puppet, const std::string& behaviour, const std::string& owner) {
 		debugf("Setting behaviour of puppet %s to %s'%s...", puppet.get_name().c_str(), owner.c_str(), behaviour.c_str());
 		try {
 			for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
@@ -1007,7 +1006,7 @@ namespace sum {
 		return false;
 	}
 
-	std::string Interpreter::get_behaviour(Puppet& puppet) const {
+	std::string Interpreter::get_behaviour(Interpreter::Puppet& puppet) const {
 		return "Hát, valami";
 	}
 }

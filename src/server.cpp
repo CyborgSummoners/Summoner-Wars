@@ -9,10 +9,19 @@
 #include <vector>
 
 
-sum::Server::Client::Client() : summonables(sum::Logic::default_templates) {};
+sum::Server::Client::Client(const sf::SocketTCP socket, const sf::IPAddress ip) : client_id(nextid()), socket(socket), ip(ip), summonables(sum::Logic::default_templates) {}
+
+const std::string sum::Server::Client::nextid() {
+	std::stringstream ss;
+	ss << ++maxid;
+	return ss.str();
+}
 
 bool sum::Server::Client::operator==(const Client& rhs) const {
 	return this->socket == rhs.socket;
+}
+bool sum::Server::Client::operator==(const sf::SocketTCP& rhs) const {
+	return this->socket == socket;
 }
 
 std::string sum::Server::Client::toString() const {
@@ -65,7 +74,6 @@ void sum::Server::Run() {
 	std::string msg_handle;
 	std::string msg;
 	std::stringstream ss;
-	Client client_descr;
 
 	debugf("Server started listening on port %d\n", port);
 
@@ -95,11 +103,7 @@ void sum::Server::Run() {
 				if(state == Joining) {	// only if we're in the joining phase (no reconnects yet).
 					listener.Accept(client, &ip);
 					debugf("Got connection from %s, awaiting scripts\n", ip.ToString().c_str());
-
-					client_descr = Client();
-					client_descr.socket = client;
-					client_descr.ip = ip;
-					waiting_list.push_back(client_descr);
+					waiting_list.push_back( new Client(client, ip) );
 					selector.Add(client);
 				}
 				else {
@@ -110,32 +114,28 @@ void sum::Server::Run() {
 			}
 			else {
 				if(socket.Receive(packet) == sf::Socket::Done) { // transmission ok
-					client_descr = find_client(socket);
+					Client* client = find_client(socket);
 
-					if(state != Joining && client_descr == nobody) {
+					if(state != Joining && client == 0) {
 						fprintf(stderr, "Unknown client tried to send something but we're already playing. This is likely an error. I wish we used proper logging.\n");
 						selector.Remove(socket);
 						socket.Close();
 					}
-					else if(client_descr == nobody) { // connected, but no scripts yet, so this should be the push.
+					else if(client == 0) { // connected, but no scripts yet, so this should be the push.
 						// is she really on the waiting list?
-						for(std::list<Client>::iterator lit = waiting_list.begin(); lit != waiting_list.end(); ++lit) {
-							if(lit->socket == socket) {
-								client_descr = *lit;
+						for(std::list<Client*>::iterator lit = waiting_list.begin(); lit != waiting_list.end(); ++lit) {
+							if( *(*lit) == socket ) {
+								client = *lit;
 								break;
 							}
 						}
-						if(client_descr == nobody) {
+						if(client == 0) {
 							fprintf(stderr, "Message from unknown client, closing connection. This is an error.\n");
 							selector.Remove(socket);
 							socket.Close();
 						}
 						else {
 							using namespace sum::Parser;	//vajon miért nem tudja kitalálni?
-
-							std::stringstream ss;
-							ss << ++Client::maxid;
-							client_descr.client_id = ss.str();
 
 							// so, this must be the push, okay.
 							// ellenőrizni kéne...
@@ -146,14 +146,14 @@ void sum::Server::Run() {
 								bytecode::subprogram prog;
 								for(size_t i=0; i<len; ++i) {
 									packet >> prog;
-									prog.owner = client_descr.client_id;
+									prog.owner = client->client_id;
 									// we just store it in the client until the game starts.
-									client_descr.progs.push_back(prog);
+									client->progs.push_back(prog);
 								}
-								debugf("Got %d scripts from client #%s.\n", len, client_descr.toString().c_str());
+								debugf("Got %d scripts from client #%s.\n", len, client->toString().c_str());
 
-								waiting_list.remove(client_descr);
-								clients.push_back(client_descr);
+								waiting_list.remove(client);
+								clients.push_back(client);
 
 								packet.Clear();
 								packet << "ack";
@@ -162,24 +162,24 @@ void sum::Server::Run() {
 								// send available server functions to client:
 								for(server_fun_iter fit = server_functions.begin(); fit != server_functions.end(); ++fit) {
 									Send(
-										client_descr,
+										*client,
 										ServerMessage(ServerMessage::server_fun) << fit->first
 									);
 								}
 								// send available puppet types to client:
-								for(Logic::pup_template_map::const_iterator fit = client_descr.summonables.begin(); fit != client_descr.summonables.end(); ++fit) {
+								for(Logic::pup_template_map::const_iterator fit = client->summonables.begin(); fit != client->summonables.end(); ++fit) {
 									Send(
-										client_descr,
+										*client,
 										ServerMessage(ServerMessage::register_mons) << fit->first << fit->second.toString()
 									);
 								}
 
 								Broadcast(
-									ServerMessage(ServerMessage::unknown) << "join" << ip.ToString() << client_descr.client_id,
-									client_descr
+									ServerMessage(ServerMessage::unknown) << "join" << ip.ToString() << client->client_id,
+									*client
 								);
 							} catch(std::exception& e) {
-								debugf("Got malformed packet instead of scripts from client @%s, closing connection.\n", client_descr.ip.ToString().c_str());
+								debugf("Got malformed packet instead of scripts from client @%s, closing connection.\n", client->ip.ToString().c_str());
 								packet.Clear();
 								packet << "nack";
 								socket.Send(packet);
@@ -194,31 +194,31 @@ void sum::Server::Run() {
 					else {
 						packet >> msg_handle;
 						packet >> msg;
-						debugf("%s says: \"%s\" (handle %s)\n", client_descr.toString().c_str(), msg.c_str(), msg_handle.c_str());
+						debugf("%s says: \"%s\" (handle %s)\n", client->toString().c_str(), msg.c_str(), msg_handle.c_str());
 
 						server_fun_iter callee = server_functions.find(msg_handle);
 						if(callee == server_functions.end()) {
 							debugf("No such handle: %s\n", msg_handle.c_str());
 							Send(
-								client_descr,
+								*client,
 								ServerMessage(ServerMessage::reply) << "Fatal: no function called " << msg_handle << " found"
 							);
 						}
 						else {
-							const std::string repl = (this->*(callee->second))(client_descr, msg);	// hadd nyújtsam még át zárójelek e szerény csokrát: ((()))
-							Send( client_descr,ServerMessage(ServerMessage::reply, repl) );
+							const std::string repl = (this->*(callee->second))(*client, msg);
+							Send( *client,ServerMessage(ServerMessage::reply, repl) );
 						}
 					}
 				}
 				else {	// close or error
 					selector.Remove(socket);
 
-					for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
-						if(lit->socket == socket) {
-							debugf("Client %s disconnected.\n", lit->ip.ToString().c_str());
+					for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
+						if(**lit == socket) {
+							debugf("Client %s disconnected.\n", (*lit)->ip.ToString().c_str());
 
 							Broadcast(
-								ServerMessage(ServerMessage::connections) << "leave" << lit->toString()
+								ServerMessage(ServerMessage::connections) << "leave" << (*lit)->toString()
 							);
 
 							clients.erase(lit);
@@ -241,20 +241,18 @@ void sum::Server::Run() {
 
 
 void sum::Server::Broadcast(sf::Packet& packet, const Client& except) {
-	for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
-		if(except == *lit)  continue;
+	for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
+		if(except == *(*lit))  continue;
 
-		lit->socket.Send(packet);
+		(*lit)->socket.Send(packet);
 	}
 }
 
-sum::Server::Client sum::Server::find_client(sf::SocketTCP socket) {
-	for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
-		if(lit->socket == socket) {
-			return *lit;
-		}
+sum::Server::Client* sum::Server::find_client(sf::SocketTCP socket) {
+	for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
+		if( (*lit)->socket == socket) return *lit;
 	}
-	return nobody;
+	return 0;
 }
 
 void sum::Server::Broadcast(ServerMessage msg, const Client& except) {
@@ -284,20 +282,20 @@ void sum::Server::gamestart() {
 	// create summoners;
 	size_t num = 0;
 	std::vector<bool> res;
-	for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
+	for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
 		Logic::Summoner& s = world->create_summoner(
 			Logic::default_startpos(Logic::coord(50,50), clients.size(), num++),	//default starting pos
-			lit->client_id,
-			lit->progs,
+			(*lit)->client_id,
+			(*lit)->progs,
 			res
 		);
-		sm << lit->client_id // client's id
+		sm << (*lit)->client_id // client's id
 		   << s.get_id()     // summoner's actor id
 		   << s.get_pos().x  // pos_x
 		   << s.get_pos().y  // pos_y
 		;
 
-		debugf("Created summoner for %s...\n", lit->toString().c_str());
+		debugf("Created summoner for %s...\n", (*lit)->toString().c_str());
 	}
 
 
@@ -426,6 +424,6 @@ const std::map<std::string, sum::Server::server_function> sum::Server::initializ
 	return Result;
 }
 
-const sum::Server::Client sum::Server::nobody;
+const sum::Server::Client sum::Server::nobody = sum::Server::Client(sf::SocketTCP(), sf::IPAddress());
 int sum::Server::Client::maxid = 0;
 const std::map<std::string, sum::Server::server_function> sum::Server::server_functions = sum::Server::initialize_server_functions();

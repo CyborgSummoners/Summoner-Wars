@@ -2,7 +2,7 @@
 #define SERVER_HPP 1
 
 #include <SFML/Network.hpp>
-#include <list>
+#include <set>
 #include <vector>
 #include <string>
 #include <map>
@@ -17,19 +17,24 @@ class Server : public sf::Thread {
 	enum GameState { Starting, Setup, Joining, Playing, Done };
 
 	struct Client {
-		static int maxid;
+		private:
+			static int maxid;
+			static const std::string nextid();
 
-		std::string client_id;
-		sf::SocketTCP socket;
-		sf::IPAddress ip;
+		public:
+			const std::string client_id;
+			sf::SocketTCP socket;
+			const sf::IPAddress ip;
 
-		Logic::pup_template_map summonables;
-		std::vector<bytecode::subprogram> progs;
+			Logic::pup_template_map summonables;
+			std::vector<bytecode::subprogram> progs;
 
-		Client();
+			Client(const sf::SocketTCP socket, const sf::IPAddress ip);
+			void set_id();
 
-		bool operator==(const Client& rhs) const;
-		std::string toString() const;
+			bool operator==(const Client& rhs) const;
+			bool operator==(const sf::SocketTCP& rhs) const;
+			std::string toString() const;
 	};
 
 	static const Client nobody;
@@ -43,8 +48,8 @@ class Server : public sf::Thread {
 		unsigned char num_of_players;
 		unsigned short port;
 
-		std::list<Client> waiting_list;
-		std::list<Client> clients;
+		std::list<Client*> waiting_list;
+		std::list<Client*> clients;
 
 		step step_size;
 
@@ -64,7 +69,7 @@ class Server : public sf::Thread {
 		void Broadcast(ServerMessage msg, const Client& except = nobody);
 		void Send(Client& to, ServerMessage msg);
 
-		Client find_client(sf::SocketTCP socket);
+		Client* find_client(sf::SocketTCP socket);
 
 		void gamestart();
 

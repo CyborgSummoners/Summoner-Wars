@@ -46,9 +46,24 @@ World::~World() {
 	}
 };
 
-Summoner& World::create_summoner(coord pos) {
+std::vector<ServerMessage> World::advance(step steps) {
+	outbox.clear();
+	outbox.push_back(
+		ServerMessage(ServerMessage::unknown, "hey")
+	);
+	interpreter.advance(steps);
+	return outbox;
+}
+
+Summoner& World::create_summoner(coord pos, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success) {
 	Summoner* Result = new Summoner(*this);
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
+
+	reg_success.resize(progs.size());
+	for(size_t i=0; i<progs.size(); ++i) {
+		reg_success[i] = interpreter.register_subprogram(progs[i]);
+	}
+
 	return *Result;
 }
 

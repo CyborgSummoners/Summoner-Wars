@@ -3,9 +3,10 @@
 
 #include <SFML/Network.hpp>
 #include <list>
+#include <vector>
 #include <string>
 #include <map>
-#include "interpreter.hpp"
+#include "bytecode.hpp"
 #include "servermessage.hpp"
 #include "serverlogic.hpp"
 #include "measurements.hpp"
@@ -24,6 +25,7 @@ class Server : public sf::Thread {
 
 		Logic::Summoner* summoner;
 		Logic::pup_template_map summonables;
+		std::vector<bytecode::subprogram> progs;
 
 		Client();
 
@@ -44,8 +46,6 @@ class Server : public sf::Thread {
 
 		std::list<Client> waiting_list;
 		std::list<Client> clients;
-
-		Interpreter interpreter;
 
 		step step_size;
 

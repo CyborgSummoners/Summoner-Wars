@@ -6,6 +6,7 @@
 #include <string>
 #include "interpreter.hpp"
 #include "measurements.hpp"
+#include "servermessage.hpp"
 
 namespace sum {
 namespace Logic {
@@ -34,16 +35,22 @@ namespace Logic {
 	struct Puppet_template;
 
 	class World {
+		Interpreter interpreter;
+
 		size_t width;
 		size_t height;
 		std::map<coord, Actor*> puppets;
+
+		std::vector<ServerMessage> outbox;
 
 		public:
 			World(size_t width, size_t height);
 			~World();
 
-			Summoner& create_summoner(coord pos);
+			Summoner& create_summoner(coord pos, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& );
 			Puppet* create_puppet(coord pos, Summoner& owner, const Puppet_template& attributes, std::string& failure_reason);
+
+			std::vector<ServerMessage> advance(step steps);
 
 			coord get_pos(Actor& actor);
 	};

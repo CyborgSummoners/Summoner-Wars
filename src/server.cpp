@@ -48,10 +48,10 @@ bool sum::Server::Newgame(unsigned char num_of_players) {
 }
 
 void sum::Server::Tick() {
-	bool result = interpreter.advance(step_size);
-//	Broadcast(
-//		ServerMessage(ServerMessage::unknown, result? "something happened!" : "tick")
-//	);
+	std::vector<ServerMessage> res = world->advance(step_size);
+	for(size_t i=0; i<res.size(); ++i) {
+		Broadcast(res[i]);
+	}
 }
 
 void sum::Server::Run() {
@@ -96,6 +96,7 @@ void sum::Server::Run() {
 					listener.Accept(client, &ip);
 					debugf("Got connection from %s, awaiting scripts\n", ip.ToString().c_str());
 
+					client_descr = Client();
 					client_descr.socket = client;
 					client_descr.ip = ip;
 					waiting_list.push_back(client_descr);
@@ -146,7 +147,8 @@ void sum::Server::Run() {
 								for(size_t i=0; i<len; ++i) {
 									packet >> prog;
 									prog.owner = client_descr.client_id;
-									interpreter.register_subprogram(prog);
+									// we just store it in the client until the game starts.
+									client_descr.progs.push_back(prog);
 								}
 								debugf("Got %d scripts from client #%s.\n", len, client_descr.toString().c_str());
 
@@ -281,8 +283,13 @@ void sum::Server::gamestart() {
 	;
 	// create summoners;
 	size_t num = 0;
+	std::vector<bool> res;
 	for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
-		Logic::Summoner& s = world->create_summoner(Logic::default_startpos(Logic::coord(50,50), clients.size(), num++));
+		Logic::Summoner& s = world->create_summoner(
+			Logic::default_startpos(Logic::coord(50,50), clients.size(), num++),	//default starting pos
+			lit->progs,
+			res
+		);
 		sm << lit->client_id // client's id
 		   << s.get_id()     // summoner's actor id
 		   << s.get_pos().x  // pos_x
@@ -404,8 +411,8 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 			return "Error: " + Result;
 		}
 
-		interpreter.register_puppet(*p);
-		interpreter.set_behaviour(*p, "DEMO", client.client_id);
+		//interpreter.register_puppet(*p);
+		//interpreter.set_behaviour(*p, "DEMO", client.client_id);
 
 		debugf("%s summoned %s to (%d,%d)\n", client.toString().c_str(), actor_type.c_str(), x, y);
 		return "";

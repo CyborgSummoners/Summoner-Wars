@@ -746,7 +746,10 @@ namespace sum {
 
 		// do we already have a program with this name?
 		std::map<std::string, size_t>::iterator it = program_map.find(nom);
-		if(it != program_map.end()) return false;
+		if(it != program_map.end()) {
+			debugf("failed: already exists\n");
+			return false;
+		}
 
 		// if not, let's register it.
 		program_map.insert( make_pair( nom, programs.size() ) );

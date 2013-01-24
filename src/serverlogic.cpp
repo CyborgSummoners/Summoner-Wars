@@ -48,16 +48,17 @@ World::~World() {
 
 std::vector<ServerMessage> World::advance(step steps) {
 	outbox.clear();
-	outbox.push_back(
+/*	outbox.push_back(
 		ServerMessage(ServerMessage::unknown, "hey")
-	);
+	);*/
 	interpreter.advance(steps);
 	return outbox;
 }
 
-Summoner& World::create_summoner(coord pos, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success) {
+Summoner& World::create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success) {
 	Summoner* Result = new Summoner(*this);
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
+	summoners.insert( std::make_pair(client_id, Result) );
 
 	reg_success.resize(progs.size());
 	for(size_t i=0; i<progs.size(); ++i) {
@@ -67,26 +68,43 @@ Summoner& World::create_summoner(coord pos, const std::vector<bytecode::subprogr
 	return *Result;
 }
 
-Puppet* World::create_puppet(coord pos, Summoner& owner, const Puppet_template& attributes, std::string& failure_reason) {
-	if(attributes.mana_cost > owner.mana) {
+Puppet* World::create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, std::string& failure_reason) {
+	debugf("Creating new puppet for client %s... ", client_id.c_str());
+
+	// do we know this summoner?
+	std::map<std::string, Summoner*>::const_iterator sit = summoners.find(client_id);
+	if( sit == summoners.end() ) {
+		failure_reason = "Unknown summoner.";
+		debugf("failed: %s\n", failure_reason.c_str());
+		return 0;
+	}
+	Summoner* owner = sit->second;
+
+	if(attributes.mana_cost > owner->mana) {
 		failure_reason = "Not enough mana!";
+		debugf("failed: %s\n", failure_reason.c_str());
 		return 0;
 	}
 
 	// is anyone at pos?
 	if( puppets.count( pos ) > 0 ) {
 		failure_reason = "Position already occupied.";
+		debugf("failed: %s\n", failure_reason.c_str());
 		return 0;
 	}
 
-	Puppet* Result = new Puppet(*this, owner, attributes);
+	Puppet* Result = new Puppet(*this, *owner, attributes);
 	if( puppets.insert( std::make_pair(pos, Result) ).second == false) { //for weirdness...
 		failure_reason = "Position already occupied.";
+		debugf("failed: %s\n", failure_reason.c_str());
 		delete Result;
 		return 0;
 	}
 
-	owner.mana -= attributes.mana_cost;
+	interpreter.register_puppet(*Result);
+	interpreter.set_behaviour(*Result, "DEMO", client_id);
+	owner->mana -= attributes.mana_cost;
+
 	debugf("Created puppet id %d.\n", Result->get_id());
 
 	//post messages...

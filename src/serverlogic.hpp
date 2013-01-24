@@ -40,6 +40,7 @@ namespace Logic {
 		size_t width;
 		size_t height;
 		std::map<coord, Actor*> puppets;
+		std::map<std::string, Summoner*> summoners;
 
 		std::vector<ServerMessage> outbox;
 
@@ -47,8 +48,8 @@ namespace Logic {
 			World(size_t width, size_t height);
 			~World();
 
-			Summoner& create_summoner(coord pos, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& );
-			Puppet* create_puppet(coord pos, Summoner& owner, const Puppet_template& attributes, std::string& failure_reason);
+			Summoner& create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success);
+			Puppet* create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, std::string& failure_reason);
 
 			std::vector<ServerMessage> advance(step steps);
 

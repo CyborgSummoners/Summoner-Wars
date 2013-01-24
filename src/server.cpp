@@ -9,7 +9,7 @@
 #include <vector>
 
 
-sum::Server::Client::Client() : summoner(0), summonables(sum::Logic::default_templates) {};
+sum::Server::Client::Client() : summonables(sum::Logic::default_templates) {};
 
 bool sum::Server::Client::operator==(const Client& rhs) const {
 	return this->socket == rhs.socket;
@@ -287,6 +287,7 @@ void sum::Server::gamestart() {
 	for(std::list<Client>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
 		Logic::Summoner& s = world->create_summoner(
 			Logic::default_startpos(Logic::coord(50,50), clients.size(), num++),	//default starting pos
+			lit->client_id,
 			lit->progs,
 			res
 		);
@@ -295,7 +296,6 @@ void sum::Server::gamestart() {
 		   << s.get_pos().x  // pos_x
 		   << s.get_pos().y  // pos_y
 		;
-		lit->summoner = &s;
 
 		debugf("Created summoner for %s...\n", lit->toString().c_str());
 	}
@@ -401,7 +401,7 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 
 		Logic::Puppet* p = world->create_puppet(
 			Logic::coord(x, y),
-			*(client.summoner),
+			client.client_id,
 			client.summonables.find(actor_type)->second,
 			Result
 		);
@@ -410,9 +410,6 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 			debugf("Summon failed: %s\n", Result.c_str());
 			return "Error: " + Result;
 		}
-
-		//interpreter.register_puppet(*p);
-		//interpreter.set_behaviour(*p, "DEMO", client.client_id);
 
 		debugf("%s summoned %s to (%d,%d)\n", client.toString().c_str(), actor_type.c_str(), x, y);
 		return "";

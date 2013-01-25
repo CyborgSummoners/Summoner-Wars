@@ -192,13 +192,11 @@ namespace sum {
 	}
 
 
-	std::set<std::string> Terminal::complete(std::string input) {
+	std::set<std::string> Terminal::complete(const std::string& prefix, std::string input) {
 		std::set<std::string> Result;
-		size_t s = input.find_first_not_of(whitespace);
-		if(std::string::npos != s) input.substr(s).swap(input);
 
 		// is the command finished?
-		if(input.empty() || input.find_first_of(whitespace)==std::string::npos) {
+		if(prefix.empty()) {
 			//no, it isn't. we'll be handing out a set of command strings with the prefix $input.
 			filesystem::Path path;
 			std::string command;
@@ -240,19 +238,15 @@ namespace sum {
 		else {
 			//ah good, then it's the command's responsibility.
 			//extract command
-			size_t div = input.find_first_of(whitespace);
-			std::string command = input.substr(0, div);
+			std::string command = stringutils::trim(prefix);
+			size_t div = command.find_first_of(whitespace);
+			command = command.substr(0, div);
 
 			filesystem::File* fil = get_file(command);
 			if(!fil) fil = get_file("/bin/"+command);
 
 			if(fil) {	// if file actually exists
-				fil->complete( input.substr(div+1), Result, this);
-
-				//this is a bit awful, but at least STLish
-				std::set<std::string> res2;
-				std::transform(Result.begin(), Result.end(), std::inserter(res2, res2.begin()), std::bind1st(std::plus<std::string>(), command + " ")  );
-				res2.swap(Result);
+				fil->complete( input, Result, this);
 			}
 		}
 
@@ -379,35 +373,17 @@ namespace sum {
 			filesystem::Path path;
 			std::string pathstr;
 			std::string frag = fragment;
-			std::string prepend;
 
-			if(!frag.empty()) {
-				size_t space = frag.find_last_of(whitespace); // regard the last argument, that's what we're supposed to complete.
-				size_t nspace = frag.find_last_not_of(whitespace);
-
-				if(space != std::string::npos) {
-					if(nspace > space) {	// if fragment doesn't end with space
-						prepend = frag.substr(0,space+1);
-						frag = frag.substr(space+1);
-					} else {
-						prepend = frag;
-						frag = "";	// whole new argument begins
-					}
-				}
-
-				if(!frag.empty()) {
-					Terminal::pathfname(frag, pathstr);
-				}
-			}
+			if(!frag.empty()) Terminal::pathfname(frag, pathstr);
 
 			path = context->string_to_path(pathstr);
 			if(path.empty()) return;
 			filesystem::Dir* dir = path.back();
 			size_t prefixlen = frag.size();
-			if(/*dir != context->root &&*/ prefixlen > 0 && frag[0]=='.') Result.insert(prepend+"..");
+			if(prefixlen > 0 && frag[0]=='.') Result.insert("../");
 
 			for(std::set<filesystem::Dir*>::const_iterator it = dir->subdirs.begin(); it!=dir->subdirs.end(); ++it) {
-				if( (*it)->name.substr(0, prefixlen) == frag ) Result.insert( prepend + (*it)->name );
+				if( (*it)->name.substr(0, prefixlen) == frag ) Result.insert( (*it)->name + "/" );
 			}
 		}
 	};

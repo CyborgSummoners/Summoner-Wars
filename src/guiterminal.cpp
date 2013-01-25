@@ -116,16 +116,28 @@ void GuiTerminal::handleEvent(sf::Event &event)
 		if(event.Key.Code==sf::Key::Tab && event.Type == sf::Event::KeyPressed) {
 			std::string frag1, frag2;
 			frag1 = inputfield->val().substr(0, inputfield->getPos());
-			if((unsigned)inputfield->getPos() <= inputfield->val().size()) frag2 = inputfield->val().substr(inputfield->getPos());
-			std::set<std::string> res=term->complete(frag1);
+			if( static_cast<size_t>(inputfield->getPos()) <= inputfield->val().size()) frag2 = inputfield->val().substr(inputfield->getPos());
+
+			//looking only at frag1, we need to separate the part we actually want to complete "(command? <frag>*)frag."
+			std::string completable, prefix;
+			size_t space = frag1.find_last_of(stringutils::whitespace);
+			if(space != std::string::npos) {
+				prefix = frag1.substr(0,space+1);
+				completable = frag1.substr(space+1); //minden az utolsó space után.
+			} else completable = frag1;
+
+			std::set<std::string> res=term->complete(prefix, completable);
+
 			if(res.size() == 1) {
-				std::string result = *(res.begin());
+				std::string result = prefix + *(res.begin());
+
 				if(!frag2.empty()) {
 					if(frag2[0] != ' ') result.append(" ");
 					result.append(frag2);
 				} else result.append(" ");
+
 				inputfield->set( result );
-				inputfield->setPos( (res.begin())->size()+1 );
+				inputfield->setPos( prefix.size()+(res.begin())->size()+1 );
 			}
 			else if(!completion_init) {
 				completion_init = true;

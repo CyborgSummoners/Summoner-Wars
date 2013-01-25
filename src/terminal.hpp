@@ -35,7 +35,7 @@ class Terminal {
 		// A válasz sikeres végrehajtás esetén üres string.
 		std::string command(std::string input);
 
-		std::set<std::string> complete(std::string input);
+		std::set<std::string> complete(const std::string& prefix, std::string input);
 
 		// Visszaadja az aktuális patht, pl "/bin" vagy "/spells/buffs" vagy "/"
 		std::string get_working_directory();

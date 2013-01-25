@@ -16,6 +16,9 @@ namespace sum {
 			virtual std::string read() const {
 				return "Fatal: not a readable file.";
 			}
+			virtual bool is_executable() const{
+				return true;
+			}
 		};
 
 		struct Server_executable : public Executable {
@@ -183,6 +186,65 @@ namespace sum {
 
 		return command+": command not found\n";
 	}
+
+
+	std::set<std::string> Terminal::complete(std::string input) {
+		std::set<std::string> Result;
+		size_t s = input.find_first_not_of(whitespace);
+		if(std::string::npos != s) input.substr(s).swap(input);
+
+		// is the command finished?
+		if(input.empty() || input.find_first_of(whitespace)==std::string::npos) {
+			//no, it isn't. we'll be handing out a set of command strings with the prefix $input.
+			filesystem::Path path;
+			std::string command;
+			std::string pathstr;
+//todo: whole thing is shaky, but should support ./<tab>
+			// is the directory specified?
+			size_t per = input.find_last_of('/');
+			if(!input.empty() && per!=std::string::npos) {
+				//okay, we'll restrict the search to that dir (and bin)
+				command = input.substr(per+1);
+				std::string pathstr = input.substr(0,per);
+				path = string_to_path(pathstr);
+			}
+			else {
+				command = input;
+				path = working_directory;
+				// okay, then we'll give you executables in current dir (and in bin), and
+			}
+
+			if(!path.empty()) {
+				size_t prefixlen = command.size();
+
+				// all exes in bin:
+				for(std::set<filesystem::File*>::const_iterator it=bin->files.begin(); it!=bin->files.end(); ++it) {
+					if( (*it)->is_executable() && (*it)->name.substr(0, prefixlen) == command ) Result.insert( (*it)->name );
+				}
+
+				// all exes in specified directory:
+				// um, currently this is totally meaningless.
+				filesystem::Dir* dir = path.back();
+				if(dir != bin) {
+					for(std::set<filesystem::File*>::const_iterator it=dir->files.begin(); it!=dir->files.end(); ++it) {
+						if( (*it)->is_executable() && (*it)->name.substr(0, prefixlen) == command ) Result.insert( (*it)->name );
+					}
+				}
+
+				// todo: directories.
+			}
+		}
+		else {
+			//ah good, then it's the command's responsibility.
+		}
+
+		for(std::set<std::string>::const_iterator it = Result.begin(); it!=Result.end(); ++it) {
+			std::cout << *it << std::endl;
+		}
+
+		return Result;
+	}
+
 
 	std::string Terminal::get_working_directory() {
 		if(working_directory.size() < 2) return "/";

@@ -9,6 +9,7 @@ namespace sum {
 	class Terminal;
 
 namespace filesystem {
+
 	struct File {
 		const std::string name;
 		const std::string content;
@@ -21,6 +22,10 @@ namespace filesystem {
 
 		virtual std::string read() const {
 			return content;
+		}
+
+		virtual bool is_executable() const{
+			return false;
 		}
 	};
 
@@ -58,6 +63,8 @@ class Terminal {
 		// és visszaadjuk a választ, amit kiírunk a képernyőre.
 		// A válasz sikeres végrehajtás esetén üres string.
 		std::string command(std::string input);
+
+		std::set<std::string> complete(std::string input);
 
 		// Visszaadja az aktuális patht, pl "/bin" vagy "/spells/buffs" vagy "/"
 		std::string get_working_directory();

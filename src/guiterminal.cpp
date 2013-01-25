@@ -11,7 +11,8 @@ GuiTerminal::GuiTerminal(
 Widget(_window),
 player_name(_player_name),
 inputfield_size(25),
-frozen(false)
+frozen(false),
+completion_init(false)
 {
 	window=_window;
 
@@ -86,6 +87,8 @@ void GuiTerminal::handleEvent(sf::Event &event)
 	sf::Lock Lock(mutex);
 	if(!frozen)
 	{
+		if(event.Type == sf::Event::KeyPressed && event.Key.Code != sf::Key::Tab) completion_init = false;
+
 		if((event.Key.Code == sf::Key::Return) && (event.Type == sf::Event::KeyPressed))
 		{
 			buffer.enter(inputfield->val());
@@ -109,6 +112,28 @@ void GuiTerminal::handleEvent(sf::Event &event)
 			}
 
 			inputfield->reset();
+		}
+		if(event.Key.Code==sf::Key::Tab && event.Type == sf::Event::KeyPressed) {
+			std::string frag1, frag2;
+			frag1 = inputfield->val().substr(0, inputfield->getPos());
+			if((unsigned)inputfield->getPos() <= inputfield->val().size()) frag2 = inputfield->val().substr(inputfield->getPos());
+			std::set<std::string> res=term->complete(frag1);
+			if(res.size() == 1) {
+				std::string result = *(res.begin());
+				if(!frag2.empty()) {
+					if(frag2[0] != ' ') result.append(" ");
+					result.append(frag2);
+				} else result.append(" ");
+				inputfield->set( result );
+				inputfield->setPos( (res.begin())->size()+1 );
+			}
+			else if(!completion_init) {
+				completion_init = true;
+			}
+			else {
+				for(std::set<std::string>::const_iterator it=res.begin(); it!=res.end(); ++it) textbox->add(*it);
+				textbox->add(player_name + term->get_working_directory() + "$" + inputfield->val());
+			}
 		}
 		if((event.Key.Code == sf::Key::Up) && (event.Type == sf::Event::KeyPressed))
 		{

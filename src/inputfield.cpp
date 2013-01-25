@@ -45,6 +45,15 @@ void InputField::setX(int _x)
 	cursor_text.SetX(_x);
 }
 
+void InputField::setPos(int pos)
+{
+	this->pos = pos;
+}
+int InputField::getPos()
+{
+	return pos;
+}
+
 void InputField::handleEvent(sf::Event &event)
 {
 	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Left))

@@ -6,40 +6,11 @@
 
 namespace sum {
 
-	class Terminal;
-
 namespace filesystem {
-
-	struct File {
-		const std::string name;
-		const std::string content;
-
-		File(const std::string& name, const std::string& content = "") : name(name), content(content) {}
-
-		virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
-			return "Not an executable file.";
-		}
-
-		virtual std::string read() const {
-			return content;
-		}
-
-		virtual bool is_executable() const{
-			return false;
-		}
-	};
-
-	struct Dir {
-		const std::string name;
-		std::set<Dir*> subdirs;
-		std::set<File*> files;
-
-		Dir(const std::string& name) : name(name) {}
-	};
-
+	struct Dir;
+	struct File;
 	typedef std::list<filesystem::Dir*> Path;
 }
-
 
 class Terminal {
 	public:
@@ -71,7 +42,56 @@ class Terminal {
 
 		bool add_server_exe(std::string path, std::string fname, std::string handle);
 		bool add_readable(std::string path, std::string fname, std::string content);
+
+		//utility
+		static void pathfname(std::string& fname, std::string& path);
+
+	public:
+		struct Completer {
+			virtual void complete(const std::string& fragment, std::set<std::string>& Result, Terminal* context) const = 0;
+			virtual ~Completer() {}
+		};
+
+		static const Completer& dir_completer;
+		static const Completer& file_completer;
+};
+
+
+namespace filesystem {
+
+	struct File {
+		const std::string name;
+		const std::string content;
+		const Terminal::Completer& completer;
+
+		File(const std::string& name, const std::string& content = "", const Terminal::Completer& completer = Terminal::dir_completer) : name(name), content(content), completer(completer) {}
+
+		virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
+			return "Not an executable file.";
+		}
+
+		virtual std::string read() const {
+			return content;
+		}
+
+		virtual bool is_executable() const{
+			return false;
+		}
+
+		virtual void complete(const std::string& fragment, std::set<std::string>& Result, sum::Terminal* context) const {
+			this->completer.complete(fragment, Result, context);
+		}
 	};
+
+	struct Dir {
+		const std::string name;
+		std::set<Dir*> subdirs;
+		std::set<File*> files;
+
+		Dir(const std::string& name) : name(name) {}
+	};
+
+}
 }
 
 #endif

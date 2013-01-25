@@ -2,6 +2,8 @@
 #include "game.hpp"
 #include "util/debug.hpp"
 #include <sstream>
+#include <cassert>
+#include <algorithm>
 
 namespace sum {
 	namespace {
@@ -201,14 +203,13 @@ namespace sum {
 			filesystem::Path path;
 			std::string command;
 			std::string pathstr;
-//todo: whole thing is shaky, but should support ./<tab>
+
 			// is the directory specified?
 			size_t per = input.find_last_of('/');
 			if(!input.empty() && per!=std::string::npos) {
 				//okay, we'll restrict the search to that dir (and bin)
 				command = input.substr(per+1);
-				std::string pathstr = input.substr(0,per);
-				path = string_to_path(pathstr);
+				path = string_to_path( input.substr(0,per) );
 			}
 			else {
 				command = input;
@@ -238,10 +239,21 @@ namespace sum {
 		}
 		else {
 			//ah good, then it's the command's responsibility.
-		}
+			//extract command
+			size_t div = input.find_first_of(whitespace);
+			std::string command = input.substr(0, div);
 
-		for(std::set<std::string>::const_iterator it = Result.begin(); it!=Result.end(); ++it) {
-			std::cout << *it << std::endl;
+			filesystem::File* fil = get_file(command);
+			if(!fil) fil = get_file("/bin/"+command);
+
+			if(fil) {	// if file actually exists
+				fil->complete( input.substr(div+1), Result, this);
+
+				//this is a bit awful, but at least STLish
+				std::set<std::string> res2;
+				std::transform(Result.begin(), Result.end(), std::inserter(res2, res2.begin()), std::bind1st(std::plus<std::string>(), command + " ")  );
+				res2.swap(Result);
+			}
 		}
 
 		return Result;
@@ -350,5 +362,57 @@ namespace sum {
 		return get_file( string_to_path( path+"/"+get_working_directory() ), fname );
 	}
 
+
+	void Terminal::pathfname(std::string& command, std::string& path) {
+		size_t per = command.find_last_of("/");
+		if(per != std::string::npos) {
+			path    = command.substr(0,per);
+			command = command.substr(per+1);
+		}
+	}
+
+
+	// puts every directory whose path is prefixed with fragment into the resultset
+	struct Dir_completer : public Terminal::Completer {
+		virtual void complete(const std::string& fragment, std::set<std::string>& Result, Terminal* context) const {
+			assert(context);
+			filesystem::Path path;
+			std::string pathstr;
+			std::string frag = fragment;
+			std::string prepend;
+
+			if(!frag.empty()) {
+				size_t space = frag.find_last_of(whitespace); // regard the last argument, that's what we're supposed to complete.
+				size_t nspace = frag.find_last_not_of(whitespace);
+
+				if(space != std::string::npos) {
+					if(nspace > space) {	// if fragment doesn't end with space
+						prepend = frag.substr(0,space+1);
+						frag = frag.substr(space+1);
+					} else {
+						prepend = frag;
+						frag = "";	// whole new argument begins
+					}
+				}
+
+				if(!frag.empty()) {
+					Terminal::pathfname(frag, pathstr);
+				}
+			}
+
+			path = context->string_to_path(pathstr);
+			if(path.empty()) return;
+			filesystem::Dir* dir = path.back();
+			size_t prefixlen = frag.size();
+			if(/*dir != context->root &&*/ prefixlen > 0 && frag[0]=='.') Result.insert(prepend+"..");
+
+			for(std::set<filesystem::Dir*>::const_iterator it = dir->subdirs.begin(); it!=dir->subdirs.end(); ++it) {
+				if( (*it)->name.substr(0, prefixlen) == frag ) Result.insert( prepend + (*it)->name );
+			}
+		}
+	};
+
+
+	const Terminal::Completer& Terminal::dir_completer = Dir_completer();
 	const std::string Terminal::freezing_return = "\\";
 }

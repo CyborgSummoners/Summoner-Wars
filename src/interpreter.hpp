@@ -23,6 +23,7 @@ namespace sum {
 				virtual step turn_right() = 0;
 
 				virtual bool operator==(const Puppet& that) = 0;
+				virtual ~Puppet() {}
 			};
 
 		private:

@@ -84,6 +84,9 @@ namespace Logic {
 		protected:
 			Actor(World& my_world, attribute hp);
 
+		public:
+			virtual ~Actor() {}
+
 		friend class World;
 	};
 

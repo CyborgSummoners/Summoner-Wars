@@ -52,11 +52,12 @@ private:
 				default:
 					break;
 			}
-		} 	
+		}
 
 		Facing way;
 		int dest_x;
 		int dest_y;
+		float speed;
 	};
 
 	class Robot : public Widget
@@ -70,7 +71,6 @@ private:
 
 		int ID;
 		int team;
-		float speed;
 		Facing facing;
 		sf::Sprite sprite;
 		std::queue<Moving> movings;

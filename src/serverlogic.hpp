@@ -13,16 +13,6 @@ namespace sum {
 namespace Logic {
 	typedef int attribute;
 
-	struct coord {
-		size_t x;
-		size_t y;
-
-		coord(size_t x, size_t y);
-		bool operator<(const coord& rhs) const;
-	};
-
-	coord default_startpos(coord map_size, size_t player_num, size_t which);
-
 	enum Facing {	// careful, we're doing math with it
 		north,
 		west,
@@ -30,6 +20,18 @@ namespace Logic {
 		east,
 		FACING_SIZE
 	};
+
+	struct coord {
+		size_t x;
+		size_t y;
+
+		coord(size_t x, size_t y);
+		bool operator<(const coord& rhs) const;
+		coord operator+(const coord& rhs) const;
+		coord operator+(const Facing& facing) const;
+	};
+
+	coord default_startpos(coord map_size, size_t player_num, size_t which);
 
 	class Actor;
 	class Puppet;
@@ -59,6 +61,8 @@ namespace Logic {
 			step move_me(Puppet& actor);
 
 			coord get_pos(Actor& actor);
+			bool is_valid(coord pos);
+			bool is_free(coord pos);
 	};
 
 

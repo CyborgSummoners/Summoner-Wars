@@ -1,7 +1,9 @@
 procedure demo is
 	i := 0;
-	while i < 8 loop
+	while i < 4 loop
 		Self.turn_left;
+		Self.move;
+		Self.move;
 		Self.move;
 		i:=i+1;
 	end loop;

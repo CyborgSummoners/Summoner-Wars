@@ -15,6 +15,34 @@ bool coord::operator<(const coord& rhs) const {
 	return y < rhs.y;
 }
 
+coord coord::operator+(const coord& rhs) const {
+	coord res(*this);
+	res.x+=rhs.x;
+	res.y+=rhs.y;
+	return res;
+}
+coord coord::operator+(const Facing& facing) const {
+	assert(facing < FACING_SIZE);
+	coord res(*this);
+	switch(facing) {
+		case north:
+			--res.y;
+			break;
+		case west:
+			--res.x;
+			break;
+		case south:
+			++res.y;
+			break;
+		case east:
+			++res.x;
+			break;
+		default:
+			break;
+	}
+	return res;
+}
+
 coord default_startpos(coord map_size, size_t player_num, size_t which) {
 	assert(player_num > 0 && player_num <= 4);
 	assert(which < player_num);
@@ -57,6 +85,50 @@ void World::post_message(const ServerMessage& msg) {
 	outbox.push_back(msg);
 }
 
+step World::move_me(Puppet& actor) {
+	debugf("%d moves ", actor.get_id());
+	coord pos = get_pos(actor);
+	coord respos = pos + actor.facing;
+	step res = actor.attributes.move_cost;
+	ServerMessage sm(ServerMessage::move);
+	sm << actor.get_id()   // this actor tried to move
+	   << pos.x            // from here
+	   << pos.y
+	   << respos.x         // to here
+	   << respos.y
+	;
+
+	// valid?
+	if(!is_valid(respos)) {
+		debugf("and bumps into a wall.\n");
+		sm << 0    // and fails;
+		   << res  // it took him res many steps.
+		;
+		post_message(sm);
+		return res;
+	}
+
+	// free?
+	if(!is_free(respos)) {
+		debugf("and bumps into another puppet.\n");
+		sm << 0 << res;
+		post_message(sm);
+		return res;
+	}
+
+	debugf("to %d,%d.\n", respos.x, respos.y);
+
+	puppets.erase( puppets.find(pos) );
+	puppets.insert( std::make_pair(respos, &actor) );
+
+	sm << 1   // success
+	   << res // it took him res many steps.
+	;
+
+	post_message(sm);
+	return res;
+}
+
 Summoner& World::create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success) {
 	Summoner* Result = new Summoner(*this);
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
@@ -89,7 +161,7 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 	}
 
 	// is anyone at pos?
-	if( puppets.count( pos ) > 0 ) {
+	if( !is_free( pos ) > 0 ) {
 		failure_reason = "Position already occupied.";
 		debugf("failed: %s\n", failure_reason.c_str());
 		return 0;
@@ -130,6 +202,14 @@ coord World::get_pos(Actor& actor) {
 	throw std::invalid_argument("No such puppet!");
 }
 
+bool World::is_valid(coord pos) {
+	return pos.x>0 && pos.y>0 && pos.x<width && pos.y<height;
+}
+
+bool World::is_free(coord pos) {
+	return is_valid(pos) && puppets.count(pos)==0;
+}
+
 
 size_t Actor::maxid = 0;
 size_t Actor::gen_id() {
@@ -164,8 +244,7 @@ Puppet::Puppet(World& my_world, const Summoner& owner, const Puppet_template& at
 }
 
 step Puppet::move() {
-	debugf("%d wants to move.\n", this->get_id());
-	return attributes.move_cost;
+	return my_world.move_me(*this);
 }
 step Puppet::turn_left() {
 	Facing orig = this->facing;

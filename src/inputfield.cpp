@@ -91,7 +91,7 @@ void InputField::handleEvent(sf::Event &event)
 		}
 		return;
 	}
-	if(event.Type == sf::Event::TextEntered)
+	if(event.Type == sf::Event::TextEntered && event.Key.Code > 31)
 	{
 		if(text.GetRect().GetWidth() < width)
 		{

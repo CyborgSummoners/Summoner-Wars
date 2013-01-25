@@ -1,3 +1,4 @@
+
 #include "guiterminal.hpp"
 #include <iostream>
 
@@ -139,10 +140,10 @@ void GuiTerminal::handleEvent(sf::Event &event)
 				inputfield->set( result );
 				inputfield->setPos( prefix.size()+(res.begin())->size()+1 );
 			}
-			else if(!completion_init) {
+			else if(!completion_init && res.size()>1) {
 				completion_init = true;
 			}
-			else {
+			else if(completion_init && res.size() > 1) {
 				for(std::set<std::string>::const_iterator it=res.begin(); it!=res.end(); ++it) textbox->add(*it);
 				textbox->add(player_name + term->get_working_directory() + "$" + inputfield->val());
 			}

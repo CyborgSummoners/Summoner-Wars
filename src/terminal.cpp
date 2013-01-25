@@ -37,6 +37,8 @@ namespace sum {
 
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
 				if(0 == context) return "Fatal: could not access filesystem.";
+				if(stringutils::trim(args).empty()) return "";
+
 				std::vector<std::string> fnames = stringutils::string_explode(stringutils::trim(args), whitespace);
 
 				std::string Result = "";

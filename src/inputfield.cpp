@@ -59,6 +59,15 @@ void InputField::handleEvent(sf::Event &event)
 			++pos;
 		return;
 	}
+	if( event.Type == sf::Event::KeyPressed && event.Key.Code == sf::Key::Home ) {
+		pos = 0;
+		return;
+	}
+	if( event.Type == sf::Event::KeyPressed && event.Key.Code == sf::Key::End ) {
+		pos = value.size();
+		return;
+	}
+
 
 	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Back))
 	{

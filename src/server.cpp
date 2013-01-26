@@ -52,7 +52,7 @@ void sum::Server::Start() {
 
 bool sum::Server::Newgame(unsigned char num_of_players) {
 	if(state != Setup) return false;
-	this->num_of_players = 1;
+	this->num_of_players = num_of_players;
 	state = Joining;
 	return true;
 }

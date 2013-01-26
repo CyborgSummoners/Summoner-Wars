@@ -220,7 +220,7 @@ namespace sum {
 
 				// all exes in bin:
 				for(std::set<filesystem::File*>::const_iterator it=bin->files.begin(); it!=bin->files.end(); ++it) {
-					if( (*it)->is_executable() && (*it)->name.substr(0, prefixlen) == command ) Result.insert( (*it)->name );
+					if( (*it)->is_executable() && (*it)->name.substr(0, prefixlen) == command ) Result.insert( (*it)->name + " " );
 				}
 
 				// all exes in specified directory:
@@ -228,7 +228,7 @@ namespace sum {
 				filesystem::Dir* dir = path.back();
 				if(dir != bin) {
 					for(std::set<filesystem::File*>::const_iterator it=dir->files.begin(); it!=dir->files.end(); ++it) {
-						if( (*it)->is_executable() && (*it)->name.substr(0, prefixlen) == command ) Result.insert( (*it)->name );
+						if( (*it)->is_executable() && (*it)->name.substr(0, prefixlen) == command ) Result.insert( (*it)->name + " " );
 					}
 				}
 
@@ -380,10 +380,10 @@ namespace sum {
 			if(path.empty()) return;
 			filesystem::Dir* dir = path.back();
 			size_t prefixlen = frag.size();
-			if(prefixlen > 0 && frag[0]=='.') Result.insert("../");
-
+			if(!pathstr.empty()) pathstr.append("/");
+			if(prefixlen > 0 && frag[0]=='.') Result.insert(pathstr + "../");
 			for(std::set<filesystem::Dir*>::const_iterator it = dir->subdirs.begin(); it!=dir->subdirs.end(); ++it) {
-				if( (*it)->name.substr(0, prefixlen) == frag ) Result.insert( (*it)->name + "/" );
+				if( (*it)->name.substr(0, prefixlen) == frag ) Result.insert( pathstr+(*it)->name + "/" );
 			}
 		}
 	};

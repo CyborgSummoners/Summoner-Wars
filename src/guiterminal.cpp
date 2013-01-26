@@ -131,14 +131,8 @@ void GuiTerminal::handleEvent(sf::Event &event)
 
 			if(res.size() == 1) {
 				std::string result = prefix + *(res.begin());
-
-				if(!frag2.empty()) {
-					if(frag2[0] != ' ') result.append(" ");
-					result.append(frag2);
-				} else result.append(" ");
-
 				inputfield->set( result );
-				inputfield->setPos( prefix.size()+(res.begin())->size()+1 );
+				inputfield->setPos( result.size() );
 			}
 			else if(!completion_init && res.size()>1) {
 				completion_init = true;

@@ -138,7 +138,10 @@ void GuiTerminal::handleEvent(sf::Event &event)
 				completion_init = true;
 			}
 			else if(completion_init && res.size() > 1) {
-				for(std::set<std::string>::const_iterator it=res.begin(); it!=res.end(); ++it) textbox->add(*it);
+				for(std::set<std::string>::const_iterator it=res.begin(); it!=res.end(); ++it) {
+					if(it->find('/') < it->size()-1) textbox->add(it->substr(it->find('/')+1));
+					else textbox->add(*it);
+				}
 				textbox->add(player_name + term->get_working_directory() + "$" + inputfield->val());
 			}
 		}

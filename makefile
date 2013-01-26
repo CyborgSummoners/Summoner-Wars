@@ -1,5 +1,14 @@
 CC = g++
-CFLAGS = -Wall -c -DDEBUG_MACROS_ENABLED
+CFLAGS = -Wall -c
+DEBUG_SYMBOLS = true
+DEBUG_LOGGING = true
+ifeq ($(DEBUG_SYMBOLS),true)
+	CFLAGS += -ggdb
+endif
+ifeq ($(DEBUG_LOGGING),true)
+	CFLAGS += -DDEBUG_MACROS_ENABLED
+endif
+
 
 # - tobbi libraryt majd ide kell hozzaadni.
 # - fontos a sorrend: sfml-system kell az sfml-windownak, aki pedig kell
@@ -10,8 +19,9 @@ LIBS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
 RM = /bin/rm -f
 
-SOURCES := $(wildcard src/*.cpp) $(wildcard src/compiler/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc
+SOURCES := $(wildcard src/*.cpp) $(wildcard src/compiler/*.cpp) $(wildcard src/util/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc
 SOURCES := $(filter-out src/konzoltest.cpp, $(SOURCES))
+SOURCES := $(filter-out src/util/debug_example.cpp, $(SOURCES))
 OBJECTS := $(patsubst src/%.cpp,obj/%.o,$(SOURCES))
 OBJECTS := $(patsubst src/%.cc,obj/%.occ,$(OBJECTS))
 COMPILER_SOURCES := $(wildcard src/compiler/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc src/bytecode.cpp src/interpreter.cpp
@@ -24,7 +34,7 @@ PROG = sumwar
 $(PROG): $(OBJECTS)
 	$(CC) -o $(PROG) $(OBJECTS) $(LIBS)
 
-obj/%.o: src/%.cpp | obj obj/compiler src/compiler/parse.cc
+obj/%.o: src/%.cpp | obj obj/compiler obj/util src/compiler/parse.cc
 	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 obj/%.occ: src/%.cc | obj obj/compiler
@@ -39,6 +49,9 @@ obj:
 	mkdir -p obj
 
 obj/compiler:
+	mkdir -p obj/compiler
+
+obj/util:
 	mkdir -p obj/compiler
 
 compiler-demo: $(COMPILER_OBJECTS) src/compiler/parse.cc

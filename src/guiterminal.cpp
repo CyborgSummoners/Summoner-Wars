@@ -10,7 +10,8 @@ GuiTerminal::GuiTerminal(
 	int _height) :
 Widget(_window),
 player_name(_player_name),
-inputfield_size(25)
+inputfield_size(25),
+frozen(false)
 {
 	window=_window;
 
@@ -47,6 +48,31 @@ GuiTerminal::~GuiTerminal()
 	delete term;
 }
 
+void GuiTerminal::update(const ServerMessage &message)
+{
+	sf::Lock Lock(mutex);
+	std::vector<std::string> ret;
+	switch(message.type)
+	{
+		case ServerMessage::server_fun:
+			term->add_server_exe("/bin", message.msg, message.msg);
+			break;
+		case ServerMessage::register_mons:
+			ret = message.get_parsed_msg();
+			if(ret.size() > 1) term->add_readable("/mon", ret[0], ret[1]);
+			break;
+		case ServerMessage::reply:
+			frozen=false;
+			if(!message.msg.empty()) {
+				ret = string_explode(message.msg, "\n");
+				for(size_t i=0; i<ret.size(); ++i) if(i != ret.size() -1 || !ret[i].empty()) textbox->add(ret[i]);
+			}
+			break;
+		default:
+			break;
+	}
+}
+
 void GuiTerminal::draw()
 {
 	inputfield->draw();
@@ -57,31 +83,45 @@ void GuiTerminal::draw()
 
 void GuiTerminal::handleEvent(sf::Event &event)
 {
-	if((event.Key.Code == sf::Key::Return) && (event.Type == sf::Event::KeyPressed))
+	sf::Lock Lock(mutex);
+	if(!frozen)
 	{
-		buffer.enter(inputfield->val());
-		std::string term_user=player_name + term->get_working_directory() + "$";
-		textbox->add(term_user+inputfield->val());
-		std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
-		term_user=player_name + term->get_working_directory() + "$";
-		name_pwd.SetText(term_user);
-		inputfield->setX(x + name_pwd.GetRect().GetWidth());
-		inputfield->setWidth(width-x-name_pwd.GetRect().GetWidth()-x);
-		for(size_t i=0; i<ret.size(); ++i)
-			textbox->add(ret[i]);
-		inputfield->reset();
+		if((event.Key.Code == sf::Key::Return) && (event.Type == sf::Event::KeyPressed))
+		{
+			buffer.enter(inputfield->val());
+			std::string term_user=player_name + term->get_working_directory() + "$";
+			textbox->add(term_user+inputfield->val());
+			std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
+
+			if(ret.size() > 0 && ret[0] == Terminal::freezing_return) frozen=true;
+
+			term_user=player_name + term->get_working_directory() + "$";
+			name_pwd.SetText(term_user);
+			inputfield->setX(x + name_pwd.GetRect().GetWidth());
+			inputfield->setWidth(width-x-name_pwd.GetRect().GetWidth()-x);
+
+			if(frozen)
+				textbox->add("Waiting for server to reply...");
+			else
+			{
+				for(size_t i=0; i<ret.size(); ++i)
+					if(i != ret.size() -1 || !ret[i].empty()) textbox->add(ret[i]);
+			}
+
+			inputfield->reset();
+		}
+		if((event.Key.Code == sf::Key::Up) && (event.Type == sf::Event::KeyPressed))
+		{
+			if(buffer.up())
+				inputfield->set(buffer.val());
+		}
+		if((event.Key.Code == sf::Key::Down) && (event.Type == sf::Event::KeyPressed))
+		{
+			if(buffer.down())
+				inputfield->set(buffer.is_end() ? "" : buffer.val());
+		}
+		inputfield->handleEvent(event);
 	}
-	if((event.Key.Code == sf::Key::Up) && (event.Type == sf::Event::KeyPressed))
-	{
-		if(buffer.up())
-			inputfield->set(buffer.val());
-	}
-	if((event.Key.Code == sf::Key::Down) && (event.Type == sf::Event::KeyPressed))
-	{
-		if(buffer.down())
-			inputfield->set(buffer.is_end() ? "" : buffer.val());
-	}
-	inputfield->handleEvent(event);
 }
 
 bool GuiTerminal::Buffer::up()

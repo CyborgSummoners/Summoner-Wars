@@ -19,7 +19,7 @@ private:
 public:
 	static void Start(std::string server_ip, unsigned short server_port);
 
-	static void SendShout(std::string msg);
+	static void SendRequest(const std::string& server_handle, const std::string& args = "");
 
 private:
 	static bool IsExiting();

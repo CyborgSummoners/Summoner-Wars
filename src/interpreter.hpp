@@ -6,15 +6,26 @@
 #include <list>
 #include <string>
 #include "bytecode.hpp"
-#include "puppet.hpp"
+#include "measurements.hpp"
 
 namespace sum {
-
 	namespace stack_machine{
 		class Stack;
 	}
 
 	class Interpreter {
+		public:
+			// interface. sum::Logic::Puppet will implement this
+			struct Puppet {
+				virtual std::string get_name() = 0;
+				virtual step move() = 0;
+				virtual step turn_left() = 0;
+				virtual step turn_right() = 0;
+
+				virtual bool operator==(const Puppet& that) = 0;
+				virtual ~Puppet() {}
+			};
+
 		private:
 			struct puppet_brain {
 				Puppet& puppet;
@@ -49,10 +60,10 @@ namespace sum {
 			Interpreter();
 
 			//advance simulation by ticks many ticks, return true if anything meaningful happened, false otherwise.
-			bool step(unsigned int ticks);
+			bool advance(step steps);
 
 			bool register_subprogram(const bytecode::subprogram& prog);
-			void execute(const std::string& program) const;
+			//void execute(const std::string& program) const;	// valahogy meg kéne oldani
 
 			// Puppet regisztrációja: a puppet bekerül a végrehajtási sorba. A Puppet viselkedése végtelen NOP
 			// True, ha sikeres, False, ha a puppet már regisztrálva volt.

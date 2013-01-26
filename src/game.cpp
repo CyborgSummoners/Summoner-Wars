@@ -38,6 +38,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	obss.push_back(combat_log);
 	obss.push_back(infobar);
 	obss.push_back(map);
+	obss.push_back(terminal);
 
 	connection = new Connection(obss);
 
@@ -88,13 +89,12 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	delete sfclock;
 }
 
-void Game::SendShout(std::string msg) {
+void Game::SendRequest(const std::string& server_handle, const std::string& args) {
 	sf::Packet packet;
-	packet << 0;	//type, vagy valami. erősen fixme
-	packet << msg;
+	packet << server_handle;
+	packet << args;
 	connection->send(packet);
 }
-
 
 bool Game::IsExiting()
 {

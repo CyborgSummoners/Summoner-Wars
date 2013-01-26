@@ -23,7 +23,7 @@ void sum::Connection::Listener::Run() {
 			}
 			packet >> msg;
 			//printf("%s\n", msg.msg); //compiles, but generates an illegal instruction! Implicit is bad.
-			//printf("%s\n", msg.msg.c_str());
+			printf("type %d: %s\n", msg.type, msg.msg.c_str());
 			updateAll( msg );
 		}
 	}

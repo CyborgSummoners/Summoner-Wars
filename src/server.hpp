@@ -39,8 +39,6 @@ class Server : public sf::Thread {
 
 	static const Client nobody;
 
-	static const tick sec_per_tick = 1.0f;	// a tick is this many seconds.
-
 	private:
 		sf::SocketTCP listener;
 		sf::SelectorTCP selector;
@@ -51,12 +49,13 @@ class Server : public sf::Thread {
 		std::list<Client*> waiting_list;
 		std::list<Client*> clients;
 
+		tick sec_per_tick;	// a tick is this many seconds.
 		step step_size;
 
 		Logic::World* world;
 
 	public:
-		Server(unsigned short port);
+		Server(unsigned short port, tick sec_per_tick = 1.0f, step step_size = 30);
 		~Server();
 
 		void Start();

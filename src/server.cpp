@@ -30,7 +30,7 @@ std::string sum::Server::Client::toString() const {
 }
 
 
-sum::Server::Server(unsigned short port) : state(Starting), port(port), step_size(30) {
+sum::Server::Server(unsigned short port, tick sec_per_tick, step step_size) : state(Starting), port(port), sec_per_tick(sec_per_tick), step_size(step_size) {
 	if(!listener.Listen(port)) {
 		std::stringstream s;
 		s << "Server could not listen on port " << port << std::endl;

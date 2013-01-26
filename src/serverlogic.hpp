@@ -21,6 +21,8 @@ namespace Logic {
 		FACING_SIZE
 	};
 
+	std::string toString(Facing facing);
+
 	struct coord {
 		size_t x;
 		size_t y;
@@ -60,9 +62,11 @@ namespace Logic {
 			void post_message(const ServerMessage& msg);
 			step move_me(Puppet& actor);
 
-			coord get_pos(Actor& actor);
-			bool is_valid(coord pos);
-			bool is_free(coord pos);
+			coord get_pos(const Actor& actor) const;
+			bool is_valid(coord pos) const;
+			bool is_free(coord pos) const;
+
+			std::string describe(size_t actor_id) const;
 	};
 
 
@@ -78,8 +82,10 @@ namespace Logic {
 			Facing facing;
 
 		public:
-			size_t get_id();
-			coord get_pos();
+			size_t get_id() const;
+			coord get_pos() const;
+
+			virtual std::string describe() const = 0;
 
 		protected:
 			Actor(World& my_world, attribute hp);
@@ -111,11 +117,12 @@ namespace Logic {
 		private:
 			Puppet(World& my_world, const Summoner& owner, const Puppet_template& attributes);
 
-		public:
 			step move();
 			step turn_left();
 			step turn_right();
 			std::string get_name();
+
+			std::string describe() const;
 
 			bool operator==(const Interpreter::Puppet& that);
 			bool operator==(const Puppet& that);
@@ -127,6 +134,8 @@ namespace Logic {
 
 		private:
 			Summoner(World& my_world);
+
+			std::string describe() const;
 
 		friend class World;
 	};

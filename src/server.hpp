@@ -81,6 +81,7 @@ class Server : public sf::Thread {
 		const std::string shout(Client& client, std::string args);
 		const std::string serverdate(Client& client, std::string args);
 		const std::string summon(Client& client, std::string args);
+		const std::string puppetinfo(Client& client, std::string args);
 };
 
 }

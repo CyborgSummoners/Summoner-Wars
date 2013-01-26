@@ -417,12 +417,30 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 	return Result.append("Usage: summon <summonable> [<x-coord> <y-coord>]");
 }
 
+const std::string sum::Server::puppetinfo(Client& client, std::string args) {
+	if(state < Playing) return "Fatal: can't describe things when not playing.";
+	std::string Result = "";
+
+	// args expected to contain puppet-id.
+	std::vector<std::string> parts = string_explode(stringutils::trim(args), stringutils::whitespace);
+	size_t puppet_id;
+	if(!stringutils::to_unsigned(parts[0], puppet_id)) {
+		Result = "Error: argument not an actor-id.";
+	}
+	else {
+		return world->describe(puppet_id);
+	}
+
+	return Result.append("Usage: describe <actor-id>");
+}
+
 
 const std::map<std::string, sum::Server::server_function> sum::Server::initialize_server_functions() {
 	std::map<std::string, server_function> Result;
 	Result.insert( make_pair("shout", &Server::shout) );
 	Result.insert( make_pair("serverdate", &Server::serverdate) );
 	Result.insert( make_pair("summon", &Server::summon) );
+	Result.insert( make_pair("describe", &Server::puppetinfo) );
 	return Result;
 }
 

@@ -7,6 +7,21 @@
 namespace sum {
 namespace Logic {
 
+std::string toString(Facing facing) {
+	switch(facing) {
+		case north:
+			return "north";
+		case west:
+			return "west";
+		case south:
+			return "south";
+		case east:
+			return "east";
+		default:
+			return "TOWARDS A BUG";
+	}
+}
+
 coord::coord(size_t x, size_t y) : x(x), y(y) {}
 
 bool coord::operator<(const coord& rhs) const {
@@ -194,7 +209,7 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 	return Result;
 }
 
-coord World::get_pos(Actor& actor) {
+coord World::get_pos(const Actor& actor) const {
 	for(std::map<coord, Actor*>::const_iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 		if(&actor == it->second) return it->first;
 	}
@@ -202,14 +217,20 @@ coord World::get_pos(Actor& actor) {
 	throw std::invalid_argument("No such puppet!");
 }
 
-bool World::is_valid(coord pos) {
+bool World::is_valid(coord pos) const {
 	return pos.x>0 && pos.y>0 && pos.x<width && pos.y<height;
 }
 
-bool World::is_free(coord pos) {
+bool World::is_free(coord pos) const {
 	return is_valid(pos) && puppets.count(pos)==0;
 }
 
+std::string World::describe(size_t actor_id) const {
+	for(std::map<coord, Actor*>::const_iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+		if(it->second->get_id() == actor_id) return it->second->describe();
+	}
+	return "";
+}
 
 size_t Actor::maxid = 0;
 size_t Actor::gen_id() {
@@ -219,10 +240,10 @@ size_t Actor::gen_id() {
 Actor::Actor(World& my_world, attribute hp) : id(gen_id()), my_world(my_world), hp(hp), facing(north) {
 }
 
-size_t Actor::get_id() {
+size_t Actor::get_id() const {
 	return id;
 }
-coord Actor::get_pos() {
+coord Actor::get_pos() const {
 	return my_world.get_pos(*this);
 }
 
@@ -284,8 +305,26 @@ bool Puppet::operator==(const Interpreter::Puppet& that) {
 	return this == &that;
 }
 
+std::string Puppet::describe() const {
+	std::stringstream Result;
+	Result << "Facing " << toString(this->facing) << std::endl
+	       << "HP: " << this->hp << "/" << this->attributes.maxhp << std::endl
+	;
+	return Result.str();
+}
+
 
 Summoner::Summoner(World& my_world) : Actor(my_world, 20), mana(100) {
+}
+
+std::string Summoner::describe() const {
+	std::stringstream Result;
+	Result << "Summoner" << std::endl  // insert name, eventually
+	       << "Facing " << toString(this->facing) << std::endl
+	       << "HP: " << this->hp << "/" << 20 << std::endl
+	       << "Mana: " << this->mana << "/" << 100 << std::endl
+	;
+	return Result.str();
 }
 
 

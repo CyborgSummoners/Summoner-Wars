@@ -13,7 +13,7 @@ namespace sum {
 	namespace filesystem {
 
 		struct Executable : public File {
-			Executable(const std::string& fname) : File(fname) {}
+			Executable(const std::string& fname, const Terminal::Completer& completer = Terminal::dir_completer) : File(fname, "", completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) = 0;
 			virtual std::string read() const {
 				return "Fatal: not a readable file.";
@@ -35,7 +35,7 @@ namespace sum {
 
 		// catlike. Args is supposed to be a space-delimited list of filenames.
 		struct Print : public Executable {
-			Print(const std::string& fname) : Executable(fname) {}
+			Print(const std::string& fname) : Executable(fname, Terminal::filedir_completer) {}
 
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
 				if(0 == context) return "Fatal: could not access filesystem.";
@@ -52,10 +52,11 @@ namespace sum {
 				}
 				return Result;
 			}
+
 		};
 
 		struct Echo : public Executable {
-			Echo() : Executable("echo") {}
+			Echo() : Executable("echo", Terminal::filedir_completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
 				return args;
 			}
@@ -67,9 +68,10 @@ namespace sum {
 				if(0 == context) return "Fatal: could not access filesystem.";
 				return context->get_working_directory();
 			}
+			virtual void complete(const std::string& fragment, std::set<std::string>& Result, sum::Terminal* context) const {}
 		};
 		struct Cd : public Executable {
-			Cd() : Executable("cd") {}
+			Cd() : Executable("cd", Terminal::dir_completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context) {
 				if(0 == context) return "Fatal: could not access filesystem.";
 				Path path = context->string_to_path(args);
@@ -79,7 +81,7 @@ namespace sum {
 			}
 		};
 		struct Ls : public Executable {
-			Ls() : Executable("ls") {}
+			Ls() : Executable("ls", Terminal::dir_completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context) {
 				if(0 == context) return "Fatal: could not access filesystem.";
 				Path path;
@@ -389,6 +391,37 @@ namespace sum {
 	};
 
 
+	struct File_completer : public Terminal::Completer {
+		virtual void complete(const std::string& fragment, std::set<std::string>& Result, Terminal* context) const {
+			assert(context);
+			filesystem::Path path;
+			std::string pathstr;
+			std::string frag = fragment;
+
+			if(!frag.empty()) Terminal::pathfname(frag, pathstr);
+
+			path = context->string_to_path(pathstr);
+			if(path.empty()) return;
+			filesystem::Dir* dir = path.back();
+			size_t prefixlen = frag.size();
+			if(!pathstr.empty()) pathstr.append("/");
+
+			for(std::set<filesystem::File*>::const_iterator it = dir->files.begin(); it!=dir->files.end(); ++it) {
+				if( (*it)->name.substr(0, prefixlen) == frag ) Result.insert( pathstr+(*it)->name + " " );
+			}
+		}
+	};
+
+	struct Filedir_completer : public Terminal::Completer {
+		virtual void complete(const std::string& fragment, std::set<std::string>& Result, Terminal* context) const {
+			Terminal::dir_completer.complete(fragment, Result, context);
+			Terminal::file_completer.complete(fragment, Result, context);
+		}
+	};
+
+
 	const Terminal::Completer& Terminal::dir_completer = Dir_completer();
+	const Terminal::Completer& Terminal::file_completer = File_completer();
+	const Terminal::Completer& Terminal::filedir_completer = Filedir_completer();
 	const std::string Terminal::freezing_return = "\\";
 }

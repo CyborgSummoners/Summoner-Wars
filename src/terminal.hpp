@@ -54,6 +54,7 @@ class Terminal {
 
 		static const Completer& dir_completer;
 		static const Completer& file_completer;
+		static const Completer& filedir_completer;
 };
 
 

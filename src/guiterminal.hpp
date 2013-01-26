@@ -51,6 +51,7 @@ class GuiTerminal : public Widget, public Observer<ServerMessage>
 		const int inputfield_size;
 		bool frozen;
 		sf::Mutex mutex;
+		bool completion_init;
 };
 
 

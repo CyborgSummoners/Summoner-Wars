@@ -45,6 +45,15 @@ void InputField::setX(int _x)
 	cursor_text.SetX(_x);
 }
 
+void InputField::setPos(int pos)
+{
+	this->pos = pos;
+}
+int InputField::getPos()
+{
+	return pos;
+}
+
 void InputField::handleEvent(sf::Event &event)
 {
 	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Left))
@@ -59,6 +68,22 @@ void InputField::handleEvent(sf::Event &event)
 			++pos;
 		return;
 	}
+	if( event.Type == sf::Event::KeyPressed && event.Key.Code == sf::Key::Home ) {
+		pos = 0;
+		return;
+	}
+	if( event.Type == sf::Event::KeyPressed && event.Key.Code == sf::Key::End ) {
+		pos = value.size();
+		return;
+	}
+	if( event.Type == sf::Event::KeyPressed && event.Key.Code == sf::Key::Delete ) {
+		if(static_cast<size_t>(pos) < value.size()) {
+			value.erase(pos,1);
+			text.SetText(value);
+		}
+		return;
+	}
+
 
 	if((event.Type == sf::Event::KeyPressed) && (event.Key.Code == sf::Key::Back))
 	{
@@ -82,7 +107,7 @@ void InputField::handleEvent(sf::Event &event)
 		}
 		return;
 	}
-	if(event.Type == sf::Event::TextEntered)
+	if(event.Type == sf::Event::TextEntered && event.Key.Code > 31 && event.Key.Code != 127) // 127 is del
 	{
 		if(text.GetRect().GetWidth() < width)
 		{

@@ -52,7 +52,7 @@ obj/compiler:
 	mkdir -p obj/compiler
 
 obj/util:
-	mkdir -p obj/compiler
+	mkdir -p obj/util
 
 compiler-demo: $(COMPILER_OBJECTS) src/compiler/parse.cc
 	$(CC) -Wall $(COMPILER_OBJECTS) -o compiler-demo

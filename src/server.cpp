@@ -344,8 +344,8 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
 	// expecting format "summon <summonable> [<coord_x> <coord_y>]";
 	std::string actor_type;
-	size_t x;
-	size_t y;
+	unsigned int x;
+	unsigned int y;
 	bool success = true;
 	size_t bit = 0;
 

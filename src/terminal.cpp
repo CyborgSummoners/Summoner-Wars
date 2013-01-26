@@ -2,6 +2,8 @@
 #include "game.hpp"
 #include "util/debug.hpp"
 #include <sstream>
+#include <cassert>
+#include <algorithm>
 
 namespace sum {
 	namespace {
@@ -11,10 +13,13 @@ namespace sum {
 	namespace filesystem {
 
 		struct Executable : public File {
-			Executable(const std::string& fname) : File(fname) {}
+			Executable(const std::string& fname, const Terminal::Completer& completer = Terminal::dir_completer) : File(fname, "", completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) = 0;
 			virtual std::string read() const {
 				return "Fatal: not a readable file.";
+			}
+			virtual bool is_executable() const{
+				return true;
 			}
 		};
 
@@ -30,10 +35,12 @@ namespace sum {
 
 		// catlike. Args is supposed to be a space-delimited list of filenames.
 		struct Print : public Executable {
-			Print(const std::string& fname) : Executable(fname) {}
+			Print(const std::string& fname) : Executable(fname, Terminal::filedir_completer) {}
 
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
 				if(0 == context) return "Fatal: could not access filesystem.";
+				if(stringutils::trim(args).empty()) return "";
+
 				std::vector<std::string> fnames = stringutils::string_explode(stringutils::trim(args), whitespace);
 
 				std::string Result = "";
@@ -45,10 +52,11 @@ namespace sum {
 				}
 				return Result;
 			}
+
 		};
 
 		struct Echo : public Executable {
-			Echo() : Executable("echo") {}
+			Echo() : Executable("echo", Terminal::filedir_completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
 				return args;
 			}
@@ -60,9 +68,10 @@ namespace sum {
 				if(0 == context) return "Fatal: could not access filesystem.";
 				return context->get_working_directory();
 			}
+			virtual void complete(const std::string& fragment, std::set<std::string>& Result, sum::Terminal* context) const {}
 		};
 		struct Cd : public Executable {
-			Cd() : Executable("cd") {}
+			Cd() : Executable("cd", Terminal::dir_completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context) {
 				if(0 == context) return "Fatal: could not access filesystem.";
 				Path path = context->string_to_path(args);
@@ -72,7 +81,7 @@ namespace sum {
 			}
 		};
 		struct Ls : public Executable {
-			Ls() : Executable("ls") {}
+			Ls() : Executable("ls", Terminal::dir_completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context) {
 				if(0 == context) return "Fatal: could not access filesystem.";
 				Path path;
@@ -184,6 +193,69 @@ namespace sum {
 		return command+": command not found\n";
 	}
 
+
+	std::set<std::string> Terminal::complete(const std::string& prefix, std::string input) {
+		std::set<std::string> Result;
+
+		// is the command finished?
+		if(prefix.empty()) {
+			//no, it isn't. we'll be handing out a set of command strings with the prefix $input.
+			filesystem::Path path;
+			std::string command;
+			std::string pathstr;
+
+			// is the directory specified?
+			size_t per = input.find_last_of('/');
+			if(!input.empty() && per!=std::string::npos) {
+				//okay, we'll restrict the search to that dir (and bin)
+				command = input.substr(per+1);
+				path = string_to_path( input.substr(0,per) );
+			}
+			else {
+				command = input;
+				path = working_directory;
+				// okay, then we'll give you executables in current dir (and in bin), and
+			}
+
+			if(!path.empty()) {
+				size_t prefixlen = command.size();
+
+				// all exes in bin:
+				for(std::set<filesystem::File*>::const_iterator it=bin->files.begin(); it!=bin->files.end(); ++it) {
+					if( (*it)->is_executable() && (*it)->name.substr(0, prefixlen) == command ) Result.insert( (*it)->name + " " );
+				}
+
+				// all exes in specified directory:
+				// um, currently this is totally meaningless.
+				filesystem::Dir* dir = path.back();
+				if(dir != bin) {
+					for(std::set<filesystem::File*>::const_iterator it=dir->files.begin(); it!=dir->files.end(); ++it) {
+						if( (*it)->is_executable() && (*it)->name.substr(0, prefixlen) == command ) Result.insert( (*it)->name + " " );
+					}
+				}
+
+				// todo: directories.
+			}
+		}
+		else {
+			//ah good, then it's the command's responsibility.
+			//extract command
+			std::string command = stringutils::trim(prefix);
+			size_t div = command.find_first_of(whitespace);
+			command = command.substr(0, div);
+
+			filesystem::File* fil = get_file(command);
+			if(!fil) fil = get_file("/bin/"+command);
+
+			if(fil) {	// if file actually exists
+				fil->complete( input, Result, this);
+			}
+		}
+
+		return Result;
+	}
+
+
 	std::string Terminal::get_working_directory() {
 		if(working_directory.size() < 2) return "/";
 
@@ -286,5 +358,70 @@ namespace sum {
 		return get_file( string_to_path( path+"/"+get_working_directory() ), fname );
 	}
 
+
+	void Terminal::pathfname(std::string& command, std::string& path) {
+		size_t per = command.find_last_of("/");
+		if(per != std::string::npos) {
+			path    = command.substr(0,per);
+			command = command.substr(per+1);
+		}
+	}
+
+
+	// puts every directory whose path is prefixed with fragment into the resultset
+	struct Dir_completer : public Terminal::Completer {
+		virtual void complete(const std::string& fragment, std::set<std::string>& Result, Terminal* context) const {
+			assert(context);
+			filesystem::Path path;
+			std::string pathstr;
+			std::string frag = fragment;
+
+			if(!frag.empty()) Terminal::pathfname(frag, pathstr);
+
+			path = context->string_to_path(pathstr);
+			if(path.empty()) return;
+			filesystem::Dir* dir = path.back();
+			size_t prefixlen = frag.size();
+			if(!pathstr.empty()) pathstr.append("/");
+			if(prefixlen > 0 && frag[0]=='.') Result.insert(pathstr + "../");
+			for(std::set<filesystem::Dir*>::const_iterator it = dir->subdirs.begin(); it!=dir->subdirs.end(); ++it) {
+				if( (*it)->name.substr(0, prefixlen) == frag ) Result.insert( pathstr+(*it)->name + "/" );
+			}
+		}
+	};
+
+
+	struct File_completer : public Terminal::Completer {
+		virtual void complete(const std::string& fragment, std::set<std::string>& Result, Terminal* context) const {
+			assert(context);
+			filesystem::Path path;
+			std::string pathstr;
+			std::string frag = fragment;
+
+			if(!frag.empty()) Terminal::pathfname(frag, pathstr);
+
+			path = context->string_to_path(pathstr);
+			if(path.empty()) return;
+			filesystem::Dir* dir = path.back();
+			size_t prefixlen = frag.size();
+			if(!pathstr.empty()) pathstr.append("/");
+
+			for(std::set<filesystem::File*>::const_iterator it = dir->files.begin(); it!=dir->files.end(); ++it) {
+				if( (*it)->name.substr(0, prefixlen) == frag ) Result.insert( pathstr+(*it)->name + " " );
+			}
+		}
+	};
+
+	struct Filedir_completer : public Terminal::Completer {
+		virtual void complete(const std::string& fragment, std::set<std::string>& Result, Terminal* context) const {
+			Terminal::dir_completer.complete(fragment, Result, context);
+			Terminal::file_completer.complete(fragment, Result, context);
+		}
+	};
+
+
+	const Terminal::Completer& Terminal::dir_completer = Dir_completer();
+	const Terminal::Completer& Terminal::file_completer = File_completer();
+	const Terminal::Completer& Terminal::filedir_completer = Filedir_completer();
 	const std::string Terminal::freezing_return = "\\";
 }

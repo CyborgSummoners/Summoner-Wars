@@ -10,15 +10,17 @@ class InputField : public Widget {
 
 public:
 	InputField(sf::RenderWindow *_window, int _x, int _y,int _width, int _height);
-	
+
 	virtual void draw();
 	void handleEvent(sf::Event &event);
 	std::string val();
 	void set(std::string _value);
 	void reset();
 	void setX(int _x);
+	void setPos(int pos);
+	int getPos();
 	void setWidth(int _width) {width=_width;}
-	
+
 private:
 
 	std::string value;

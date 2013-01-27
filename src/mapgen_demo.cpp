@@ -33,9 +33,16 @@ int main(int argc, char* argv[]) {
 		else if(strcmp(argv[1], "arena") == 0) {
 			gen = new Arena;
 		}
+		else {
+			std::cout << "Unknown map type. Valid types: arena, cave." << std::endl;
+			return 0;
+		}
+	} else {
+		gen = new Caves(3);
 	}
 
 	std::cout << "seed: " << sf::Randomizer::GetSeed() << std::endl;
+
 	gen->generate(map, 50, 20);
 
 	print_map(map, 50, 20, std::cout);

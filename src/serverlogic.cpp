@@ -153,6 +153,8 @@ step World::move_me(Puppet& actor) {
 
 Summoner& World::create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success) {
 	Summoner* Result = new Summoner(*this);
+	assert(pos.x >= 0 && pos.x < width);
+	assert(pos.y >= 0 && pos.y < height);
 
 	//if the suggested starting position is blocked by a wall, start a depth-first search for a free pos.
 	if(terrain[ pos.y*width + pos.x ] != floor) {
@@ -210,8 +212,15 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 		return 0;
 	}
 
+	// wall?
+	if( !is_valid(pos) ) {
+		failure_reason = "Invalid position!";
+		debugf("failed: %s\n", failure_reason.c_str());
+		return 0;
+	}
+
 	// is anyone at pos?
-	if( !is_free( pos ) > 0 ) {
+	if( !is_free( pos ) ) {
 		failure_reason = "Position already occupied.";
 		debugf("failed: %s\n", failure_reason.c_str());
 		return 0;
@@ -253,11 +262,15 @@ coord World::get_pos(const Actor& actor) const {
 }
 
 bool World::is_valid(coord pos) const {
-	return pos.x>0 && pos.y>0 && pos.x<width && pos.y<height;
+	return pos.x>0 && pos.y>0 && pos.x<width && pos.y<height && terrain_at(pos) != wall;
 }
 
 bool World::is_free(coord pos) const {
 	return is_valid(pos) && puppets.count(pos)==0;
+}
+
+Terrain World::terrain_at(coord pos) const {
+	return terrain[ pos.y*width + pos.x ];
 }
 
 const Terrain* const World::get_map() const {

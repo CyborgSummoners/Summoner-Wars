@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <deque>
+#include "mapgen.hpp"
 #include "interpreter.hpp"
 #include "measurements.hpp"
 #include "servermessage.hpp"
@@ -41,17 +42,20 @@ namespace Logic {
 	struct Puppet_template;
 
 	class World {
+		static const Map_generator& Default_mapgen;
+
 		Interpreter interpreter;
 
 		size_t width;
 		size_t height;
 		std::map<coord, Actor*> puppets;
 		std::map<std::string, Summoner*> summoners;
+		Terrain* terrain;
 
 		std::deque<ServerMessage> outbox;
 
 		public:
-			World(size_t width, size_t height);
+			World(size_t width, size_t height, const Map_generator* const mapgen = &World::Default_mapgen);
 			~World();
 
 			Summoner& create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success);
@@ -67,6 +71,8 @@ namespace Logic {
 			bool is_free(coord pos) const;
 
 			std::string describe(size_t actor_id) const;
+
+			const Terrain* const get_map() const;
 	};
 
 

@@ -14,7 +14,7 @@ void sum::Mapgen::print_map(Terrain* map, size_t width, size_t height, std::ostr
 }
 
 
-void sum::Mapgen::Arena::generate(Terrain*& map, size_t width, size_t height) {
+void sum::Mapgen::Arena::generate(Terrain*& map, size_t width, size_t height) const {
 	for(size_t k=0; k<width; ++k) {
 		map[k] = wall;
 	}
@@ -62,7 +62,7 @@ namespace {
 }
 
 
-void sum::Mapgen::Caves::generate(Terrain*& map, size_t width, size_t height) {
+void sum::Mapgen::Caves::generate(Terrain*& map, size_t width, size_t height) const {
 	Terrain* map_new = new Terrain[width*height];
 	Terrain* t = 0;
 

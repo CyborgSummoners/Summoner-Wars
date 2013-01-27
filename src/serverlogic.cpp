@@ -83,11 +83,17 @@ coord default_startpos(coord map_size, size_t player_num, size_t which) {
 }
 
 
-World::World(size_t width, size_t height) : width(width), height(height) {}
+World::World(size_t width, size_t height, const Map_generator* const mapgen) : width(width), height(height) {
+	terrain = new Terrain[width*height];
+	mapgen->generate(terrain, width, height);
+}
+
 World::~World() {
 	for(std::map<coord, Actor*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 		delete it->second;
 	}
+
+	delete[] terrain;
 };
 
 std::deque<ServerMessage>& World::advance(step steps) {
@@ -225,6 +231,10 @@ bool World::is_free(coord pos) const {
 	return is_valid(pos) && puppets.count(pos)==0;
 }
 
+const Terrain* const World::get_map() const {
+	return terrain;
+}
+
 std::string World::describe(size_t actor_id) const {
 	for(std::map<coord, Actor*>::const_iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 		if(it->second->get_id() == actor_id) return it->second->describe();
@@ -345,6 +355,9 @@ const std::map<std::string, Puppet_template> init_default_templates() {
 
 	return Result;
 }
+
+
+const Map_generator& World::Default_mapgen = Mapgen::Arena();
 
 }
 }

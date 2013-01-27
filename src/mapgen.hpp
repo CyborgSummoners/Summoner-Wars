@@ -13,21 +13,21 @@ namespace sum {
 	};
 
 	struct Map_generator { // interface
-		virtual void generate(Terrain*& map, size_t width, size_t height) = 0;
+		virtual void generate(Terrain*& map, size_t width, size_t height) const = 0;
 	};
 
 	namespace Mapgen {
 		void print_map(Terrain* map, size_t width, size_t height, std::ostream& out);
 
 		struct Arena : public Map_generator {	// aka basic
-			void generate(Terrain*& map, size_t width, size_t height);
+			void generate(Terrain*& map, size_t width, size_t height) const;
 		};
 
 		struct Caves : public Map_generator {
 			const unsigned short cycles;
 			Caves(unsigned short cycles = 3) : cycles(cycles) {}
 
-			void generate(Terrain*& map, size_t width, size_t height);
+			void generate(Terrain*& map, size_t width, size_t height) const;
 		};
 	}
 }

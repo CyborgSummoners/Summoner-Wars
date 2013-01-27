@@ -18,6 +18,7 @@ bin/*
 # executables
 sumwar
 compiler-demo
+mapgen
 konzoltest
 
 # flex-generated lexer

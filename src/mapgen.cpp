@@ -3,15 +3,61 @@
 #include <queue>
 #include <vector>
 #include <limits>
+#include <cassert>
 
 void sum::Mapgen::print_map(Terrain* map, size_t width, size_t height, std::ostream& out) {
 	for(size_t i=0; i<height; ++i) {
 		for(size_t k=0; k<width; ++k) {
-			out << ( map[i*width + k] == wall? '#' : '.' );
+			if(map[i*width + k] == wall) out << '#';
+			else if(map[i*width + k] == floor) out << '.';
+			else out << '!';
 		}
 		out << std::endl;
 	}
 }
+
+void sum::Mapgen::dump_compressed(Terrain* map, size_t width, size_t height, std::ostream& out) {
+	// not very efficient, but better than nothing.
+	assert(map);
+	assert(width > 0);
+	assert(height > 0);
+
+	Terrain curr = map[0];
+	int currcount = 1;
+	for(size_t k=1; k<height*width; ++k) {
+		if(map[k] == curr) currcount++;
+		else {
+			out << currcount << "*" << static_cast<int>(curr) << " ";
+			curr = map[k];
+			currcount = 1;
+		}
+	}
+	out << currcount << "*" << static_cast<int>(curr) << " ";
+}
+
+void sum::Mapgen::reconstruct_from_dump(Terrain* map, size_t width, size_t height, std::istream& in) {
+	//assumes Terrain is already an array sized width*height.
+	assert(map);
+	assert(width > 0);
+	assert(height > 0);
+
+	int curri;
+	size_t multiplier;
+	char delim;
+	size_t k = 0;
+	while(k < height*width) {
+		in >> std::ws >> multiplier >> std::ws >> delim >> std::ws >> curri;
+		size_t i = 0;
+		while(i < multiplier) {
+			map[k] = static_cast<Terrain>(curri);
+			++k;
+			++i;
+		}
+	}
+
+	in >> std::ws;
+}
+
 
 
 void sum::Mapgen::Arena::generate(Terrain*& map, size_t width, size_t height) const {

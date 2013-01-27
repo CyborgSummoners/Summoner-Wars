@@ -73,6 +73,7 @@ namespace Logic {
 			std::string describe(size_t actor_id) const;
 
 			const Terrain* const get_map() const;
+			std::string dump_mapdata() const;
 	};
 
 

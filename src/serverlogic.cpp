@@ -235,6 +235,12 @@ const Terrain* const World::get_map() const {
 	return terrain;
 }
 
+std::string World::dump_mapdata() const {
+	std::stringstream ss;
+	Mapgen::dump_compressed(terrain, width, height, ss);
+	return ss.str();
+}
+
 std::string World::describe(size_t actor_id) const {
 	for(std::map<coord, Actor*>::const_iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 		if(it->second->get_id() == actor_id) return it->second->describe();

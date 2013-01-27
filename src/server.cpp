@@ -14,7 +14,7 @@ sum::Server::Client::Client(const sf::SocketTCP socket, const sf::IPAddress ip) 
 
 const std::string sum::Server::Client::nextid() {
 	std::stringstream ss;
-	ss << ++maxid;
+	ss << maxid++;
 	return ss.str();
 }
 

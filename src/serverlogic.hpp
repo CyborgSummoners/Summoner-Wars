@@ -28,6 +28,7 @@ namespace Logic {
 		size_t x;
 		size_t y;
 
+		coord();
 		coord(size_t x, size_t y);
 		bool operator<(const coord& rhs) const;
 		coord operator+(const coord& rhs) const;

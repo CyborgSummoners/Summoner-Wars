@@ -22,6 +22,7 @@ std::string toString(Facing facing) {
 	}
 }
 
+coord::coord() : x(x), y(y) {}
 coord::coord(size_t x, size_t y) : x(x), y(y) {}
 
 bool coord::operator<(const coord& rhs) const {
@@ -152,6 +153,34 @@ step World::move_me(Puppet& actor) {
 
 Summoner& World::create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success) {
 	Summoner* Result = new Summoner(*this);
+
+	//if the suggested starting position is blocked by a wall, start a depth-first search for a free pos.
+	if(terrain[ pos.y*width + pos.x ] != floor) {
+		bool* marked = new bool[width*height];
+		for(size_t k=0; k<width*height; ++k) marked[k] = false;
+
+		std::queue<coord> q;
+		q.push(pos);
+		coord n;
+		while(!q.empty()) {
+			n = q.front();
+			q.pop();
+			if( terrain[ n.y*width + n.x ] ==  floor) {
+				pos.x = n.x;
+				pos.y = n.y;
+				break;
+			}
+			else  {
+				if(n.x>0        && !marked[n.y*width + n.x-1])   { q.push( coord(n.x-1, n.y) ); }  // west
+				if(n.x<width-1  && !marked[n.y*width + n.x+1])   { q.push( coord(n.x+1, n.y) ); } 	// east
+				if(n.y>0        && !marked[(n.y-1)*width + n.x]) { q.push( coord(n.x, n.y-1) ); } 	// north
+				if(n.y<height-1 && !marked[(n.y+1)*width + n.x]) { q.push( coord(n.x, n.y+1) ); } 	// south
+			}
+		}
+
+		delete[] marked;
+	}
+
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
 	summoners.insert( std::make_pair(client_id, Result) );
 

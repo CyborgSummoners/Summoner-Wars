@@ -53,11 +53,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	// connecting:
 	bool success = false;
 	if( connection->connect(server_ip, server_port) ) {
-
-		//load scripts
-		sf::Packet scripts = Parser::packetize_scripts_from_file("script-samples/puppet_demo.summ");
-
-		if( connection->send_scripts(scripts) ) {
+		if( connection->handshake() ) {
 			connection->listen();
 			combat_log->add( "Connected to " + connection->get_address() );
 			success = true;
@@ -69,6 +65,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 		ss << "Could not connect to " << server_ip << ":" << server_port;
 		combat_log->add(ss.str());
 	}
+
 
 	sfclock = new sf::Clock();
 

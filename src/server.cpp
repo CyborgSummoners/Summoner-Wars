@@ -139,27 +139,16 @@ void sum::Server::Run() {
 						else {
 							using namespace sum::Parser;	//vajon miért nem tudja kitalálni?
 
-							// so, this must be the push, okay.
-							// ellenőrizni kéne...
-							sf::Uint32 len;
-							std::string msg;
+							// now handshake
 							try {
-								packet >> len;
-								bytecode::subprogram prog;
-								for(size_t i=0; i<len; ++i) {
-									packet >> prog;
-									prog.owner = client->client_id;
-									// we just store it in the client until the game starts.
-									client->progs.push_back(prog);
-								}
-								debugf("Got %d scripts from client #%s.\n", len, client->toString().c_str());
-
 								waiting_list.remove(client);
 								clients.push_back(client);
 
 								packet.Clear();
 								packet << "ack";
 								socket.Send(packet);
+
+								// send list of registered subprograms?
 
 								// send available server functions to client:
 								for(server_fun_iter fit = server_functions.begin(); fit != server_functions.end(); ++fit) {

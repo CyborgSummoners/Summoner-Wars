@@ -6,6 +6,7 @@
 #include "summparsebase.h"
 #include "compiler.hpp"
 #include <map>
+#include <vector>
 #include <stdint.h>
 
 #ifndef yyFlexLexerOnce
@@ -28,6 +29,9 @@ class Parser : public ParserBase {
 	private:
 		Lexer* lexer;
 		size_t varnum;
+		std::ostream& out;
+		std::vector< std::pair<size_t, std::string> > errors;
+		size_t errnum;
 
 	public:
 		std::vector<bytecode::subprogram> subprograms;	// list of parsed subprograms
@@ -62,6 +66,7 @@ class Parser : public ParserBase {
 		uint32_t get_value(const std::string& str);
 
 		void reset();
+		void display_errors(const std::string& funcname);
 };
 
 
@@ -78,11 +83,12 @@ class Lexer : public yyFlexLexer {
 
 
 inline void Parser::error(char const *msg) {
-	std::cerr << d_loc__.first_line << ": " << msg;
+	++errnum;
+	errors.push_back(std::make_pair(d_loc__.first_line, msg));
 }
 
 inline void Parser::warning(char const *msg) {
-	std::cerr << d_loc__.first_line << ": " << msg;
+	out << d_loc__.first_line << ": " << msg;
 }
 
 inline void Parser::print() {

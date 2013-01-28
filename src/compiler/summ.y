@@ -84,7 +84,8 @@ K_PROCEDURE IDENTIFIER argument_list K_IS proc_body K_END IDENTIFIER SEMICOLON {
 		ss << "Name mismatch. Procedure declared as '" << subprogram::normalize_name(*$2) << "' ends as '" << subprogram::normalize_name(*$7) << "'";
 		error(ss.str().c_str());
 	}
-	else {
+
+	if(errors.empty()) {
 		$5->code.push_back( codeline(RET, 0) );
 
 		second_pass($5->code);
@@ -93,6 +94,9 @@ K_PROCEDURE IDENTIFIER argument_list K_IS proc_body K_END IDENTIFIER SEMICOLON {
 		size_t length = 0;
 		assemble($5->code, code, length);
 		subprograms.push_back( subprogram(*$2, $3, code, length) );
+		reset();
+	} else {
+		display_errors(subprogram::normalize_name(*$2));
 		reset();
 	}
 
@@ -106,7 +110,8 @@ K_PROCEDURE IDENTIFIER argument_list K_IS proc_body K_END IDENTIFIER SEMICOLON {
 		ss << "Name mismatch. Function declared as '" << subprogram::normalize_name(*$2) << "' ends as '" << subprogram::normalize_name(*$7) << "'";
 		error(ss.str().c_str());
 	}
-	else {
+
+	if(errors.empty()) {
 		$5->code.push_back( codeline(RET, 0) );	// ensure end of subroutine. It will (most likely) cause some sort of stack underflow, so make sure there's a RETV before this.
 		second_pass($5->code);
 		byte* code = 0;
@@ -114,7 +119,11 @@ K_PROCEDURE IDENTIFIER argument_list K_IS proc_body K_END IDENTIFIER SEMICOLON {
 		assemble($5->code, code, length);
 		subprograms.push_back( subprogram(*$2, $3, code, length, true) );
 		reset();
+	} else {
+		display_errors(subprogram::normalize_name(*$2));
+		reset();
 	}
+
 
 	delete $2;
 	delete $5;

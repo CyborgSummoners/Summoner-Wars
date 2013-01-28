@@ -213,22 +213,15 @@ void sum::Server::Run() {
 					}
 				}
 				else {	// close or error
-					selector.Remove(socket);
-
-					for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
-						if(**lit == socket) {
-							debugf("Client %s disconnected.\n", (*lit)->ip.ToString().c_str());
-
-							Broadcast(
-								ServerMessage(ServerMessage::connections) << "leave" << (*lit)->toString()
-							);
-
-							clients.erase(lit);
-							break;
-						}
-					}
-
+					Client* client = find_client(socket);
+					clients.remove(client);
+					debugf("Client %s disconnected.\n", client->ip.ToString().c_str());
+					Broadcast(
+						ServerMessage(ServerMessage::connections) << "leave" << client->toString(),
+						*client
+					);
 					socket.Close();
+					selector.Remove(socket);
 
 					// anybody left?
 					if(clients.empty()) {

@@ -4,9 +4,11 @@ namespace sum
 {
 
 Map::Map(sf::RenderWindow *_window) :
-	Widget(_window,0,25,_window->GetWidth(),_window->GetHeight()*2/3)
+	Widget(_window,0,25,_window->GetWidth(),_window->GetHeight()*2/3),
+	target(0,0,this)
 {
 	Robot rob(2,0,0,0,this);
+	//Targetfield target(0,0,this);
 
 	robots.push_back(rob);
 }
@@ -25,6 +27,9 @@ void Map::draw()
 		sf::Shape::Rectangle(x,y,width,height, sf::Color(128,128,128)));
 	for(int i=0;i<robots.size();++i)
 		robots[i].draw();
+	target.draw();
+	//hogy a francba lehet kirajzoltatni az a h*lye shape-t?
+
 }
 
 void Map::update(const ServerMessage &message)
@@ -83,5 +88,32 @@ void Map::Robot::update(float tick)
 
 sf::Image Map::Robot::robot_image;
 bool Map::Robot::initiated(false);
+
+Map::Targetfield::Targetfield(int _x, int _y, Map *_map):
+Widget(_map->window,_x,_y,20,20)
+{
+	shape = sf::Shape::Rectangle(_x,_y,_x+SPRITE_SIZE,_y+SPRITE_SIZE, sf::Color(0,255,0));
+	this->x = _x;
+	this->y = _y;
+}
+
+void Map::Targetfield::draw()
+{
+	window->Draw(shape);
+}
+
+void Map::Targetfield::move(int newx, int newy)
+{
+	this->x += newx;
+	this->y += newy;
+	window->Draw(this->shape);
+}
+
+void Map::Targetfield::moveto(int newx, int newy)
+{
+	this->x = newx;
+	this->y = newy;
+	window->Draw(this->shape);
+}
 
 }

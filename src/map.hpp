@@ -12,6 +12,7 @@ class Map : public Widget, public Observer<ServerMessage>
 {
 
 friend class Robot;
+friend class Targetfield;
 
 public:
 
@@ -22,7 +23,6 @@ public:
 	void update(float tick);
 
 private:
-
 	enum Facing {down=0,left,right,up};
 	static const int SPRITE_SIZE=32;
 
@@ -88,8 +88,21 @@ private:
 
 	std::vector<Robot> robots;
 
-};
+	class Targetfield : public Widget
+	{
+	public:
+		Targetfield(int _x, int _y, Map *_map);
 
-}
+		void draw();
+		void move(int newx, int newy);
+		void moveto(int newx, int newy);
+
+	private:
+		sf::Shape shape;
+		const Map *map;
+	};
+	Targetfield target;
+};
+};
 
 #endif

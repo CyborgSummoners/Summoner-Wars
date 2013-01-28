@@ -18,6 +18,7 @@ public:
 
 	Map(sf::RenderWindow *_window);
 
+	void handleEvent(sf::Event &event);
 	void draw();
 	void update(const ServerMessage &message);
 	void update(float tick);
@@ -25,6 +26,7 @@ public:
 private:
 	enum Facing {down=0,left,right,up};
 	static const int SPRITE_SIZE=32;
+	bool isCtrlDown;
 
 	struct Moving
 	{
@@ -96,9 +98,10 @@ private:
 		void draw();
 		void move(int newx, int newy);
 		void moveto(int newx, int newy);
+		
+		sf::Shape shape;
 
 	private:
-		sf::Shape shape;
 		const Map *map;
 	};
 	Targetfield target;

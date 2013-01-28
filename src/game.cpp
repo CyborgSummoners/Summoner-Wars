@@ -118,6 +118,7 @@ void Game::GameLoop()
 				{
 					gameState = Game::Exiting;
 				}
+				map->handleEvent(currentEvent);
 				terminal->handleEvent(currentEvent);
 				break;
 			}

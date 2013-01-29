@@ -423,8 +423,10 @@ const std::string sum::Server::register_script(Client& client, sf::Packet& packe
 	using sum::Parser::operator>>;
 
 	sf::Uint32 len;
+	bool forcereplace;
 	bytecode::subprogram prog;
 	packet >> len;
+	packet >> forcereplace;
 	debugf("Recieving %d scripts from client #%s.\n", len, client.toString().c_str());
 
 	std::stringstream Result;
@@ -434,9 +436,14 @@ const std::string sum::Server::register_script(Client& client, sf::Packet& packe
 			packet >> prog;	// this may throw
 			prog.owner = client.client_id;
 
-			if( interpreter.register_subprogram(prog) ) ++s;
+
+			if(forcereplace) {
+				interpreter.register_subprogram(prog, true);
+				++s;
+			}
 			else {
-				Result << "Could not register " << prog.get_name() << ": subprogram already exists.\n";
+				if( interpreter.register_subprogram(prog) ) ++s;
+				else Result << "Could not register " << prog.get_name() << ": subprogram already exists. Run the command again with the --replace argument to force replacement.\n";
 			}
 		}
 	} catch(std::exception& e) {

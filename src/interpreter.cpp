@@ -743,24 +743,32 @@ namespace sum {
 		return (program_map.find(prog_name) != program_map.end() );
 	}
 
-	bool Interpreter::register_subprogram(const bytecode::subprogram& prog) {
+	bool Interpreter::register_subprogram(const bytecode::subprogram& prog, bool force_replace) {
 		std::string nom = ("" == prog.owner? prog.get_name() : prog.owner+"'"+prog.get_name());
 
 		debugf("Registering subprogram %s...", nom.c_str());
 
 		if(subprogram_exists(nom)) {
-			debugf("failed: already exists\n");
-			return false;
+			if(!force_replace) {
+				debugf("failed: already exists\n");
+				return false;
+			}
+
+			debugf("... replacing existing... ");
+			// get id.
+			size_t id = get_program_id(prog.get_name(), prog.owner);
+			programs[id] = prog;
+			// this may very well cause problems for the puppet, but let this be the summoner's problem.
+			debugf("done\n");
+		}
+		else {
+			program_map.insert( make_pair( nom, programs.size() ) );
+			programs.push_back(prog);
+			debugf("done.\n");
 		}
 
-		// if not, let's register it.
-		program_map.insert( make_pair( nom, programs.size() ) );
-		programs.push_back(prog);
-
-		debugf("done.\n");
 		return true;
 	}
-
 
 	bool Interpreter::advance(step steps) {
 		if(puppets.empty()) return false;

@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstring>
 #include <dirent.h>
+#include <fstream>
 #include <iostream>
 
 namespace sum {
@@ -52,6 +53,18 @@ std::set<std::string> get_files(const std::string& dir) {
 	closedir(d);
 	return Result;
 }
+
+
+void read(const std::string& file, std::ostream& out) {
+	std::ifstream f(file.c_str());
+	if(!f) {
+		out << "Could not open file '" << file << "' for reading" << std::endl;
+		return;
+	}
+	out << f.rdbuf();
+	f.close();
+}
+
 
 } // filehandling
 } // sum

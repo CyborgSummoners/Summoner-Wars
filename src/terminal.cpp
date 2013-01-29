@@ -3,6 +3,7 @@
 #include "filehandling.hpp"
 #include "util/debug.hpp"
 #include <sstream>
+#include <fstream>
 #include <cassert>
 #include <algorithm>
 
@@ -12,6 +13,17 @@ namespace sum {
 	}
 
 	namespace filesystem {
+		struct Mounted_file : public File {
+			const std::string realpath;
+			Mounted_file(const std::string& name, const std::string& realpath) : File(name), realpath(realpath) {}
+
+			virtual std::string read() const {
+				std::stringstream ss;
+				filehandling::read(realpath, ss);
+				return ss.str();
+			}
+		};
+
 		struct Mounted_dir : public Dir {
 			const std::string mounted_dir;
 			Mounted_dir(const std::string& name, const std::string& dir_to_mount) : Dir(name), mounted_dir(dir_to_mount) {
@@ -30,11 +42,11 @@ namespace sum {
 				//get dirs
 				std::set<std::string> names = filehandling::get_subdirs(mounted_dir);
 				for(std::set<std::string>::const_iterator it = names.begin(); it!=names.end(); ++it) {
-					subdirs.insert(new Mounted_dir(*it, *it));
+					subdirs.insert(new Mounted_dir(*it, mounted_dir+"/"+*it));
 				}
 				names = filehandling::get_files(mounted_dir);
 				for(std::set<std::string>::const_iterator it = names.begin(); it!=names.end(); ++it) {
-					files.insert(new File(*it));
+					files.insert(new Mounted_file(*it, mounted_dir+"/"+*it));
 				}
 
 			}
@@ -75,7 +87,7 @@ namespace sum {
 				File* f;
 				for(size_t i=0; i<fnames.size(); ++i) {
 					f = context->get_file(fnames[i]);
-					if(f) Result.append(f->content);
+					if(f) Result.append(f->read());
 					else Result.append(fnames[i] + ": no such file.");
 				}
 				return Result;

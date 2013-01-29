@@ -100,7 +100,14 @@ namespace sum {
 				for(size_t i=0; i<fnames.size(); ++i) {
 					f = context->get_file(fnames[i]);
 					if(f) {
-						if(f->is_readable()) Result.append(f->read());
+						if(f->is_readable()) {
+							try {
+								Result.append(f->read());
+							}
+							catch(std::exception& e) {
+								Result.append("Error: ").append(e.what());
+							}
+						}
 						else Result.append("Fatal: not a readable file.");
 					}
 					else Result.append(fnames[i] + ": no such file.");

@@ -64,9 +64,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 		std::stringstream ss;
 		ss << "Could not connect to " << server_ip << ":" << server_port;
 		combat_log->add(ss.str());
-	}
-
-	terminal->boot();
+	} else terminal->boot();
 
 	sfclock = new sf::Clock();
 
@@ -88,6 +86,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 }
 
 void Game::SendRequest(const std::string& server_handle, const std::string& args) {
+	if(!connection->is_connected()) return;
 	sf::Packet packet;
 	packet << server_handle;
 	packet << args;
@@ -95,6 +94,7 @@ void Game::SendRequest(const std::string& server_handle, const std::string& args
 }
 
 void Game::SendPacket(sf::Packet& packet) {
+	if(!connection->is_connected()) return;
 	connection->send(packet);
 }
 

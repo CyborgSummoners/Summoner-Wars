@@ -1,4 +1,5 @@
 #include "stringutils.hpp"
+#include "debug.hpp"
 #include <stdexcept>
 #include <sstream>
 
@@ -56,6 +57,15 @@ std::string trim(const std::string& str) {
 	if(std::string::npos == pos) Result = "";
 	else Result = Result.substr(0, pos+1);
 
+	return Result;
+}
+
+std::string tabconv(const std::string& str) {
+	std::string Result;
+	for(size_t i=0; i<str.size(); ++i) {
+		if(str[i] == '\t') Result.append(3, ' ');
+		else Result.append(1, str[i]);
+	}
 	return Result;
 }
 

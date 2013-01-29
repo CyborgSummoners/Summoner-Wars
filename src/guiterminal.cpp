@@ -97,20 +97,18 @@ void GuiTerminal::handleEvent(sf::Event &event)
 			textbox->add(term_user+inputfield->val());
 			std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
 
-			if(ret.size() > 0 && ret[0] == Terminal::freezing_return) frozen=true;
-
 			term_user=player_name + term->get_working_directory() + "$";
 			name_pwd.SetText(term_user);
 			inputfield->setX(x + name_pwd.GetRect().GetWidth());
 			inputfield->setWidth(width-x-name_pwd.GetRect().GetWidth()-x);
 
-			if(frozen)
-				textbox->add("Waiting for server to reply...");
-			else
-			{
-				for(size_t i=0; i<ret.size(); ++i)
-					if(i != ret.size() -1 || !ret[i].empty()) textbox->add(ret[i]);
+			if(stringutils::trim(ret.back()).empty()) ret.pop_back();
+			if(!ret.empty() && ret.back() == Terminal::freezing_return) {
+				ret.pop_back();
+				frozen=true;
 			}
+			for(size_t i=0; i<ret.size(); ++i) textbox->add(ret[i]);
+			if(frozen) textbox->add("Waiting for server to reply...");
 
 			inputfield->reset();
 		}

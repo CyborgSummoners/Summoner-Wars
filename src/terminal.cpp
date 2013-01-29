@@ -34,7 +34,7 @@ namespace sum {
 
 		struct Mounted_dir : public Dir {
 			const std::string mounted_dir;
-			Mounted_dir(const std::string& name, const std::string& dir_to_mount) : Dir(name), mounted_dir(dir_to_mount) {
+			Mounted_dir(const std::string& name, const std::string& dir_to_mount) : Dir(name), mounted_dir("./"+dir_to_mount) {
 				refresh();
 			}
 
@@ -197,6 +197,35 @@ namespace sum {
 				return Result;
 			}
 		};
+		struct Command : public Executable {	// reads a file line-by-line and executes its contents in the command line.
+			Command() : Executable("command", Terminal::filedir_completer) {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context) {
+				assert(context);
+				std::stringstream Result;
+				if(stringutils::trim(args).empty()) return "";
+
+				std::vector<std::string> fnames = stringutils::string_explode(stringutils::trim(args), whitespace);
+
+				File* f;
+				for(size_t i=0; i<fnames.size(); ++i) {
+					f = context->get_file(fnames[i]);
+					if(f) {
+						if(f->is_readable()) {
+							try {
+								std::vector<std::string> lines = stringutils::string_explode(stringutils::trim(f->read()), "\n");
+								for(size_t i=0; i<lines.size(); ++i) Result << context->command(lines[i]);
+							}
+							catch(std::exception& e) {
+								Result << "Error: " << e.what();
+							}
+						}
+						else Result << "Fatal: not a readable file.";
+					}
+					else Result << fnames[i] << ": no such file.";
+				}
+				return Result.str();
+			}
+		};
 
 		// dangerously tight coupling.
 		struct Compile : public Executable {
@@ -281,6 +310,7 @@ namespace sum {
 		bin->files.insert( new filesystem::Ls() );
 		bin->files.insert( new filesystem::Mount() );
 		bin->files.insert( new filesystem::Compile() );
+		bin->files.insert( new filesystem::Command() );
 
 		Dir* dir;
 
@@ -289,10 +319,11 @@ namespace sum {
 
 		dir = new Dir("mnt");
 		root->subdirs.insert(dir);
-//		dir->subdirs.insert(physical_scripts);
 
 		// set pwd to root
 		this->working_directory.push_back( root );
+
+		this->command("mount boot /boot");
 	}
 
 	std::string Terminal::command(std::string input) {

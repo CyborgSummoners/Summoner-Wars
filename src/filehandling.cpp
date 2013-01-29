@@ -61,7 +61,7 @@ void read(const std::string& file, std::ostream& out) {
 	std::ifstream f(file.c_str());
 	if(!f) {
 		std::stringstream msg;
-		msg << "Could not open file '" << file << "' for reading";
+		msg << "Could not open real file '." << file << "' for reading";
 		throw std::runtime_error(msg.str().c_str());
 		return;
 	}

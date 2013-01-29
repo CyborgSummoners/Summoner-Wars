@@ -38,11 +38,13 @@ class Parser : public ParserBase {
 		std::map<std::string, var> symtab;	// symbol table of variables
 
 	public:
+		Parser(std::ostream& out);
 		Parser(std::istream& in, std::ostream& out, action act=FULL);
 		~Parser();
 
     public:
         int parse();	// starts the parsing
+        int parse(std::istream& in);
 
 		static void second_pass(codelines& code);	// cleanup & optimize code a bit.
 		static void assemble(codelines& code, byte*& Result, size_t& length);	// assemble code into actual bytecode.

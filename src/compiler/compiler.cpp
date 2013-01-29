@@ -1,10 +1,19 @@
 #include "../bytecode.hpp"
 #include "summparse.h"
 
+Parser::Parser(std::ostream& out) : act(FULL), lexer(0), varnum(0), out(out), errnum(0) {
+}
 Parser::Parser(std::istream& in, std::ostream& out, action act) : act(act), lexer( new Lexer(in, out) ), varnum(0), out(out), errnum(0) {
 }
 Parser::~Parser() {
 	delete lexer;
+}
+
+int Parser::parse(std::istream& in) {
+	reset();
+	if(lexer) delete lexer;
+	lexer = new Lexer(in, out);
+	return this->parse();
 }
 
 int Parser::lex() {

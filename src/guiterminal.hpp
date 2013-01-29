@@ -19,10 +19,13 @@ class GuiTerminal : public Widget, public Observer<ServerMessage>
 			int _height = 0);
 		~GuiTerminal();
 
+		void boot();
 		void draw();
 		void handleEvent(sf::Event &event);
 		void update(const ServerMessage &message);
 
+	private:
+		void handleTermReply(const std::string& repl);
 
 	private:
 

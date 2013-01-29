@@ -66,6 +66,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 		combat_log->add(ss.str());
 	}
 
+	terminal->boot();
 
 	sfclock = new sf::Clock();
 

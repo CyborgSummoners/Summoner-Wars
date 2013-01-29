@@ -51,6 +51,12 @@ GuiTerminal::~GuiTerminal()
 	delete term;
 }
 
+void GuiTerminal::boot() {
+	sf::Lock Lock(mutex);
+	handleTermReply( term->command("echo Booting from /boot/autoexec") );
+	handleTermReply( term->command("command /boot/autoexec") );
+}
+
 void GuiTerminal::update(const ServerMessage &message)
 {
 	sf::Lock Lock(mutex);
@@ -97,20 +103,14 @@ void GuiTerminal::handleEvent(sf::Event &event)
 			buffer.enter(inputfield->val());
 			std::string term_user=player_name + term->get_working_directory() + "$";
 			textbox->add(term_user+inputfield->val());
-			std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
+			std::string term_reply = term->command(inputfield->val());
 
 			term_user=player_name + term->get_working_directory() + "$";
 			name_pwd.SetText(term_user);
 			inputfield->setX(x + name_pwd.GetRect().GetWidth());
 			inputfield->setWidth(width-x-name_pwd.GetRect().GetWidth()-x);
 
-			if(stringutils::trim(ret.back()).empty()) ret.pop_back();
-			if(!ret.empty() && ret.back() == Terminal::freezing_return) {
-				ret.pop_back();
-				frozen=true;
-			}
-			for(size_t i=0; i<ret.size(); ++i) textbox->add(ret[i]);
-			if(frozen) textbox->add(GuiTerminal::waiting_message);
+			handleTermReply(term_reply);
 
 			inputfield->reset();
 		}
@@ -157,6 +157,17 @@ void GuiTerminal::handleEvent(sf::Event &event)
 		}
 		inputfield->handleEvent(event);
 	}
+}
+
+void GuiTerminal::handleTermReply(const std::string& repl) {
+	std::vector<std::string> ret = string_explode(repl, '\n');
+	if(stringutils::trim(ret.back()).empty()) ret.pop_back();
+	if(!ret.empty() && ret.back() == Terminal::freezing_return) {
+		ret.pop_back();
+		frozen=true;
+	}
+	for(size_t i=0; i<ret.size(); ++i) if(ret[i]!=Terminal::freezing_return) textbox->add(ret[i]);
+	if(frozen) textbox->add(GuiTerminal::waiting_message);
 }
 
 bool GuiTerminal::Buffer::up()

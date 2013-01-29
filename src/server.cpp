@@ -253,7 +253,7 @@ void sum::Server::gamestart() {
 	debugf("%d players have gathered, we can now start playing.\n", clients.size());
 	ServerMessage sm(ServerMessage::start);
 
-	world = new Logic::World(50,50);
+	world = new Logic::World(interpreter, 50,50);
 
 	// generic data
 	sm << stringutils::float_to_string(sec_per_tick) // a tick is this many seconds
@@ -264,13 +264,10 @@ void sum::Server::gamestart() {
 	;
 	// create summoners;
 	size_t num = 0;
-	std::vector<bool> res;
 	for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
 		Logic::Summoner& s = world->create_summoner(
 			Logic::default_startpos(Logic::coord(50,50), clients.size(), num++),	//default starting pos
-			(*lit)->client_id,
-			(*lit)->progs,
-			res
+			(*lit)->client_id
 		);
 		sm << (*lit)->client_id // client's id
 		   << s.get_id()     // summoner's actor id
@@ -435,7 +432,7 @@ const std::string sum::Server::register_script(Client& client, sf::Packet& packe
 		packet >> prog;
 		prog.owner = client.client_id;
 
-		if(state < Playing) client.progs.push_back(prog);
+		//if(state < Playing) client.progs.push_back(prog);
 		// else world->register_subprogram or something.
 		++s;
 	}

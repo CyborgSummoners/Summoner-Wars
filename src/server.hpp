@@ -10,6 +10,8 @@
 #include "servermessage.hpp"
 #include "serverlogic.hpp"
 #include "measurements.hpp"
+#include "interpreter.hpp"
+
 
 namespace sum {
 
@@ -27,7 +29,6 @@ class Server : public sf::Thread {
 			const sf::IPAddress ip;
 
 			Logic::pup_template_map summonables;
-			std::vector<bytecode::subprogram> progs;
 
 			Client(const sf::SocketTCP socket, const sf::IPAddress ip);
 			void set_id();
@@ -52,6 +53,7 @@ class Server : public sf::Thread {
 		tick sec_per_tick;	// a tick is this many seconds.
 		step step_size;
 
+		Interpreter interpreter;
 		Logic::World* world;
 
 	public:

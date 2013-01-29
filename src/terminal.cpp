@@ -1,5 +1,6 @@
 #include "terminal.hpp"
 #include "game.hpp"
+#include "filehandling.hpp"
 #include "util/debug.hpp"
 #include <sstream>
 #include <cassert>
@@ -11,6 +12,33 @@ namespace sum {
 	}
 
 	namespace filesystem {
+		struct Mounted_dir : public Dir {
+			const std::string mounted_dir;
+			Mounted_dir(const std::string& name, const std::string& dir_to_mount) : Dir(name), mounted_dir(dir_to_mount) {
+				refresh();
+			}
+
+			virtual void refresh() {
+				// naively drop/insert. This will cause Bad Things if a dir is mounted in a mounted dir -- but shit, don't.
+				// also, it's recursive.
+				debugf("Refreshing %s\n", mounted_dir.c_str());
+				for(std::set<File*>::iterator it=files.begin(); it!=files.end(); ++it) delete *it;
+				for(std::set<Dir*>::iterator it=subdirs.begin(); it!=subdirs.end(); ++it) delete *it;
+				subdirs.clear();
+				files.clear();
+
+				//get dirs
+				std::set<std::string> names = filehandling::get_subdirs(mounted_dir);
+				for(std::set<std::string>::const_iterator it = names.begin(); it!=names.end(); ++it) {
+					subdirs.insert(new Mounted_dir(*it, *it));
+				}
+				names = filehandling::get_files(mounted_dir);
+				for(std::set<std::string>::const_iterator it = names.begin(); it!=names.end(); ++it) {
+					files.insert(new File(*it));
+				}
+
+			}
+		};
 
 		struct Executable : public File {
 			Executable(const std::string& fname, const Terminal::Completer& completer = Terminal::dir_completer) : File(fname, "", completer) {}
@@ -80,6 +108,40 @@ namespace sum {
 				return "";
 			}
 		};
+		struct Mount : public Executable {
+			Mount() : Executable("mount") {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context) {
+				assert(context);
+				if(stringutils::trim(args).empty()) return "Not enough argument to function.\nUsage: mount <physical-subdir-name> <dir-name>";
+				std::vector<std::string> argv = stringutils::string_explode(stringutils::trim(args), whitespace);
+				if(argv.size() < 2) return "Not enough argument to function.\nUsage: mount <physical-subdir-name> <new-dir-name> ";
+				if(argv.size() > 2) return "Too many arguments to function.\nUsage: mount <physical-subdir-name> <new-dir-name> ";
+
+				if(std::count_if(argv[1].begin(), argv[1].end(), stringutils::is_valid_path_char) != (signed)argv[1].size() ) return argv[1] + " is not a valid path name.";
+
+				// local dir exists already?
+				Path path = context->string_to_path(argv[1]);
+				if(!path.empty()) return argv[1] + " already exists.";
+				if(!filehandling::dir_exists(argv[0])) {
+					return "Outer directory "+argv[0]+" does not seem to exist.";
+				}
+
+				//make dir. this is awkward and terrible, but dunno now. FIXME.
+				path = context->string_to_path(argv[1], true);
+				Dir* dir = path.back();
+				std::string dirname = dir->name;
+
+				path.pop_back();
+				Dir* parent = path.back();
+				parent->subdirs.erase(dir);
+				delete dir;
+				dir = new Mounted_dir(dirname, argv[0]);
+				parent->subdirs.insert(dir);
+				path.push_back(dir);
+
+				return "";
+			}
+		};
 		struct Ls : public Executable {
 			Ls() : Executable("ls", Terminal::dir_completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context) {
@@ -104,7 +166,7 @@ namespace sum {
 
 	}
 
-	Terminal::Terminal() : root(new filesystem::Dir("")), bin(new filesystem::Dir("bin")) {
+	Terminal::Terminal() : root(new filesystem::Dir("")), bin(new filesystem::Dir("bin")), physical_scripts(new filesystem::Dir("src")) {
 		// building fake filesystem:
 		using filesystem::Dir;
 		using filesystem::File;
@@ -115,6 +177,7 @@ namespace sum {
 		bin->files.insert( new filesystem::Pwd() );
 		bin->files.insert( new filesystem::Cd() );
 		bin->files.insert( new filesystem::Ls() );
+		bin->files.insert( new filesystem::Mount() );
 
 		Dir* dir;
 		dir = new Dir("scripts");
@@ -122,6 +185,10 @@ namespace sum {
 
 		dir = new Dir("mon");
 		root->subdirs.insert(dir);
+
+		dir = new Dir("mnt");
+		root->subdirs.insert(dir);
+//		dir->subdirs.insert(physical_scripts);
 
 		// set pwd to root
 		this->working_directory.push_back( root );
@@ -297,7 +364,7 @@ namespace sum {
 		return false;
 	}
 
-	filesystem::Path Terminal::string_to_path(std::string str) {
+	filesystem::Path Terminal::string_to_path(std::string str, bool makeit) {
 		using filesystem::Path;
 		using filesystem::Dir;
 		Path path;
@@ -321,17 +388,22 @@ namespace sum {
 				for(std::set<Dir*>::const_iterator it=path.back()->subdirs.begin(); it!=path.back()->subdirs.end(); ++it) {
 					if( (*it)->name == part ) {
 						path.push_back(*it);
+						path.back()->refresh(); // this is great, but should be temporary. ATM we can't be sure that everything around uses this fun.
 						found = true;
 						break;
 					}
 				}
-				if(!found) return Path();
+				if(!found && makeit) {
+					Dir* dir = new Dir(part);
+					path.back()->subdirs.insert(dir);
+					path.push_back(dir);
+				}
+				else if(!found) return Path();
 			}
 		}
 
 		return path;
 	}
-
 
 	filesystem::File* Terminal::get_file(const filesystem::Path& path, std::string fname) {
 		if(path.empty()) return 0;

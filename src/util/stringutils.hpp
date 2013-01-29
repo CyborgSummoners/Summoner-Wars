@@ -17,6 +17,8 @@ bool to_unsigned(const std::string& str, unsigned int& Result);
 
 std::string float_to_string(float f);
 
+bool is_valid_path_char(char c);
+
 }
 }
 

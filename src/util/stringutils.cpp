@@ -77,5 +77,9 @@ std::string float_to_string(float f) {
 	return ss.str();
 }
 
+
+bool is_valid_path_char(char c) {
+	return isalnum(c) || c=='/';
+}
 }
 }

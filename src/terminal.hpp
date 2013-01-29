@@ -76,6 +76,10 @@ namespace filesystem {
 			return content;
 		}
 
+		virtual bool is_readable() const {
+			return true;
+		}
+
 		virtual bool is_executable() const{
 			return false;
 		}

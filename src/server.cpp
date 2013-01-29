@@ -422,12 +422,37 @@ const std::string sum::Server::puppetinfo(Client& client, sf::Packet& packet) {
 }
 
 
+const std::string sum::Server::register_script(Client& client, sf::Packet& packet) {
+	using sum::Parser::operator>>;
+
+	sf::Uint32 len;
+	bytecode::subprogram prog;
+	packet >> len;
+	debugf("Recieving %d scripts from client #%s.\n", len, client.toString().c_str());
+
+	size_t s=0;
+	for(size_t i=0; i<len; ++i) {
+		packet >> prog;
+		prog.owner = client.client_id;
+
+		if(state < Playing) client.progs.push_back(prog);
+		// else world->register_subprogram or something.
+		++s;
+	}
+
+	debugf("Got %d / %d scripts from client #%s.\n", len, s, client.toString().c_str());
+
+	return "";
+}
+
+
 const std::map<std::string, sum::Server::server_function> sum::Server::initialize_server_functions() {
 	std::map<std::string, server_function> Result;
 	Result.insert( make_pair("shout", &Server::shout) );
 	Result.insert( make_pair("serverdate", &Server::serverdate) );
 	Result.insert( make_pair("summon", &Server::summon) );
 	Result.insert( make_pair("describe", &Server::puppetinfo) );
+	Result.insert( make_pair("scriptreg", &Server::register_script) );
 	return Result;
 }
 

@@ -93,6 +93,10 @@ void Game::SendRequest(const std::string& server_handle, const std::string& args
 	connection->send(packet);
 }
 
+void Game::SendPacket(sf::Packet& packet) {
+	connection->send(packet);
+}
+
 bool Game::IsExiting()
 {
 	return gameState == Game::Exiting;

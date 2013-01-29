@@ -6,6 +6,14 @@
 #include <fstream>
 #include <cassert>
 #include <algorithm>
+#include <stdexcept>
+
+// dangerously tight coupling:
+#include "parser.hpp"
+#include "bytecode.hpp"
+#include "compiler/summparse.h"
+#include <SFML/Network.hpp>
+
 
 namespace sum {
 	namespace {
@@ -33,7 +41,7 @@ namespace sum {
 			virtual void refresh() {
 				// naively drop/insert. This will cause Bad Things if a dir is mounted in a mounted dir -- but shit, don't.
 				// also, it's recursive.
-				debugf("Refreshing %s\n", mounted_dir.c_str());
+				//debugf("Refreshing %s\n", mounted_dir.c_str());
 				for(std::set<File*>::iterator it=files.begin(); it!=files.end(); ++it) delete *it;
 				for(std::set<Dir*>::iterator it=subdirs.begin(); it!=subdirs.end(); ++it) delete *it;
 				subdirs.clear();
@@ -55,7 +63,11 @@ namespace sum {
 		struct Executable : public File {
 			Executable(const std::string& fname, const Terminal::Completer& completer = Terminal::dir_completer) : File(fname, "", completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) = 0;
+			virtual bool is_readable() const {
+				return false;
+			}
 			virtual std::string read() const {
+				throw std::logic_error("Fatal: not a readable file.");
 				return "Fatal: not a readable file.";
 			}
 			virtual bool is_executable() const{
@@ -87,7 +99,10 @@ namespace sum {
 				File* f;
 				for(size_t i=0; i<fnames.size(); ++i) {
 					f = context->get_file(fnames[i]);
-					if(f) Result.append(f->read());
+					if(f) {
+						if(f->is_readable()) Result.append(f->read());
+						else Result.append("Fatal: not a readable file.");
+					}
 					else Result.append(fnames[i] + ": no such file.");
 				}
 				return Result;
@@ -176,6 +191,74 @@ namespace sum {
 			}
 		};
 
+		// dangerously tight coupling.
+		struct Compile : public Executable {
+			Compile() : Executable("compile", Terminal::filedir_completer) {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context) {
+				assert(context);
+				if(stringutils::trim(args).empty()) return "Not enough argument to function.\nUsage: compile <path>*";
+				std::vector<std::string> argv = stringutils::string_explode(stringutils::trim(args), whitespace);
+				std::stringstream Result;
+
+				File* f;
+				Path path;
+				std::vector<File*> files;
+				for(size_t i=0; i<argv.size(); ++i) {
+					f = context->get_file(argv[i]);
+
+					if(f) files.push_back(f);
+					else { //maybe it's a path?
+						path = context->string_to_path(argv[i]);
+						if(!path.empty()) {
+							Dir* dir = path.back();
+							for(std::set<File*>::const_iterator it=dir->files.begin(); it != dir->files.end(); ++it) {
+								files.push_back(*it);
+							}
+						}
+						else {
+							Result << argv[i] + ": no such file or directory." << std::endl;
+						}
+					}
+				}
+
+				if(files.empty()) {
+					Result << "Error: no input files." << std::endl;
+					return Result.str();
+				}
+
+				::Parser parser(Result);
+				for(size_t i=0; i<files.size(); ++i) {
+					try {
+						if(files[i]->is_readable()) {
+							Result << "compile " << files[i]->name << std::endl;
+							std::stringstream in;
+							in.str( files[i]->read() );
+							parser.parse(in);
+						}
+						else Result << "Error: could not open " << files[i]->name << " for reading." << std::endl;
+					}
+					catch(std::exception& e) {
+						Result << "Error: " << e.what() << std::endl;
+					}
+				}
+
+				using sum::Parser::operator<<;
+				if(parser.subprograms.size() > 0) {
+					sf::Packet packet;
+					packet << "scriptreg";
+					packet << static_cast<sf::Uint32>(parser.subprograms.size());
+					for(size_t i=0; i<parser.subprograms.size(); ++i) {
+						packet << parser.subprograms[i];
+					}
+
+					Game::SendPacket(packet);
+					Result << Terminal::freezing_return;
+				}
+
+				return Result.str();
+			}
+		};
+
 	}
 
 	Terminal::Terminal() : root(new filesystem::Dir("")), bin(new filesystem::Dir("bin")), physical_scripts(new filesystem::Dir("src")) {
@@ -190,10 +273,9 @@ namespace sum {
 		bin->files.insert( new filesystem::Cd() );
 		bin->files.insert( new filesystem::Ls() );
 		bin->files.insert( new filesystem::Mount() );
+		bin->files.insert( new filesystem::Compile() );
 
 		Dir* dir;
-		dir = new Dir("scripts");
-		root->subdirs.insert(dir);
 
 		dir = new Dir("mon");
 		root->subdirs.insert(dir);

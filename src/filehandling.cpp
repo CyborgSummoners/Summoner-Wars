@@ -4,6 +4,8 @@
 #include <dirent.h>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
+#include <sstream>
 
 namespace sum {
 namespace filehandling {
@@ -58,7 +60,9 @@ std::set<std::string> get_files(const std::string& dir) {
 void read(const std::string& file, std::ostream& out) {
 	std::ifstream f(file.c_str());
 	if(!f) {
-		out << "Could not open file '" << file << "' for reading" << std::endl;
+		std::stringstream msg;
+		msg << "Could not open file '" << file << "' for reading";
+		throw std::runtime_error(msg.str().c_str());
 		return;
 	}
 	out << f.rdbuf();

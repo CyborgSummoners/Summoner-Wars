@@ -32,7 +32,7 @@ class Connection : private sf::SocketTCP {
 	public:
 		//call these in sequence.
 		bool connect(const std::string& address, unsigned short port);
-		bool send_scripts(sf::Packet& packet);
+		bool handshake();
 		void listen();
 
 		void disconnect();

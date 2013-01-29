@@ -57,7 +57,9 @@ bool sum::Connection::connect(const std::string& address, unsigned short port) {
 	return connected=true;
 }
 
-bool sum::Connection::send_scripts(sf::Packet& packet) {
+bool sum::Connection::handshake() {
+	sf::Packet packet;
+	packet << "handshake";
 	Send(packet);
 
 	Receive(packet);

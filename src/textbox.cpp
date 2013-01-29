@@ -1,4 +1,5 @@
 #include "textbox.hpp"
+#include "util/stringutils.hpp"
 
 namespace sum
 {
@@ -42,6 +43,7 @@ void TextBox::draw()
 
 void TextBox::add(std::string _text)
 {
+	_text = stringutils::tabconv(_text);
 	tmp.SetText(_text);
 	if(tmp.GetRect().GetWidth() > width-linesize)
 	{

@@ -1,4 +1,5 @@
 #include "stringutils.hpp"
+#include "debug.hpp"
 #include <stdexcept>
 #include <sstream>
 
@@ -59,6 +60,15 @@ std::string trim(const std::string& str) {
 	return Result;
 }
 
+std::string tabconv(const std::string& str) {
+	std::string Result;
+	for(size_t i=0; i<str.size(); ++i) {
+		if(str[i] == '\t') Result.append(3, ' ');
+		else Result.append(1, str[i]);
+	}
+	return Result;
+}
+
 bool to_unsigned(const std::string& str, unsigned int& Result) {
 	Result = 0;
 
@@ -77,5 +87,9 @@ std::string float_to_string(float f) {
 	return ss.str();
 }
 
+
+bool is_valid_path_char(char c) {
+	return isalnum(c) || c=='/';
+}
 }
 }

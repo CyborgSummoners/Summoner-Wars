@@ -19,10 +19,11 @@ class Terminal {
 	private:
 		filesystem::Dir* root;
 		filesystem::Dir* bin;
+		filesystem::Dir* physical_scripts;
 
 	public:
 		filesystem::Path working_directory;
-		filesystem::Path string_to_path(std::string path);
+		filesystem::Path string_to_path(std::string path, bool makeit = false);
 		filesystem::File* get_file(const filesystem::Path& path, std::string fname);
 		filesystem::File* get_file(std::string path);
 
@@ -75,6 +76,10 @@ namespace filesystem {
 			return content;
 		}
 
+		virtual bool is_readable() const {
+			return true;
+		}
+
 		virtual bool is_executable() const{
 			return false;
 		}
@@ -90,6 +95,12 @@ namespace filesystem {
 		std::set<File*> files;
 
 		Dir(const std::string& name) : name(name) {}
+		virtual void refresh() {}
+		virtual ~Dir() {
+			for(std::set<Dir*>::iterator it=subdirs.begin(); it!=subdirs.end(); ++it) delete *it;
+			for(std::set<File*>::iterator it=files.begin(); it!=files.end(); ++it) delete *it;
+		}
+
 	};
 
 }

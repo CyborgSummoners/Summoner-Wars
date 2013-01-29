@@ -1,9 +1,19 @@
 #include "terminal.hpp"
 #include "game.hpp"
+#include "filehandling.hpp"
 #include "util/debug.hpp"
 #include <sstream>
+#include <fstream>
 #include <cassert>
 #include <algorithm>
+#include <stdexcept>
+
+// dangerously tight coupling:
+#include "parser.hpp"
+#include "bytecode.hpp"
+#include "compiler/summparse.h"
+#include <SFML/Network.hpp>
+
 
 namespace sum {
 	namespace {
@@ -11,11 +21,53 @@ namespace sum {
 	}
 
 	namespace filesystem {
+		struct Mounted_file : public File {
+			const std::string realpath;
+			Mounted_file(const std::string& name, const std::string& realpath) : File(name), realpath(realpath) {}
+
+			virtual std::string read() const {
+				std::stringstream ss;
+				filehandling::read(realpath, ss);
+				return ss.str();
+			}
+		};
+
+		struct Mounted_dir : public Dir {
+			const std::string mounted_dir;
+			Mounted_dir(const std::string& name, const std::string& dir_to_mount) : Dir(name), mounted_dir("./"+dir_to_mount) {
+				refresh();
+			}
+
+			virtual void refresh() {
+				// naively drop/insert. This will cause Bad Things if a dir is mounted in a mounted dir -- but shit, don't.
+				// also, it's recursive.
+				//debugf("Refreshing %s\n", mounted_dir.c_str());
+				for(std::set<File*>::iterator it=files.begin(); it!=files.end(); ++it) delete *it;
+				for(std::set<Dir*>::iterator it=subdirs.begin(); it!=subdirs.end(); ++it) delete *it;
+				subdirs.clear();
+				files.clear();
+
+				//get dirs
+				std::set<std::string> names = filehandling::get_subdirs(mounted_dir);
+				for(std::set<std::string>::const_iterator it = names.begin(); it!=names.end(); ++it) {
+					subdirs.insert(new Mounted_dir(*it, mounted_dir+"/"+*it));
+				}
+				names = filehandling::get_files(mounted_dir);
+				for(std::set<std::string>::const_iterator it = names.begin(); it!=names.end(); ++it) {
+					files.insert(new Mounted_file(*it, mounted_dir+"/"+*it));
+				}
+
+			}
+		};
 
 		struct Executable : public File {
 			Executable(const std::string& fname, const Terminal::Completer& completer = Terminal::dir_completer) : File(fname, "", completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context = 0) = 0;
+			virtual bool is_readable() const {
+				return false;
+			}
 			virtual std::string read() const {
+				throw std::logic_error("Fatal: not a readable file.");
 				return "Fatal: not a readable file.";
 			}
 			virtual bool is_executable() const{
@@ -47,7 +99,17 @@ namespace sum {
 				File* f;
 				for(size_t i=0; i<fnames.size(); ++i) {
 					f = context->get_file(fnames[i]);
-					if(f) Result.append(f->content);
+					if(f) {
+						if(f->is_readable()) {
+							try {
+								Result.append(f->read());
+							}
+							catch(std::exception& e) {
+								Result.append("Error: ").append(e.what());
+							}
+						}
+						else Result.append("Fatal: not a readable file.");
+					}
 					else Result.append(fnames[i] + ": no such file.");
 				}
 				return Result;
@@ -80,6 +142,40 @@ namespace sum {
 				return "";
 			}
 		};
+		struct Mount : public Executable {
+			Mount() : Executable("mount") {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context) {
+				assert(context);
+				if(stringutils::trim(args).empty()) return "Not enough argument to function.\nUsage: mount <physical-subdir-name> <dir-name>";
+				std::vector<std::string> argv = stringutils::string_explode(stringutils::trim(args), whitespace);
+				if(argv.size() < 2) return "Not enough argument to function.\nUsage: mount <physical-subdir-name> <new-dir-name> ";
+				if(argv.size() > 2) return "Too many arguments to function.\nUsage: mount <physical-subdir-name> <new-dir-name> ";
+
+				if(std::count_if(argv[1].begin(), argv[1].end(), stringutils::is_valid_path_char) != (signed)argv[1].size() ) return argv[1] + " is not a valid path name.";
+
+				// local dir exists already?
+				Path path = context->string_to_path(argv[1]);
+				if(!path.empty()) return argv[1] + " already exists.";
+				if(!filehandling::dir_exists(argv[0])) {
+					return "Outer directory "+argv[0]+" does not seem to exist.";
+				}
+
+				//make dir. this is awkward and terrible, but dunno now. FIXME.
+				path = context->string_to_path(argv[1], true);
+				Dir* dir = path.back();
+				std::string dirname = dir->name;
+
+				path.pop_back();
+				Dir* parent = path.back();
+				parent->subdirs.erase(dir);
+				delete dir;
+				dir = new Mounted_dir(dirname, argv[0]);
+				parent->subdirs.insert(dir);
+				path.push_back(dir);
+
+				return "";
+			}
+		};
 		struct Ls : public Executable {
 			Ls() : Executable("ls", Terminal::dir_completer) {}
 			virtual std::string execute(const std::string& args, sum::Terminal* context) {
@@ -101,10 +197,107 @@ namespace sum {
 				return Result;
 			}
 		};
+		struct Command : public Executable {	// reads a file line-by-line and executes its contents in the command line.
+			Command() : Executable("command", Terminal::filedir_completer) {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context) {
+				assert(context);
+				std::stringstream Result;
+				if(stringutils::trim(args).empty()) return "";
+
+				std::vector<std::string> fnames = stringutils::string_explode(stringutils::trim(args), whitespace);
+
+				File* f;
+				for(size_t i=0; i<fnames.size(); ++i) {
+					f = context->get_file(fnames[i]);
+					if(f) {
+						if(f->is_readable()) {
+							try {
+								std::vector<std::string> lines = stringutils::string_explode(stringutils::trim(f->read()), "\n");
+								for(size_t i=0; i<lines.size(); ++i) Result << context->command(lines[i]);
+							}
+							catch(std::exception& e) {
+								Result << "Error: " << e.what();
+							}
+						}
+						else Result << "Fatal: not a readable file.";
+					}
+					else Result << fnames[i] << ": no such file.";
+				}
+				return Result.str();
+			}
+		};
+
+		// dangerously tight coupling.
+		struct Compile : public Executable {
+			Compile() : Executable("compile", Terminal::filedir_completer) {}
+			virtual std::string execute(const std::string& args, sum::Terminal* context) {
+				assert(context);
+				if(stringutils::trim(args).empty()) return "Not enough argument to function.\nUsage: compile <path>*";
+				std::vector<std::string> argv = stringutils::string_explode(stringutils::trim(args), whitespace);
+				std::stringstream Result;
+
+				File* f;
+				Path path;
+				std::vector<File*> files;
+				for(size_t i=0; i<argv.size(); ++i) {
+					f = context->get_file(argv[i]);
+
+					if(f) files.push_back(f);
+					else { //maybe it's a path?
+						path = context->string_to_path(argv[i]);
+						if(!path.empty()) {
+							Dir* dir = path.back();
+							for(std::set<File*>::const_iterator it=dir->files.begin(); it != dir->files.end(); ++it) {
+								files.push_back(*it);
+							}
+						}
+						else {
+							Result << argv[i] + ": no such file or directory." << std::endl;
+						}
+					}
+				}
+
+				if(files.empty()) {
+					Result << "Error: no input files." << std::endl;
+					return Result.str();
+				}
+
+				::Parser parser(Result);
+				for(size_t i=0; i<files.size(); ++i) {
+					try {
+						if(files[i]->is_readable()) {
+							Result << "compile " << files[i]->name << std::endl;
+							std::stringstream in;
+							in.str( files[i]->read() );
+							parser.parse(in);
+						}
+						else Result << "Error: could not open " << files[i]->name << " for reading." << std::endl;
+					}
+					catch(std::exception& e) {
+						Result << "Error: " << e.what() << std::endl;
+					}
+				}
+
+				using sum::Parser::operator<<;
+				if(parser.subprograms.size() > 0) {
+					sf::Packet packet;
+					packet << "scriptreg";
+					packet << static_cast<sf::Uint32>(parser.subprograms.size());
+					for(size_t i=0; i<parser.subprograms.size(); ++i) {
+						packet << parser.subprograms[i];
+					}
+
+					Game::SendPacket(packet);
+					Result << Terminal::freezing_return;
+				}
+
+				return Result.str();
+			}
+		};
 
 	}
 
-	Terminal::Terminal() : root(new filesystem::Dir("")), bin(new filesystem::Dir("bin")) {
+	Terminal::Terminal() : root(new filesystem::Dir("")), bin(new filesystem::Dir("bin")), physical_scripts(new filesystem::Dir("src")) {
 		// building fake filesystem:
 		using filesystem::Dir;
 		using filesystem::File;
@@ -115,16 +308,22 @@ namespace sum {
 		bin->files.insert( new filesystem::Pwd() );
 		bin->files.insert( new filesystem::Cd() );
 		bin->files.insert( new filesystem::Ls() );
+		bin->files.insert( new filesystem::Mount() );
+		bin->files.insert( new filesystem::Compile() );
+		bin->files.insert( new filesystem::Command() );
 
 		Dir* dir;
-		dir = new Dir("scripts");
-		root->subdirs.insert(dir);
 
 		dir = new Dir("mon");
 		root->subdirs.insert(dir);
 
+		dir = new Dir("mnt");
+		root->subdirs.insert(dir);
+
 		// set pwd to root
 		this->working_directory.push_back( root );
+
+		this->command("mount boot /boot");
 	}
 
 	std::string Terminal::command(std::string input) {
@@ -297,7 +496,7 @@ namespace sum {
 		return false;
 	}
 
-	filesystem::Path Terminal::string_to_path(std::string str) {
+	filesystem::Path Terminal::string_to_path(std::string str, bool makeit) {
 		using filesystem::Path;
 		using filesystem::Dir;
 		Path path;
@@ -321,17 +520,22 @@ namespace sum {
 				for(std::set<Dir*>::const_iterator it=path.back()->subdirs.begin(); it!=path.back()->subdirs.end(); ++it) {
 					if( (*it)->name == part ) {
 						path.push_back(*it);
+						path.back()->refresh(); // this is great, but should be temporary. ATM we can't be sure that everything around uses this fun.
 						found = true;
 						break;
 					}
 				}
-				if(!found) return Path();
+				if(!found && makeit) {
+					Dir* dir = new Dir(part);
+					path.back()->subdirs.insert(dir);
+					path.push_back(dir);
+				}
+				else if(!found) return Path();
 			}
 		}
 
 		return path;
 	}
-
 
 	filesystem::File* Terminal::get_file(const filesystem::Path& path, std::string fname) {
 		if(path.empty()) return 0;

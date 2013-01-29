@@ -1,6 +1,7 @@
 
 #include "guiterminal.hpp"
 #include <iostream>
+#include <functional>
 
 namespace sum{
 
@@ -50,6 +51,12 @@ GuiTerminal::~GuiTerminal()
 	delete term;
 }
 
+void GuiTerminal::boot() {
+	sf::Lock Lock(mutex);
+	handleTermReply( term->command("echo Booting from /boot/autoexec") );
+	handleTermReply( term->command("command /boot/autoexec") );
+}
+
 void GuiTerminal::update(const ServerMessage &message)
 {
 	sf::Lock Lock(mutex);
@@ -65,6 +72,7 @@ void GuiTerminal::update(const ServerMessage &message)
 			break;
 		case ServerMessage::reply:
 			frozen=false;
+			textbox->remove_last_line_if( std::bind1st( std::equal_to<std::string>(), GuiTerminal::waiting_message ) );
 			if(!message.msg.empty()) {
 				ret = string_explode(message.msg, "\n");
 				for(size_t i=0; i<ret.size(); ++i) if(i != ret.size() -1 || !ret[i].empty()) textbox->add(ret[i]);
@@ -95,22 +103,14 @@ void GuiTerminal::handleEvent(sf::Event &event)
 			buffer.enter(inputfield->val());
 			std::string term_user=player_name + term->get_working_directory() + "$";
 			textbox->add(term_user+inputfield->val());
-			std::vector<std::string> ret = string_explode(term->command(inputfield->val()), '\n');
-
-			if(ret.size() > 0 && ret[0] == Terminal::freezing_return) frozen=true;
+			std::string term_reply = term->command(inputfield->val());
 
 			term_user=player_name + term->get_working_directory() + "$";
 			name_pwd.SetText(term_user);
 			inputfield->setX(x + name_pwd.GetRect().GetWidth());
 			inputfield->setWidth(width-x-name_pwd.GetRect().GetWidth()-x);
 
-			if(frozen)
-				textbox->add("Waiting for server to reply...");
-			else
-			{
-				for(size_t i=0; i<ret.size(); ++i)
-					if(i != ret.size() -1 || !ret[i].empty()) textbox->add(ret[i]);
-			}
+			handleTermReply(term_reply);
 
 			inputfield->reset();
 		}
@@ -159,6 +159,17 @@ void GuiTerminal::handleEvent(sf::Event &event)
 	}
 }
 
+void GuiTerminal::handleTermReply(const std::string& repl) {
+	std::vector<std::string> ret = string_explode(repl, '\n');
+	if(stringutils::trim(ret.back()).empty()) ret.pop_back();
+	if(!ret.empty() && ret.back() == Terminal::freezing_return) {
+		ret.pop_back();
+		frozen=true;
+	}
+	for(size_t i=0; i<ret.size(); ++i) if(ret[i]!=Terminal::freezing_return) textbox->add(ret[i]);
+	if(frozen) textbox->add(GuiTerminal::waiting_message);
+}
+
 bool GuiTerminal::Buffer::up()
 {
 	bool not_start=act!=buff.begin();
@@ -193,5 +204,6 @@ void GuiTerminal::Buffer::enter(std::string _val)
 	act=buff.end();
 }
 
+const std::string GuiTerminal::waiting_message = "Waiting for server to reply...";
 
 }

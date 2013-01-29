@@ -139,27 +139,16 @@ void sum::Server::Run() {
 						else {
 							using namespace sum::Parser;	//vajon miért nem tudja kitalálni?
 
-							// so, this must be the push, okay.
-							// ellenőrizni kéne...
-							sf::Uint32 len;
-							std::string msg;
+							// now handshake
 							try {
-								packet >> len;
-								bytecode::subprogram prog;
-								for(size_t i=0; i<len; ++i) {
-									packet >> prog;
-									prog.owner = client->client_id;
-									// we just store it in the client until the game starts.
-									client->progs.push_back(prog);
-								}
-								debugf("Got %d scripts from client #%s.\n", len, client->toString().c_str());
-
 								waiting_list.remove(client);
 								clients.push_back(client);
 
 								packet.Clear();
 								packet << "ack";
 								socket.Send(packet);
+
+								// send list of registered subprograms?
 
 								// send available server functions to client:
 								for(server_fun_iter fit = server_functions.begin(); fit != server_functions.end(); ++fit) {
@@ -195,8 +184,7 @@ void sum::Server::Run() {
 					}
 					else {
 						packet >> msg_handle;
-						packet >> msg;
-						debugf("%s says: \"%s\" (handle %s)\n", client->toString().c_str(), msg.c_str(), msg_handle.c_str());
+						debugf("%s request %s\n", client->toString().c_str(), msg_handle.c_str());
 
 						server_fun_iter callee = server_functions.find(msg_handle);
 						if(callee == server_functions.end()) {
@@ -207,7 +195,7 @@ void sum::Server::Run() {
 							);
 						}
 						else {
-							const std::string repl = (this->*(callee->second))(*client, msg);
+							const std::string repl = (this->*(callee->second))(*client, packet);
 							Send( *client,ServerMessage(ServerMessage::reply, repl) );
 						}
 					}
@@ -302,7 +290,9 @@ void sum::Server::gamestart() {
 //************************
 //*** server functions ***
 //************************
-const std::string sum::Server::shout(Client& client, std::string args) {
+const std::string sum::Server::shout(Client& client, sf::Packet& packet) {
+	std::string args;
+	packet >> args;
 	debugf("SHOUT from %s: %s\n", client.toString().c_str(), args.c_str());
 
 	// todo: trim args
@@ -317,7 +307,7 @@ const std::string sum::Server::shout(Client& client, std::string args) {
 	return "";
 }
 
-const std::string sum::Server::serverdate(Client& client, std::string args) {
+const std::string sum::Server::serverdate(Client& client, sf::Packet& packet) {
 	time_t raw;
 	struct tm* tms;
 	char buf[80];
@@ -330,8 +320,10 @@ const std::string sum::Server::serverdate(Client& client, std::string args) {
 	return std::string(buf);
 }
 
-const std::string sum::Server::summon(Client& client, std::string args) {
+const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 	if(state != Playing) return "Fatal: you can only summon things while playing.";
+	std::string args;
+	packet >> args;
 
 	std::string Result = "";
 	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
@@ -410,8 +402,10 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 	return Result.append("Usage: summon <summonable> [<x-coord> <y-coord>]");
 }
 
-const std::string sum::Server::puppetinfo(Client& client, std::string args) {
+const std::string sum::Server::puppetinfo(Client& client, sf::Packet& packet) {
 	if(state < Playing) return "Fatal: can't describe things when not playing.";
+	std::string args;
+	packet >> args;
 	std::string Result = "";
 
 	// args expected to contain puppet-id.
@@ -428,12 +422,37 @@ const std::string sum::Server::puppetinfo(Client& client, std::string args) {
 }
 
 
+const std::string sum::Server::register_script(Client& client, sf::Packet& packet) {
+	using sum::Parser::operator>>;
+
+	sf::Uint32 len;
+	bytecode::subprogram prog;
+	packet >> len;
+	debugf("Recieving %d scripts from client #%s.\n", len, client.toString().c_str());
+
+	size_t s=0;
+	for(size_t i=0; i<len; ++i) {
+		packet >> prog;
+		prog.owner = client.client_id;
+
+		if(state < Playing) client.progs.push_back(prog);
+		// else world->register_subprogram or something.
+		++s;
+	}
+
+	debugf("Got %d / %d scripts from client #%s.\n", len, s, client.toString().c_str());
+
+	return "";
+}
+
+
 const std::map<std::string, sum::Server::server_function> sum::Server::initialize_server_functions() {
 	std::map<std::string, server_function> Result;
 	Result.insert( make_pair("shout", &Server::shout) );
 	Result.insert( make_pair("serverdate", &Server::serverdate) );
 	Result.insert( make_pair("summon", &Server::summon) );
 	Result.insert( make_pair("describe", &Server::puppetinfo) );
+	Result.insert( make_pair("scriptreg", &Server::register_script) );
 	return Result;
 }
 

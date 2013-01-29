@@ -51,10 +51,12 @@ sf::Packet sum::Parser::packetize_scripts_from_file(std::string fname, std::ostr
 	sf::Packet Result;
 	std::ifstream source(fname.c_str());
 	if(!source.is_open() || !source.good()) {
-		debugf("Could not open source file '%s' for reading.", fname.c_str());
+		debugf("Could not open source file '%s' for reading.\n", fname.c_str());
 		throw std::invalid_argument("Could not open source file for reading");
 		return Result;
 	}
+	debugf("Parsing %s\n", fname.c_str());
+	parser_output << "compile " << fname << "\n";
 
 	::Parser parser(source, parser_output);
 	parser.parse();

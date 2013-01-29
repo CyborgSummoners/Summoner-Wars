@@ -1,10 +1,19 @@
 #include "../bytecode.hpp"
 #include "summparse.h"
 
-Parser::Parser(std::istream& in, std::ostream& out, action act) : act(act), lexer( new Lexer(in, out) ), varnum(0) {
+Parser::Parser(std::ostream& out) : act(FULL), lexer(0), varnum(0), out(out), errnum(0) {
+}
+Parser::Parser(std::istream& in, std::ostream& out, action act) : act(act), lexer( new Lexer(in, out) ), varnum(0), out(out), errnum(0) {
 }
 Parser::~Parser() {
 	delete lexer;
+}
+
+int Parser::parse(std::istream& in) {
+	reset();
+	if(lexer) delete lexer;
+	lexer = new Lexer(in, out);
+	return this->parse();
 }
 
 int Parser::lex() {
@@ -132,8 +141,17 @@ void Parser::assemble(codelines& code, byte*& Result, size_t& length) {
 }
 
 void Parser::reset() {
+	errors.clear();
 	varnum = 0;
 	symtab.clear();
+}
+
+void Parser::display_errors(const std::string& funcname) {
+	out << errors.size() << " errors in subprogram " << funcname << ": " << std::endl;
+	for(size_t i=0; i<errors.size(); ++i) {
+		out << "  on line " << errors[i].first << ": " << errors[i].second;
+	}
+	out << std::endl;
 }
 
 bool var::is(type typ) const {

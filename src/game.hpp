@@ -6,6 +6,7 @@
 #include "infobar.hpp"
 #include "map.hpp"
 #include "combatlog.hpp"
+#include <SFML/Network.hpp>
 
 namespace sum
 {
@@ -20,6 +21,7 @@ public:
 	static void Start(std::string server_ip, unsigned short server_port);
 
 	static void SendRequest(const std::string& server_handle, const std::string& args = "");
+	static void SendPacket(sf::Packet& packet); //tight coupling, ee
 
 private:
 	static bool IsExiting();

@@ -739,14 +739,16 @@ namespace sum {
 		return it->second;
 	}
 
+	bool Interpreter::subprogram_exists(const std::string& prog_name) {
+		return (program_map.find(prog_name) != program_map.end() );
+	}
+
 	bool Interpreter::register_subprogram(const bytecode::subprogram& prog) {
 		std::string nom = ("" == prog.owner? prog.get_name() : prog.owner+"'"+prog.get_name());
 
 		debugf("Registering subprogram %s...", nom.c_str());
 
-		// do we already have a program with this name?
-		std::map<std::string, size_t>::iterator it = program_map.find(nom);
-		if(it != program_map.end()) {
+		if(subprogram_exists(nom)) {
 			debugf("failed: already exists\n");
 			return false;
 		}

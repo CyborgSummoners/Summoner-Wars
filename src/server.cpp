@@ -427,19 +427,26 @@ const std::string sum::Server::register_script(Client& client, sf::Packet& packe
 	packet >> len;
 	debugf("Recieving %d scripts from client #%s.\n", len, client.toString().c_str());
 
+	std::stringstream Result;
 	size_t s=0;
-	for(size_t i=0; i<len; ++i) {
-		packet >> prog;
-		prog.owner = client.client_id;
+	try {
+		for(size_t i=0; i<len; ++i) {
+			packet >> prog;	// this may throw
+			prog.owner = client.client_id;
 
-		//if(state < Playing) client.progs.push_back(prog);
-		// else world->register_subprogram or something.
-		++s;
+			if( interpreter.register_subprogram(prog) ) ++s;
+			else {
+				Result << "Could not register " << prog.get_name() << ": subprogram already exists.\n";
+			}
+		}
+	} catch(std::exception& e) {
+		debugf("Malformed packet from client #%s.\n", client.toString().c_str());
+		return "Got malformed packet. Some scripts may not have been registered.\n";
 	}
 
 	debugf("Got %d / %d scripts from client #%s.\n", len, s, client.toString().c_str());
 
-	return "";
+	return Result.str();
 }
 
 

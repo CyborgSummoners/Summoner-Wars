@@ -52,6 +52,8 @@ class GuiTerminal : public Widget, public Observer<ServerMessage>
 		bool frozen;
 		sf::Mutex mutex;
 		bool completion_init;
+
+		static const std::string waiting_message;
 };
 
 

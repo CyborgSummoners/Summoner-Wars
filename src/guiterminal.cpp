@@ -1,6 +1,7 @@
 
 #include "guiterminal.hpp"
 #include <iostream>
+#include <functional>
 
 namespace sum{
 
@@ -65,6 +66,7 @@ void GuiTerminal::update(const ServerMessage &message)
 			break;
 		case ServerMessage::reply:
 			frozen=false;
+			textbox->remove_last_line_if( std::bind1st( std::equal_to<std::string>(), GuiTerminal::waiting_message ) );
 			if(!message.msg.empty()) {
 				ret = string_explode(message.msg, "\n");
 				for(size_t i=0; i<ret.size(); ++i) if(i != ret.size() -1 || !ret[i].empty()) textbox->add(ret[i]);
@@ -108,7 +110,7 @@ void GuiTerminal::handleEvent(sf::Event &event)
 				frozen=true;
 			}
 			for(size_t i=0; i<ret.size(); ++i) textbox->add(ret[i]);
-			if(frozen) textbox->add("Waiting for server to reply...");
+			if(frozen) textbox->add(GuiTerminal::waiting_message);
 
 			inputfield->reset();
 		}
@@ -191,5 +193,6 @@ void GuiTerminal::Buffer::enter(std::string _val)
 	act=buff.end();
 }
 
+const std::string GuiTerminal::waiting_message = "Waiting for server to reply...";
 
 }

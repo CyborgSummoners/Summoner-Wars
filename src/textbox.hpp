@@ -9,7 +9,7 @@ namespace sum
 class TextBox : public Widget{
 
 public:
-	
+
 	TextBox(
 		sf::RenderWindow *_window,
 		int _x,
@@ -21,7 +21,12 @@ public:
 	void draw();
 	void add(std::string _text);
 	std::vector<std::string> val();
-	
+
+	template<typename T>
+	void remove_last_line_if(const T& predicate) {
+		if(!lines.empty() && predicate(lines.back())) lines.pop_back();
+	}
+
 private:
 
 	std::vector<std::string> lines;
@@ -31,7 +36,7 @@ private:
 	const int linesize;
 	bool chopping;
 	int chopping_size;
-	
+
 };
 
 }

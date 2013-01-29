@@ -184,8 +184,7 @@ void sum::Server::Run() {
 					}
 					else {
 						packet >> msg_handle;
-						packet >> msg;
-						debugf("%s says: \"%s\" (handle %s)\n", client->toString().c_str(), msg.c_str(), msg_handle.c_str());
+						debugf("%s request %s\n", client->toString().c_str(), msg_handle.c_str());
 
 						server_fun_iter callee = server_functions.find(msg_handle);
 						if(callee == server_functions.end()) {
@@ -196,7 +195,7 @@ void sum::Server::Run() {
 							);
 						}
 						else {
-							const std::string repl = (this->*(callee->second))(*client, msg);
+							const std::string repl = (this->*(callee->second))(*client, packet);
 							Send( *client,ServerMessage(ServerMessage::reply, repl) );
 						}
 					}
@@ -291,7 +290,9 @@ void sum::Server::gamestart() {
 //************************
 //*** server functions ***
 //************************
-const std::string sum::Server::shout(Client& client, std::string args) {
+const std::string sum::Server::shout(Client& client, sf::Packet& packet) {
+	std::string args;
+	packet >> args;
 	debugf("SHOUT from %s: %s\n", client.toString().c_str(), args.c_str());
 
 	// todo: trim args
@@ -306,7 +307,7 @@ const std::string sum::Server::shout(Client& client, std::string args) {
 	return "";
 }
 
-const std::string sum::Server::serverdate(Client& client, std::string args) {
+const std::string sum::Server::serverdate(Client& client, sf::Packet& packet) {
 	time_t raw;
 	struct tm* tms;
 	char buf[80];
@@ -319,8 +320,10 @@ const std::string sum::Server::serverdate(Client& client, std::string args) {
 	return std::string(buf);
 }
 
-const std::string sum::Server::summon(Client& client, std::string args) {
+const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 	if(state != Playing) return "Fatal: you can only summon things while playing.";
+	std::string args;
+	packet >> args;
 
 	std::string Result = "";
 	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
@@ -399,8 +402,10 @@ const std::string sum::Server::summon(Client& client, std::string args) {
 	return Result.append("Usage: summon <summonable> [<x-coord> <y-coord>]");
 }
 
-const std::string sum::Server::puppetinfo(Client& client, std::string args) {
+const std::string sum::Server::puppetinfo(Client& client, sf::Packet& packet) {
 	if(state < Playing) return "Fatal: can't describe things when not playing.";
+	std::string args;
+	packet >> args;
 	std::string Result = "";
 
 	// args expected to contain puppet-id.

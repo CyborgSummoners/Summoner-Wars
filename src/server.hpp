@@ -73,15 +73,15 @@ class Server : public sf::Thread {
 		void gamestart();
 
 		// server functions the client can call
-		typedef const std::string (sum::Server::*server_function)(Client&, std::string);
+		typedef const std::string (sum::Server::*server_function)(Client&, sf::Packet&);
 		static const std::map<std::string, server_function> server_functions;
 		static const std::map<std::string, server_function> initialize_server_functions();
 		typedef std::map<std::string, server_function>::const_iterator server_fun_iter;
 
-		const std::string shout(Client& client, std::string args);
-		const std::string serverdate(Client& client, std::string args);
-		const std::string summon(Client& client, std::string args);
-		const std::string puppetinfo(Client& client, std::string args);
+		const std::string shout(Client& client, sf::Packet& packet);
+		const std::string serverdate(Client& client, sf::Packet& packet);
+		const std::string summon(Client& client, sf::Packet& packet);
+		const std::string puppetinfo(Client& client, sf::Packet& packet);
 };
 
 }

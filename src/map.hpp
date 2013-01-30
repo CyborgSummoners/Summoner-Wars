@@ -84,12 +84,12 @@ private:
 
 	public:
 
-		Robot(int _ID,int _team, int _x, int _y, Map *_map);
+		Robot(int _ID, int _client_ID,int _team, int _x, int _y, Map *_map);
 
 	private:
 
 		int ID;
-		int sum_ID;
+		int client_ID;
 		int team;
 		int map_x;
 		int map_y;

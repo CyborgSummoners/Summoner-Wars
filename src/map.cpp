@@ -38,13 +38,20 @@ void Map::update(const ServerMessage &message)
 			std::cout<<"Map received unknown message: "<<message.msg;
 			break;
 		case ServerMessage::summon:
-			/*robots.insert(
+			robots.insert(
 				std::pair<int,Robot>
 					(
-						res[0],
-						Robot(res[0],)
+						string_to_int(res[1]),
+						Robot(
+							string_to_int(res[1]),
+							string_to_int(res[0]),
+							string_to_int(res[0])-1,
+							string_to_int(res[2]),
+							string_to_int(res[3]),
+							this
+							)
 					)
-				);*/
+				);
 			break;
 		case ServerMessage::start:
 			tick=string_to_float(res[0]);
@@ -90,11 +97,12 @@ void Map::update(const ServerMessage &message)
 	}
 }
 
-Map::Robot::Robot(int _ID,int _team, int _x, int _y, Map *_map) :
+Map::Robot::Robot(int _ID,int _client_ID,int _team, int _x, int _y, Map *_map) :
 	Widget(_map->window,_x,_y,SPRITE_SIZE,SPRITE_SIZE),
 	map_x(_x),
 	map_y(_y),
 	ID(_ID),
+	client_ID(_client_ID),
 	team(_team),
 	facing(down),
 	map(_map),

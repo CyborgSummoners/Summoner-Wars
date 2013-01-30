@@ -194,6 +194,7 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 	post_message(
 		ServerMessage(ServerMessage::summon) << client_id            // this summoner-soul
 		                                     << Result->get_id()     // summoned this creature
+		                                     << Result->facing
 		                                     << pos.x                // to these coordinates
 		                                     << pos.y
 		                                     << attributes.mana_cost // losing this much mana,
@@ -212,7 +213,7 @@ coord World::get_pos(const Actor& actor) const {
 }
 
 bool World::is_valid(coord pos) const {
-	return pos.x>0 && pos.y>0 && pos.x<width && pos.y<height;
+	return pos.x>=0 && pos.y>=0 && pos.x<width && pos.y<height;
 }
 
 bool World::is_free(coord pos) const {

@@ -24,6 +24,21 @@ void Map::draw()
 		it->second.draw();
 }
 
+Map::Facing Map::armin_facing_converter(int facing)
+{
+	switch(facing)
+	{
+		case 0:
+			return up;
+		case 1:
+			return left;
+		case 2:
+			return down;
+		case 3:
+			return right;
+	}
+}
+
 void Map::update(const ServerMessage &message)
 {
 	using namespace stringutils;
@@ -45,17 +60,21 @@ void Map::update(const ServerMessage &message)
 						Robot(
 							string_to_int(res[1]),
 							string_to_int(res[0]),
+							armin_facing_converter(string_to_int(res[2])),
 							string_to_int(res[0])-1,
-							string_to_int(res[2]),
 							string_to_int(res[3]),
+							string_to_int(res[4]),
 							this
 							)
 					)
 				);
+			std::cout<<"FFFFFFFFFFF"<<string_to_int(res[3])<<"FFFFFFFF";
+			std::cout<<"KKKKKKKKKKK"<<string_to_int(res[4])<<"FFFFFFFF";
 			break;
 		case ServerMessage::start:
 			tick=string_to_float(res[0]);
 			step_size=string_to_int(res[1]);
+			steps_in_sec=step_size/tick;
 
 			for(int i=0;i<string_to_int(res[3]);++i)
 			{
@@ -85,19 +104,22 @@ void Map::update(const ServerMessage &message)
 			break;
 
 		case ServerMessage::move:
-
-			it=robots.find(string_to_int(res[0]));
-			it->second.movings.push(
-				Moving(
-					coord_to_facing(
-						string_to_int(res[1]),
-						string_to_int(res[2]),
-						string_to_int(res[3]),
-						string_to_int(res[4])
+			if(string_to_int(res[5])!=0)
+			{
+				it=robots.find(string_to_int(res[0]));
+				it->second.movings.push(
+					Moving(
+						coord_to_facing(
+							string_to_int(res[1]),
+							string_to_int(res[2]),
+							string_to_int(res[3]),
+							string_to_int(res[4])
+							),
+						string_to_int(res[6])/steps_in_sec,
+						false
 						)
-					)
-				);
-			
+					);
+			}
 			break;
 		case ServerMessage::shout:
 
@@ -125,16 +147,23 @@ Map::Facing Map::coord_to_facing(int x1, int y1, int x2, int y2)
 			return left;
 }
 
-Map::Robot::Robot(int _ID,int _client_ID,int _team, int _x, int _y, Map *_map) :
+Map::Robot::Robot(
+	int _ID,
+	int _client_ID,
+	Facing _facing,
+	int _team,
+	int _x,
+	int _y,
+	Map *_map) :
 	Widget(_map->window,_x,_y,SPRITE_SIZE,SPRITE_SIZE),
 	map_x(_x),
 	map_y(_y),
 	ID(_ID),
 	client_ID(_client_ID),
+	facing(_facing),
 	team(_team),
-	facing(down),
 	map(_map),
-	speed(3)
+	speed(SPRITE_SIZE)
 {
 	if(!initiated)
 	{
@@ -179,22 +208,39 @@ void Map::Robot::update(float tick)
 		switch(move.way)
 		{
 			case down:
-				y=y+speed*tick;
+				y=y+(SPRITE_SIZE*tick)/(move.time);
 			break;
 			case left:
-				x=x-speed*tick;
+				x=x-(SPRITE_SIZE*tick)/(move.time);
 			break;
 			case right:
-				x=x+speed*tick;
+				x=x+(SPRITE_SIZE*tick)/(move.time);
 			break;
 			case up:
-				y=y-speed*tick;
+				y=y-(SPRITE_SIZE*tick)/(move.time);
 			break;
 		}
-		move.duration-=speed*tick;
+		sprite.SetX(x);
+		sprite.SetY(y);
+		move.duration-=tick*move.time;
 		if(move.duration<=0)
 		{
-			setToPos();
+			switch(move.way)
+			{
+				case down:
+					map_y++;
+				break;
+				case up:
+					map_y--;
+				break;
+				case left:
+					map_x--;
+				break;
+				case right:
+					map_x++;
+				break;
+			}
+			//setToPos();
 			movings.pop();
 		}
 	}

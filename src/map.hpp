@@ -26,6 +26,7 @@ private:
 
 	enum Facing {down=0,left,right,up,unknown};
 	Facing coord_to_facing(int x1, int y1, int x2, int y2);
+	Facing armin_facing_converter(int facing);
 
 	struct Field
 	{
@@ -40,11 +41,12 @@ private:
 
 	struct Moving
 	{
-		Moving(Facing _way, float _duration=SPRITE_SIZE, bool _turn=false):
-			way(_way), duration(_duration), turn(_turn){}
+		Moving(Facing _way, float _duration, bool _turn=false):
+			way(_way), duration(_duration),time(_duration), turn(_turn){}
 
 		Facing way;
 		float duration;
+		float time;
 		bool turn;
 	};
 
@@ -85,7 +87,14 @@ private:
 
 	public:
 
-		Robot(int _ID, int _client_ID,int _team, int _x, int _y, Map *_map);
+		Robot(
+			int _ID,
+			int _client_ID,
+			Facing _facing,
+			int _team, 
+			int _x, 
+			int _y, 
+			Map *_map);
 
 	private:
 
@@ -116,6 +125,7 @@ private:
 	std::map<int,Summoner> summoners; // key::client ID
 	float tick;
 	int step_size;
+	float steps_in_sec;
 
 };
 

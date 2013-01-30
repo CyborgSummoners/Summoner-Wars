@@ -30,13 +30,19 @@ private:
 
 	struct Field
 	{
-		enum Type {field, block};
+		enum Type {field, block, brick};
 		Field(Type _type=field) : type(_type){}
 
 		Type type;
 	};
 
 	static const int SPRITE_SIZE=32;
+	static const int CAMERA_WIDTH=32;
+	static const int CAMERA_HEIGHT=16;
+	int camera_x;
+	int camera_y;
+	sf::Image map_image;
+	sf::Sprite map_sprite;
 	std::vector<std::vector<Field> > map_layout;
 
 	struct Moving

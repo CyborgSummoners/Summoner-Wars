@@ -4,8 +4,16 @@ namespace sum
 {
 
 Map::Map(sf::RenderWindow *_window) :
-	Widget(_window,0,25,_window->GetWidth(),_window->GetHeight()*2/3)
+	Widget(_window,0,25,_window->GetWidth(),_window->GetHeight()*2/3),
+	camera_x(0),
+	camera_y(0)
 {
+	if (!map_image.LoadFromFile("resources/materials.png"))
+	{
+		std::cout<<"couldn't load resources/materials.png";
+	}
+	map_sprite.SetImage(map_image);
+	map_sprite.SetBlendMode(sf::Blend::Multiply);
 }
 
 void Map::update(float tick)
@@ -18,6 +26,23 @@ void Map::draw()
 {
 	window->Draw(
 		sf::Shape::Rectangle(x,y,width,height, sf::Color(128,128,128)));
+	if(!map_layout.empty())
+		for(int i=camera_y;i<map_layout.size() && i<CAMERA_HEIGHT;++i)
+			for(int j=camera_x;j<map_layout[0].size() && j<CAMERA_WIDTH;++j)
+			{
+				map_sprite.SetX(x+j*SPRITE_SIZE);
+				map_sprite.SetY(y+i*SPRITE_SIZE);
+				switch(map_layout[i][j].type)
+				{
+					default:
+						map_sprite.SetSubRect(
+							sf::IntRect(
+								0,0,SPRITE_SIZE,SPRITE_SIZE)
+							);
+					break;
+				}
+				window->Draw(map_sprite);
+			}
 	for(std::map<int,Robot>::iterator it=robots.begin(); it!=robots.end(); ++it )
 		it->second.draw();
 	for(std::map<int,Summoner>::iterator it=summoners.begin(); it!=summoners.end();++it)
@@ -68,8 +93,6 @@ void Map::update(const ServerMessage &message)
 							)
 					)
 				);
-			std::cout<<"FFFFFFFFFFF"<<string_to_int(res[3])<<"FFFFFFFF";
-			std::cout<<"KKKKKKKKKKK"<<string_to_int(res[4])<<"FFFFFFFF";
 			break;
 		case ServerMessage::start:
 			tick=string_to_float(res[0]);
@@ -196,8 +219,8 @@ void Map::Robot::draw()
 
 void Map::Robot::setToPos()
 {
-	setX(map->x + map_x*SPRITE_SIZE);
-	setY(map->y + map_y*SPRITE_SIZE);
+	setX(map->x + (map_x-map->camera_x)*SPRITE_SIZE);
+	setY(map->y + (map_y-map->camera_y)*SPRITE_SIZE);
 }
 
 void Map::Robot::update(float tick)
@@ -240,7 +263,7 @@ void Map::Robot::update(float tick)
 					map_x++;
 				break;
 			}
-			//setToPos();
+			setToPos();
 			movings.pop();
 		}
 	}

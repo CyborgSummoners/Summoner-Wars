@@ -83,7 +83,7 @@ coord default_startpos(coord map_size, size_t player_num, size_t which) {
 }
 
 
-World::World(size_t width, size_t height) : width(width), height(height) {}
+World::World(Interpreter& interpreter, size_t width, size_t height) : interpreter(interpreter), width(width), height(height) {}
 World::~World() {
 	for(std::map<coord, Actor*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 		delete it->second;
@@ -144,16 +144,10 @@ step World::move_me(Puppet& actor) {
 	return res;
 }
 
-Summoner& World::create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success) {
+Summoner& World::create_summoner(coord pos, const std::string& client_id) {
 	Summoner* Result = new Summoner(*this);
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
 	summoners.insert( std::make_pair(client_id, Result) );
-
-	reg_success.resize(progs.size());
-	for(size_t i=0; i<progs.size(); ++i) {
-		reg_success[i] = interpreter.register_subprogram(progs[i]);
-	}
-
 	return *Result;
 }
 

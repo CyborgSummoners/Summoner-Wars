@@ -343,7 +343,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 5;
 				}
 			};
 			// operator!=
@@ -368,7 +368,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 5;
 				}
 			};
 			// operator<
@@ -389,7 +389,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 5;
 				}
 			};
 			// operator>
@@ -410,7 +410,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 5;
 				}
 			};
 
@@ -437,7 +437,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 1;
 				}
 			};
 
@@ -457,7 +457,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 1;
 				}
 			};
 
@@ -477,7 +477,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 1;
 				}
 			};
 
@@ -502,7 +502,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 1;
 				}
 			};
 
@@ -527,7 +527,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 1;
 				}
 			};
 
@@ -547,7 +547,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 1;
 				}
 			};
 
@@ -567,7 +567,7 @@ namespace sum {
 					delete r1;
 					delete r2;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 1;
 				}
 			};
 
@@ -589,7 +589,7 @@ namespace sum {
 					}
 					delete r1;
 					if(!done) throw except::incompatible_types();
-					return 0;
+					return 1;
 				}
 			};
 
@@ -604,7 +604,7 @@ namespace sum {
 					Cell* r1 = stack.pop();
 					std::cout << r1->to_str() << std::endl;
 					delete r1;
-					return 0;
+					return 50;
 				}
 			};
 
@@ -616,7 +616,7 @@ namespace sum {
 					Cell* r1 = stack.pop();
 					stack.push( new StringValue(r1->to_str()) );
 					delete r1;
-					return 0;
+					return 10;
 				}
 			};
 
@@ -739,26 +739,36 @@ namespace sum {
 		return it->second;
 	}
 
-	bool Interpreter::register_subprogram(const bytecode::subprogram& prog) {
+	bool Interpreter::subprogram_exists(const std::string& prog_name) {
+		return (program_map.find(prog_name) != program_map.end() );
+	}
+
+	bool Interpreter::register_subprogram(const bytecode::subprogram& prog, bool force_replace) {
 		std::string nom = ("" == prog.owner? prog.get_name() : prog.owner+"'"+prog.get_name());
 
 		debugf("Registering subprogram %s...", nom.c_str());
 
-		// do we already have a program with this name?
-		std::map<std::string, size_t>::iterator it = program_map.find(nom);
-		if(it != program_map.end()) {
-			debugf("failed: already exists\n");
-			return false;
+		if(subprogram_exists(nom)) {
+			if(!force_replace) {
+				debugf("failed: already exists\n");
+				return false;
+			}
+
+			debugf("... replacing existing... ");
+			// get id.
+			size_t id = get_program_id(prog.get_name(), prog.owner);
+			programs[id] = prog;
+			// this may very well cause problems for the puppet, but let this be the summoner's problem.
+			debugf("done\n");
+		}
+		else {
+			program_map.insert( make_pair( nom, programs.size() ) );
+			programs.push_back(prog);
+			debugf("done.\n");
 		}
 
-		// if not, let's register it.
-		program_map.insert( make_pair( nom, programs.size() ) );
-		programs.push_back(prog);
-
-		debugf("done.\n");
 		return true;
 	}
-
 
 	bool Interpreter::advance(step steps) {
 		if(puppets.empty()) return false;
@@ -826,7 +836,7 @@ namespace sum {
 		size_t rs;
 		int ri, rj;
 
-		byte opcode = programs[program_id].get_byte(pc);
+		byte opcode = programs[program_id].get_byte(pc);	//may throw
 		switch(opcode) {
 			case NOP:	// 0
 				break;

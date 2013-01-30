@@ -62,7 +62,8 @@ namespace sum {
 			//advance simulation by ticks many ticks, return true if anything meaningful happened, false otherwise.
 			bool advance(step steps);
 
-			bool register_subprogram(const bytecode::subprogram& prog);
+			bool subprogram_exists(const std::string& prog_name);
+			bool register_subprogram(const bytecode::subprogram& prog, bool force_replace = false);
 			//void execute(const std::string& program) const;	// valahogy meg kéne oldani
 
 			// Puppet regisztrációja: a puppet bekerül a végrehajtási sorba. A Puppet viselkedése végtelen NOP

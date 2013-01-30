@@ -41,7 +41,7 @@ namespace Logic {
 	struct Puppet_template;
 
 	class World {
-		Interpreter interpreter;
+		Interpreter& interpreter;
 
 		size_t width;
 		size_t height;
@@ -51,10 +51,10 @@ namespace Logic {
 		std::deque<ServerMessage> outbox;
 
 		public:
-			World(size_t width, size_t height);
+			World(Interpreter& interpreter, size_t width, size_t height);
 			~World();
 
-			Summoner& create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success);
+			Summoner& create_summoner(coord pos, const std::string& client_id);
 			Puppet* create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, std::string& failure_reason);
 
 			std::deque<ServerMessage>& advance(step steps);

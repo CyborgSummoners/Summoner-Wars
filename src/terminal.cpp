@@ -239,7 +239,13 @@ namespace sum {
 				File* f;
 				Path path;
 				std::vector<File*> files;
+				bool forcereplace = false;
 				for(size_t i=0; i<argv.size(); ++i) {
+					if(argv[i] == "--replace") {
+						forcereplace = true;
+						continue;
+					}
+
 					f = context->get_file(argv[i]);
 
 					if(f) files.push_back(f);
@@ -283,6 +289,7 @@ namespace sum {
 					sf::Packet packet;
 					packet << "scriptreg";
 					packet << static_cast<sf::Uint32>(parser.subprograms.size());
+					packet << forcereplace;
 					for(size_t i=0; i<parser.subprograms.size(); ++i) {
 						packet << parser.subprograms[i];
 					}

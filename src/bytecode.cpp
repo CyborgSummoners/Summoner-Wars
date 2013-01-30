@@ -133,12 +133,14 @@ namespace bytecode {
 	}
 
 	int subprogram::get_int(size_t& program_counter) const {
+		if(program_counter + 4 >= len) throw bytecode::underflow();
 		int Result = ((code[program_counter] & 0xff) << 24) | ((code[program_counter+1] & 0xff) << 16) | ((code[program_counter+2] & 0xff) << 8) | (code[program_counter+3] & 0xff);
 		program_counter+=4;
 		return Result;
 	}
 
 	byte subprogram::get_byte(size_t& program_counter) const {
+		if(program_counter >= len) throw bytecode::underflow();
 		return code[program_counter++];
 	}
 
@@ -148,6 +150,7 @@ namespace bytecode {
 		Result.reserve(16);
 		char c;
 		while(code[program_counter] != 0) {
+			if(program_counter >= len) throw bytecode::underflow();
 			c = code[program_counter];
 			Result.append( 1,c );
 			++program_counter;

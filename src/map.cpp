@@ -154,9 +154,9 @@ Map::Robot::Robot(int _ID,int _client_ID,int _team, int _x, int _y, Map *_map) :
 	sprite.SetY(y);
 	sprite.SetSubRect(
 	sf::IntRect(
-		team*SPRITE_SIZE,
+		(team%2)*SPRITE_SIZE,
 		facing*SPRITE_SIZE,
-		team*SPRITE_SIZE+SPRITE_SIZE,
+		(team%2)*SPRITE_SIZE+SPRITE_SIZE,
 		facing*SPRITE_SIZE+SPRITE_SIZE));
 }
 
@@ -231,9 +231,9 @@ Map::Summoner::Summoner(int _ID,int _client_ID, int _x, int _y, Map *_map) :
 	sprite.SetSubRect(
 	sf::IntRect(
 		0,
-		3*SPRITE_SIZE,
+		2*SPRITE_SIZE,
 		SPRITE_SIZE,
-		4*SPRITE_SIZE));
+		3*SPRITE_SIZE));
 
 }
 

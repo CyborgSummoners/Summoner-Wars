@@ -5,7 +5,7 @@ namespace sum
 
 Map::Map(sf::RenderWindow *_window) :
 	Widget(_window,0,25,_window->GetWidth(),_window->GetHeight()*2/3),
-	target(10,10,this)
+	target(x+1,y+1,this)
 {
 	//target.shape.EnableFill(false);
 	Robot rob(2,0,0,0,this);
@@ -108,7 +108,7 @@ bool Map::Robot::initiated(false);
 Map::Targetfield::Targetfield(int _x, int _y, Map *_map):
 Widget(_map->window,_x,_y,20,20)
 {
-	shape = sf::Shape::Rectangle(_x,_y,_x+SPRITE_SIZE,_y+SPRITE_SIZE, sf::Color(0,255,0), 1, sf::Color(255,0,0));
+	shape = sf::Shape::Rectangle(_x,_y,_x+SPRITE_SIZE-2,_y+SPRITE_SIZE-2, sf::Color(0,255,0), 1, sf::Color(255,0,0));
 	shape.EnableFill(false);
 	this->x = _x;
 	this->y = _y;

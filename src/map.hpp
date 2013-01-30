@@ -54,11 +54,12 @@ private:
 
 	public:
 
-		Summoner(int _ID, int _x, int _y, Map *_map);
+		Summoner(int _ID, int _client_ID,int _x, int _y, Map *_map);
 
 	private:
 
 		int ID;
+		int client_ID;
 		int map_x;
 		int map_y;
 		sf::Sprite sprite;
@@ -110,7 +111,10 @@ private:
 		const Map *map;
 	};
 
-	std::map<int,Robot> robots;
+	std::map<int,Robot> robots; // key::actor ID
+	std::map<int,Summoner> summoners; // key::client ID
+	float tick;
+	int step_size;
 
 };
 

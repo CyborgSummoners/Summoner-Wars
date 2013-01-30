@@ -20,12 +20,18 @@ void Map::draw()
 		sf::Shape::Rectangle(x,y,width,height, sf::Color(128,128,128)));
 	for(std::map<int,Robot>::iterator it=robots.begin(); it!=robots.end(); ++it )
 		it->second.draw();
+	for(std::map<int,Summoner>::iterator it=summoners.begin(); it!=summoners.end();++it)
+		it->second.draw();
 }
 
 void Map::update(const ServerMessage &message)
 {
+	using namespace stringutils;
+
 	std::vector<std::string> res = message.get_parsed_msg();
 	std::map<int,Robot>::iterator it;
+	std::vector<Field> vtmp;
+	int client_size(0);
 	switch(message.type)
 	{
 		case ServerMessage::unknown:
@@ -41,6 +47,33 @@ void Map::update(const ServerMessage &message)
 				);*/
 			break;
 		case ServerMessage::start:
+			tick=string_to_float(res[0]);
+			step_size=string_to_int(res[1]);
+
+			for(int i=0;i<string_to_int(res[3]);++i)
+			{
+				for(int j=0;j<string_to_int(res[2]);++j)
+					vtmp.push_back(Field());
+				map_layout.push_back(vtmp);
+				vtmp.clear();
+			}
+
+			client_size=string_to_int(res[4]);
+
+			for(int i=0;i<client_size;++i)
+			{
+				summoners.insert(std::pair<int,Summoner>(
+					string_to_int(res[5+i*4]),
+					Summoner(
+						string_to_int(res[6+i*4]),
+						string_to_int(res[5+i*4]),
+						string_to_int(res[7+i*4]),
+						string_to_int(res[8+i*4]),
+						this
+						)
+					));
+			}
+
 
 			break;
 
@@ -131,9 +164,10 @@ void Map::Robot::update(float tick)
 	}
 }
 
-Map::Summoner::Summoner(int _ID, int _x, int _y, Map *_map) :
+Map::Summoner::Summoner(int _ID,int _client_ID, int _x, int _y, Map *_map) :
 		Widget(_map->window, _x,_y, SPRITE_SIZE, SPRITE_SIZE),
 		ID(_ID),
+		client_ID(_client_ID),
 		map_x(_x),
 		map_y(_y),
 		map(_map)
@@ -154,7 +188,7 @@ Map::Summoner::Summoner(int _ID, int _x, int _y, Map *_map) :
 	setX(map->x + x*SPRITE_SIZE);
 	setY(map->y + y*SPRITE_SIZE);
 
-	sprite.SetImage(robot_image);
+	sprite.SetImage(summoner_image);
 	sprite.SetBlendMode(sf::Blend::Multiply);
 	sprite.SetX(x);
 	sprite.SetY(y);

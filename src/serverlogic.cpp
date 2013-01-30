@@ -83,7 +83,7 @@ coord default_startpos(coord map_size, size_t player_num, size_t which) {
 }
 
 
-World::World(size_t width, size_t height) : width(width), height(height) {}
+World::World(Interpreter& interpreter, size_t width, size_t height) : interpreter(interpreter), width(width), height(height) {}
 World::~World() {
 	for(std::map<coord, Actor*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 		delete it->second;
@@ -144,16 +144,46 @@ step World::move_me(Puppet& actor) {
 	return res;
 }
 
-Summoner& World::create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success) {
+void World::hurt(Actor& actor, const size_t hp_loss) {
+	actor.hp -= hp_loss;
+	if(actor.hp <= 0) {
+		actor.die();
+	}
+	else {
+		post_message(
+			ServerMessage(ServerMessage::hp_loss) << actor.get_id() // this puppet
+			                                      << hp_loss // lost this much hp
+			                                      << actor.hp // he has this much remaining.
+		);
+	}
+}
+
+void World::kill(Puppet& puppet) {
+	debugf("puppet %d died\n", puppet.id);
+	interpreter.unregister_puppet(puppet);
+	for(std::map<coord, Actor*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+		if(&puppet == it->second) {
+			puppets.erase(it);
+			break;
+		}
+	}
+
+	post_message(
+		ServerMessage(ServerMessage::death) << puppet.get_id() // this puppet died :(
+											<< puppet.hp // because he had only this many hp.
+	);
+
+	delete &puppet;
+}
+void World::kill(Summoner& summoner) {
+	debugf("A summoner died!\n");
+}
+
+
+Summoner& World::create_summoner(coord pos, const std::string& client_id) {
 	Summoner* Result = new Summoner(*this);
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
 	summoners.insert( std::make_pair(client_id, Result) );
-
-	reg_success.resize(progs.size());
-	for(size_t i=0; i<progs.size(); ++i) {
-		reg_success[i] = interpreter.register_subprogram(progs[i]);
-	}
-
 	return *Result;
 }
 
@@ -200,6 +230,7 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 	post_message(
 		ServerMessage(ServerMessage::summon) << client_id            // this summoner-soul
 		                                     << Result->get_id()     // summoned this creature
+		                                     << Result->facing       // initial facing
 		                                     << pos.x                // to these coordinates
 		                                     << pos.y
 		                                     << attributes.mana_cost // losing this much mana,
@@ -218,7 +249,7 @@ coord World::get_pos(const Actor& actor) const {
 }
 
 bool World::is_valid(coord pos) const {
-	return pos.x>0 && pos.y>0 && pos.x<width && pos.y<height;
+	return pos.x>=0 && pos.y>=0 && pos.x<width && pos.y<height;
 }
 
 bool World::is_free(coord pos) const {
@@ -298,11 +329,35 @@ std::string Puppet::get_name() {
 	ss << this->get_id();
 	return ss.str();
 }
+bool Puppet::is_alive() {
+	return (hp > 0);
+}
 bool Puppet::operator==(const Puppet& that) {
 	return this == &that;
 }
 bool Puppet::operator==(const Interpreter::Puppet& that) {
 	return this == &that;
+}
+
+step Puppet::brain_damage(size_t severity, const std::string& message) {
+	size_t hp_loss = severity * 5;
+	step res = severity * 10;
+
+	my_world.post_message(
+		ServerMessage(ServerMessage::program_error) << this -> id  // id of puppet fouling himself
+		                                            << message // description of problem
+		                                            << res
+	);
+
+	my_world.hurt(*this, hp_loss);
+	return res;
+}
+
+void Puppet::die() {
+	my_world.kill(*this);
+}
+void Summoner::die() {
+	my_world.kill(*this);
 }
 
 std::string Puppet::describe() const {

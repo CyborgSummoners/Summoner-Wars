@@ -30,7 +30,7 @@ std::string sum::Server::Client::toString() const {
 }
 
 
-sum::Server::Server(unsigned short port, tick sec_per_tick, step step_size) : state(Starting), port(port), sec_per_tick(sec_per_tick), step_size(step_size) {
+sum::Server::Server(unsigned short port, tick sec_per_tick, step step_size) : state(Starting), port(port), sec_per_tick(sec_per_tick), step_size(step_size), world(0) {
 	if(!listener.Listen(port)) {
 		std::stringstream s;
 		s << "Server could not listen on port " << port << std::endl;
@@ -42,7 +42,7 @@ sum::Server::Server(unsigned short port, tick sec_per_tick, step step_size) : st
 }
 
 sum::Server::~Server() {
-	delete world;
+	if(world) delete world;
 }
 
 
@@ -253,7 +253,7 @@ void sum::Server::gamestart() {
 	debugf("%d players have gathered, we can now start playing.\n", clients.size());
 	ServerMessage sm(ServerMessage::start);
 
-	world = new Logic::World(50,50);
+	world = new Logic::World(interpreter, 50,50);
 
 	// generic data
 	sm << stringutils::float_to_string(sec_per_tick) // a tick is this many seconds
@@ -264,13 +264,10 @@ void sum::Server::gamestart() {
 	;
 	// create summoners;
 	size_t num = 0;
-	std::vector<bool> res;
 	for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
 		Logic::Summoner& s = world->create_summoner(
 			Logic::default_startpos(Logic::coord(50,50), clients.size(), num++),	//default starting pos
-			(*lit)->client_id,
-			(*lit)->progs,
-			res
+			(*lit)->client_id
 		);
 		sm << (*lit)->client_id // client's id
 		   << s.get_id()     // summoner's actor id
@@ -426,23 +423,37 @@ const std::string sum::Server::register_script(Client& client, sf::Packet& packe
 	using sum::Parser::operator>>;
 
 	sf::Uint32 len;
+	bool forcereplace;
 	bytecode::subprogram prog;
 	packet >> len;
+	packet >> forcereplace;
 	debugf("Recieving %d scripts from client #%s.\n", len, client.toString().c_str());
 
+	std::stringstream Result;
 	size_t s=0;
-	for(size_t i=0; i<len; ++i) {
-		packet >> prog;
-		prog.owner = client.client_id;
+	try {
+		for(size_t i=0; i<len; ++i) {
+			packet >> prog;	// this may throw
+			prog.owner = client.client_id;
 
-		if(state < Playing) client.progs.push_back(prog);
-		// else world->register_subprogram or something.
-		++s;
+
+			if(forcereplace) {
+				interpreter.register_subprogram(prog, true);
+				++s;
+			}
+			else {
+				if( interpreter.register_subprogram(prog) ) ++s;
+				else Result << "Could not register " << prog.get_name() << ": subprogram already exists. Run the command again with the --replace argument to force replacement.\n";
+			}
+		}
+	} catch(std::exception& e) {
+		debugf("Malformed packet from client #%s.\n", client.toString().c_str());
+		return "Got malformed packet. Some scripts may not have been registered.\n";
 	}
 
 	debugf("Got %d / %d scripts from client #%s.\n", len, s, client.toString().c_str());
 
-	return "";
+	return Result.str();
 }
 
 

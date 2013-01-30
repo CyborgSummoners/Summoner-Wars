@@ -21,6 +21,9 @@ namespace sum {
 				virtual step move() = 0;
 				virtual step turn_left() = 0;
 				virtual step turn_right() = 0;
+				virtual step brain_damage(size_t severity, const std::string& message) = 0;
+
+				virtual bool is_alive() = 0;
 
 				virtual bool operator==(const Puppet& that) = 0;
 				virtual ~Puppet() {}
@@ -33,10 +36,11 @@ namespace sum {
 				size_t program_counter;
 				size_t base_pointer;
 				size_t delay;
+				bool alive;
 				stack_machine::Stack* stack;
 				std::map<size_t, size_t> overrides;
 
-				puppet_brain(Puppet& puppet);
+				puppet_brain(Puppet& puppet, size_t delay);
 				~puppet_brain();
 			};
 
@@ -45,7 +49,8 @@ namespace sum {
 
 		private:
 			unsigned int clock;
-			std::list<puppet_brain*> puppets;
+			std::list<puppet_brain*> puppet_list;
+			std::list<puppet_brain*> puppets; //queue
 			void enqueue_puppet(puppet_brain* puppet);
 			puppet_brain* dequeue_puppet();
 
@@ -62,7 +67,8 @@ namespace sum {
 			//advance simulation by ticks many ticks, return true if anything meaningful happened, false otherwise.
 			bool advance(step steps);
 
-			bool register_subprogram(const bytecode::subprogram& prog);
+			bool subprogram_exists(const std::string& prog_name);
+			bool register_subprogram(const bytecode::subprogram& prog, bool force_replace = false);
 			//void execute(const std::string& program) const;	// valahogy meg kéne oldani
 
 			// Puppet regisztrációja: a puppet bekerül a végrehajtási sorba. A Puppet viselkedése végtelen NOP

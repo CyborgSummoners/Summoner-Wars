@@ -27,6 +27,8 @@ struct ServerMessage
 		spell,
 		death,
 		summon,
+		program_error,
+		hp_loss,
 
 		// chatting
 		shout      = 50,

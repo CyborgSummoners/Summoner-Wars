@@ -41,7 +41,7 @@ namespace Logic {
 	struct Puppet_template;
 
 	class World {
-		Interpreter interpreter;
+		Interpreter& interpreter;
 
 		size_t width;
 		size_t height;
@@ -51,16 +51,19 @@ namespace Logic {
 		std::deque<ServerMessage> outbox;
 
 		public:
-			World(size_t width, size_t height);
+			World(Interpreter& interpreter, size_t width, size_t height);
 			~World();
 
-			Summoner& create_summoner(coord pos, const std::string& client_id, const std::vector<bytecode::subprogram>& progs, std::vector<bool>& reg_success);
+			Summoner& create_summoner(coord pos, const std::string& client_id);
 			Puppet* create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, std::string& failure_reason);
 
 			std::deque<ServerMessage>& advance(step steps);
 
 			void post_message(const ServerMessage& msg);
 			step move_me(Puppet& actor);
+			void hurt(Actor& actor, const size_t hp_loss);
+			void kill(Puppet& actor);
+			void kill(Summoner& actor);
 
 			coord get_pos(const Actor& actor) const;
 			bool is_valid(coord pos) const;
@@ -86,7 +89,7 @@ namespace Logic {
 			coord get_pos() const;
 
 			virtual std::string describe() const = 0;
-
+			virtual void die() = 0;
 		protected:
 			Actor(World& my_world, attribute hp);
 
@@ -124,6 +127,10 @@ namespace Logic {
 
 			std::string describe() const;
 
+			step brain_damage(size_t severity, const std::string& message);
+			virtual void die();
+			bool is_alive();
+
 			bool operator==(const Interpreter::Puppet& that);
 			bool operator==(const Puppet& that);
 		friend class World;
@@ -136,7 +143,7 @@ namespace Logic {
 			Summoner(World& my_world);
 
 			std::string describe() const;
-
+			virtual void die();
 		friend class World;
 	};
 

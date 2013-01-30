@@ -13,7 +13,7 @@ Map::Map(sf::RenderWindow *_window) :
 
 void Map::update(float tick)
 {
-	for(int i=0;i<robots.size();++i)
+	for(size_t i=0;i<robots.size();++i)
 	{
 		robots[i].update(tick);
 	}
@@ -23,7 +23,7 @@ void Map::draw()
 {
 	window->Draw(
 		sf::Shape::Rectangle(x,y,width,height, sf::Color(128,128,128)));
-	for(int i=0;i<robots.size();++i)
+	for(size_t i=0;i<robots.size();++i)
 		robots[i].draw();
 }
 

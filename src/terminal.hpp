@@ -60,15 +60,12 @@ class Terminal {
 
 
 namespace filesystem {
-
-	namespace {
-		template<typename T>
-		struct ptr_less {
-			bool operator()(T* const lhs, T* const rhs) const {
-				return *(lhs) < *(rhs);
-			}
-		};
-	}
+	template<typename T>
+	struct ptr_less {
+		bool operator()(T* const lhs, T* const rhs) const {
+			return *(lhs) < *(rhs);
+		}
+	};
 
 	struct File {
 		const std::string name;
@@ -76,6 +73,7 @@ namespace filesystem {
 		const Terminal::Completer& completer;
 
 		File(const std::string& name, const std::string& content = "", const Terminal::Completer& completer = Terminal::dir_completer) : name(name), content(content), completer(completer) {}
+		virtual ~File() {}
 
 		virtual std::string execute(const std::string& args, sum::Terminal* context = 0) {
 			return "Not an executable file.";

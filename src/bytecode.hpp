@@ -5,8 +5,14 @@
 #include <string>
 #include <iostream>
 #include <map>
+#include <stdexcept>
 
 namespace bytecode {
+	struct underflow : public std::runtime_error {
+		underflow() : runtime_error("Bytecode underflow!") {}
+	};
+
+
 	enum type{ meta, none, any, boolean, integer, list, string, puppet, self };
 	bool subtypeof(type super, type sub);
 

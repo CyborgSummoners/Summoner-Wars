@@ -85,9 +85,19 @@ void Map::update(const ServerMessage &message)
 			break;
 
 		case ServerMessage::move:
-			//res = message.get_parsed_msg();
-			//it = robots.find(res[0]);
-			//it->second.movings.push(Moving())
+
+			it=robots.find(string_to_int(res[0]));
+			it->second.movings.push(
+				Moving(
+					coord_to_facing(
+						string_to_int(res[1]),
+						string_to_int(res[2]),
+						string_to_int(res[3]),
+						string_to_int(res[4])
+						)
+					)
+				);
+			
 			break;
 		case ServerMessage::shout:
 
@@ -95,6 +105,24 @@ void Map::update(const ServerMessage &message)
 		default:
 			break;
 	}
+}
+
+Map::Facing Map::coord_to_facing(int x1, int y1, int x2, int y2)
+{
+	bool sidemove((x1-x2)!=0);
+	bool verticalmove((y1-y2)!=0);
+	if(sidemove && verticalmove)
+		return unknown;
+	if(!sidemove)
+		if((y1-y2) < 0)
+			return down;
+		else
+			return up;
+	else
+		if((x1-x2) < 0)
+			return right;
+		else
+			return left;
 }
 
 Map::Robot::Robot(int _ID,int _client_ID,int _team, int _x, int _y, Map *_map) :
@@ -106,7 +134,7 @@ Map::Robot::Robot(int _ID,int _client_ID,int _team, int _x, int _y, Map *_map) :
 	team(_team),
 	facing(down),
 	map(_map),
-	speed(30)
+	speed(3)
 {
 	if(!initiated)
 	{

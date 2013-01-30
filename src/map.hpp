@@ -24,7 +24,8 @@ public:
 
 private:
 
-	enum Facing {down=0,left,right,up};
+	enum Facing {down=0,left,right,up,unknown};
+	Facing coord_to_facing(int x1, int y1, int x2, int y2);
 
 	struct Field
 	{
@@ -39,11 +40,11 @@ private:
 
 	struct Moving
 	{
-		Moving(Facing _way, int _duration=SPRITE_SIZE, bool _turn=false):
+		Moving(Facing _way, float _duration=SPRITE_SIZE, bool _turn=false):
 			way(_way), duration(_duration), turn(_turn){}
 
 		Facing way;
-		int duration;
+		float duration;
 		bool turn;
 	};
 

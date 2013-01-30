@@ -61,6 +61,15 @@ class Terminal {
 
 namespace filesystem {
 
+	namespace {
+		template<typename T>
+		struct ptr_less {
+			bool operator()(T* const lhs, T* const rhs) const {
+				return *(lhs) < *(rhs);
+			}
+		};
+	}
+
 	struct File {
 		const std::string name;
 		const std::string content;
@@ -87,12 +96,16 @@ namespace filesystem {
 		virtual void complete(const std::string& fragment, std::set<std::string>& Result, sum::Terminal* context) const {
 			this->completer.complete(fragment, Result, context);
 		}
+
+		bool operator<(const File& that) const {
+			return this->name < that.name;
+		}
 	};
 
 	struct Dir {
 		const std::string name;
-		std::set<Dir*> subdirs;
-		std::set<File*> files;
+		std::set<Dir*, ptr_less<Dir> > subdirs;
+		std::set<File*, ptr_less<File> > files;
 
 		Dir(const std::string& name) : name(name) {}
 		virtual void refresh() {}
@@ -100,7 +113,9 @@ namespace filesystem {
 			for(std::set<Dir*>::iterator it=subdirs.begin(); it!=subdirs.end(); ++it) delete *it;
 			for(std::set<File*>::iterator it=files.begin(); it!=files.end(); ++it) delete *it;
 		}
-
+		bool operator<(const Dir& that) const {
+			return this->name < that.name;
+		}
 	};
 
 }

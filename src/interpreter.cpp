@@ -760,7 +760,8 @@ namespace sum {
 		code[1] = bytecode::DELAY;
 		code[2] = code[3] = code[4] = 0;
 		code[5] = 100;
-		programs.push_back(bytecode::subprogram("NOP", 0, code, 5, false));
+		code[6] = bytecode::RET;
+		programs.push_back(bytecode::subprogram("NOP", 0, code, 7, false));
 		program_map.insert( std::make_pair("NOP", 0) );
 
 		//clock starts at 0
@@ -776,7 +777,7 @@ namespace sum {
 
 	size_t Interpreter::get_program_id(const std::string& str, const std::string& owner) const {
 		std::string nom = ("" == owner? str : owner+"'"+str);
-		std::map<std::string, size_t>::const_iterator it = program_map.find(owner + "'" + str);
+		std::map<std::string, size_t>::const_iterator it = program_map.find(nom);
 		if(it == program_map.end()) {
 			debugf("Subprogram %s does not exist\n", nom.c_str());
 			throw stack_machine::except::subprogram_does_not_exist();
@@ -784,8 +785,9 @@ namespace sum {
 		return it->second;
 	}
 
-	bool Interpreter::subprogram_exists(const std::string& prog_name) {
-		return (program_map.find(prog_name) != program_map.end() );
+	bool Interpreter::subprogram_exists(const std::string& prog_name, const std::string& owner) {
+		std::string nom = ("" == owner? bytecode::subprogram::normalize_name(prog_name) : owner+"'"+bytecode::subprogram::normalize_name(prog_name));
+		return (program_map.find(nom) != program_map.end() );
 	}
 
 	bool Interpreter::register_subprogram(const bytecode::subprogram& prog, bool force_replace) {
@@ -1087,11 +1089,12 @@ namespace sum {
 		return false;
 	}
 	bool Interpreter::set_behaviour(Interpreter::Puppet& puppet, const std::string& behaviour, const std::string& owner) {
-		debugf("Setting behaviour of puppet %s to %s'%s...", puppet.get_name().c_str(), owner.c_str(), behaviour.c_str());
+		std::string nom = ("" == owner? behaviour : owner+"'"+behaviour);
+		debugf("Setting behaviour of puppet %s to %s...", puppet.get_name().c_str(), nom.c_str());
 		try {
 			for(std::list<puppet_brain*>::iterator it = puppet_list.begin(); it!=puppet_list.end(); ++it) {
 				if( (*it)->puppet == puppet ) {
-					(*it)->overrides[0] = get_program_id(behaviour, owner);
+					(*it)->overrides[0] = get_program_id(nom);
 					if( (*it)->program == 0 )  (*it)->program = (*it)->overrides[0];
 					debugf("done\n");
 					return true;

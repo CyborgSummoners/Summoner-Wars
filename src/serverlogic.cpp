@@ -187,7 +187,7 @@ Summoner& World::create_summoner(coord pos, const std::string& client_id) {
 	return *Result;
 }
 
-Puppet* World::create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, std::string& failure_reason) {
+Puppet* World::create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, const std::string& behaviour, std::string& failure_reason) {
 	debugf("Creating new puppet for client %s... ", client_id.c_str());
 
 	// do we know this summoner?
@@ -222,7 +222,7 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 	}
 
 	interpreter.register_puppet(*Result);
-	interpreter.set_behaviour(*Result, "DEMO", client_id);
+	interpreter.set_behaviour(*Result, behaviour, (behaviour == "NOP"? "" : client_id)); //aargh
 	owner->mana -= attributes.mana_cost;
 
 	debugf("Created puppet id %d.\n", Result->get_id());

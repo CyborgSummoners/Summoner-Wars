@@ -324,11 +324,12 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 
 	std::string Result = "";
 	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
-	// expecting format "summon <summonable> [<coord_x> <coord_y>]";
+	// expecting format "summon <summonable> <coord_x> <coord_y> [with behaviour <behaviour>]";
 	std::string actor_type;
 	unsigned int x;
 	unsigned int y;
 	bool success = true;
+	std::string behaviour = "NOP";
 	size_t bit = 0;
 
 	// gather args
@@ -358,6 +359,27 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 			}
 			++bit;
 		}
+		else if(bit ==3) {
+			if(parts[i] != "with") {
+				Result = "Error: expected fourth argument to be 'with'.\n";
+				success = false;
+			}
+			++bit;
+		}
+		else if(bit == 4) {
+			if(parts[i] != "behaviour") {
+				Result = "Error: expected fifth argument to be 'behaviour'.\n";
+				success = false;
+			}
+			++bit;
+		}
+		else if(bit == 5) {
+			if(!interpreter.subprogram_exists(parts[i], client.client_id)) {
+				Result = "Error: '"+parts[i]+"' does not name a subprogram.\n";
+				success = false;
+			} else behaviour = bytecode::subprogram::normalize_name(parts[i]);
+			++bit;
+		}
 	}
 
 	// enough args?
@@ -366,11 +388,11 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 			Result = "Error: too few arguments to function.\n";
 			success=false;
 		}
-		else if(bit > 3) {
+		else if(bit > 6) {
 			Result = "Error: too many arguments to function.\n";
 			success=false;
 		}
-		else if(bit > 1 && bit < 3) {
+		else if( (bit > 1 && bit < 3) || (bit>3 && bit<5)) {
 			Result = "Error: too few arguments to function.\n";
 			success=false;
 		}
@@ -385,6 +407,7 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 			Logic::coord(x, y),
 			client.client_id,
 			client.summonables.find(actor_type)->second,
+			behaviour,
 			Result
 		);
 
@@ -396,7 +419,7 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 		debugf("%s summoned %s to (%d,%d)\n", client.toString().c_str(), actor_type.c_str(), x, y);
 		return "";
 	}
-	return Result.append("Usage: summon <summonable> [<x-coord> <y-coord>]");
+	return Result.append("Usage: summon <summonable> <x-coord> <y-coord> [with behaviour <subprogram>]");
 }
 
 const std::string sum::Server::puppetinfo(Client& client, sf::Packet& packet) {

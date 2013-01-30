@@ -329,8 +329,8 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
 	// expecting format "summon <summonable> [<coord_x> <coord_y>]";
 	std::string actor_type;
-	unsigned int x;
-	unsigned int y;
+	unsigned x;
+	unsigned y;
 	bool success = true;
 	size_t bit = 0;
 
@@ -410,7 +410,8 @@ const std::string sum::Server::puppetinfo(Client& client, sf::Packet& packet) {
 
 	// args expected to contain puppet-id.
 	std::vector<std::string> parts = string_explode(stringutils::trim(args), stringutils::whitespace);
-	size_t puppet_id;
+	//size_t puppet_id;
+	unsigned puppet_id;
 	if(!stringutils::to_unsigned(parts[0], puppet_id)) {
 		Result = "Error: argument not an actor-id.";
 	}

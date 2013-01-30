@@ -25,8 +25,17 @@ public:
 private:
 
 	enum Facing {down=0,left,right,up};
-	static const int SPRITE_SIZE=32;
 
+	struct Field
+	{
+		enum Type {field, block};
+		Field(Type _type=field) : type(_type){}
+
+		Type type;
+	};
+
+	static const int SPRITE_SIZE=32;
+	std::vector<std::vector<Field> > map_layout;
 
 	struct Moving
 	{
@@ -36,6 +45,35 @@ private:
 		Facing way;
 		int duration;
 		bool turn;
+	};
+
+	class Summoner : public Widget
+	{
+
+	friend class Map;
+
+	public:
+
+		Summoner(int _ID, int _x, int _y, Map *_map);
+
+	private:
+
+		int ID;
+		int map_x;
+		int map_y;
+		sf::Sprite sprite;
+
+	public:
+
+		void draw();
+		void update(float tick);
+
+	private:
+
+		static sf::Image summoner_image;
+		static bool initiated;
+		const Map *map;
+
 	};
 
 	class Robot : public Widget
@@ -50,8 +88,10 @@ private:
 	private:
 
 		int ID;
+		int sum_ID;
 		int team;
-		int map_x,map_y;
+		int map_x;
+		int map_y;
 		float speed;
 		Facing facing;
 		sf::Sprite sprite;

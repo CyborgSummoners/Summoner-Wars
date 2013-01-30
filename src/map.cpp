@@ -32,14 +32,18 @@ void Map::update(const ServerMessage &message)
 			std::cout<<"Map received unknown message: "<<message.msg;
 			break;
 		case ServerMessage::summon:
-			robots.insert(
+			/*robots.insert(
 				std::pair<int,Robot>
 					(
 						res[0],
 						Robot(res[0],)
 					)
-				);
+				);*/
 			break;
+		case ServerMessage::start:
+
+			break;
+
 		case ServerMessage::move:
 			//res = message.get_parsed_msg();
 			//it = robots.find(res[0]);
@@ -64,10 +68,13 @@ Map::Robot::Robot(int _ID,int _team, int _x, int _y, Map *_map) :
 	speed(30)
 {
 	if(!initiated)
+	{
 		if (!robot_image.LoadFromFile("resources/robots.png"))
 		{
 			std::cout<<"couldn't load resources/robots.png";
 		}
+	}
+	initiated=true;
 
 	setX(map->x + x*SPRITE_SIZE);
 	setY(map->y + y*SPRITE_SIZE);
@@ -124,7 +131,56 @@ void Map::Robot::update(float tick)
 	}
 }
 
+Map::Summoner::Summoner(int _ID, int _x, int _y, Map *_map) :
+		Widget(_map->window, _x,_y, SPRITE_SIZE, SPRITE_SIZE),
+		ID(_ID),
+		map_x(_x),
+		map_y(_y),
+		map(_map)
+{
+	/*if(!initiated)
+		if (!summoner_image.LoadFromFile("resources/summoners.png"))
+		{
+			std::cout<<"couldn't load resources/summoners.png";
+		}
+		*/
+	if(!initiated)
+		if (!summoner_image.LoadFromFile("resources/robots.png"))
+		{
+			std::cout<<"couldn't load resources/robots.png";
+		}
+	initiated=true;
+
+	setX(map->x + x*SPRITE_SIZE);
+	setY(map->y + y*SPRITE_SIZE);
+
+	sprite.SetImage(robot_image);
+	sprite.SetBlendMode(sf::Blend::Multiply);
+	sprite.SetX(x);
+	sprite.SetY(y);
+	sprite.SetSubRect(
+	sf::IntRect(
+		0,
+		3*SPRITE_SIZE,
+		SPRITE_SIZE,
+		4*SPRITE_SIZE));
+
+}
+
+void Map::Summoner::draw()
+{
+	window->Draw(sprite);
+}
+
+void Map::Summoner::update(float tick)
+{
+
+}
+
 sf::Image Map::Robot::robot_image;
 bool Map::Robot::initiated(false);
+
+sf::Image Map::Summoner::summoner_image;
+bool Map::Summoner::initiated(false);
 
 }

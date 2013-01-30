@@ -746,6 +746,7 @@ namespace sum {
 //*** Interpreter ***
 //*******************
 	Interpreter::puppet_brain::puppet_brain(Interpreter::Puppet& puppet, size_t delay) : puppet(puppet), program(0), program_counter(0), base_pointer(0), delay(delay), alive(true) {
+		overrides.insert( std::make_pair(0,0) );
 		stack = new stack_machine::Stack();
 	}
 	Interpreter::puppet_brain::~puppet_brain() {
@@ -760,6 +761,7 @@ namespace sum {
 		code[2] = code[3] = code[4] = 0;
 		code[5] = 100;
 		programs.push_back(bytecode::subprogram("NOP", 0, code, 5, false));
+		program_map.insert( std::make_pair("NOP", 0) );
 
 		//clock starts at 0
 		clock = 0;
@@ -1073,7 +1075,6 @@ namespace sum {
 				for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 					if( (*it)->puppet == puppet ) {
 						puppet_list.erase(it);
-						debugf("Also remived from the queue\n");
 						break;
 					}
 				}
@@ -1104,7 +1105,13 @@ namespace sum {
 		return false;
 	}
 
-	std::string Interpreter::get_behaviour(Interpreter::Puppet& puppet) const {
-		return "Hát, valami";
+	std::string Interpreter::get_behaviour(const Interpreter::Puppet& puppet) const {
+		std::list<puppet_brain*>::const_iterator it;
+		for(it=puppet_list.begin(); it != puppet_list.end(); ++it) {
+			if( (*it)->puppet == puppet ) break;
+		}
+		if(it == puppet_list.end()) return "";
+
+		return programs[ (*it)->overrides[0] ].get_name();
 	}
 }

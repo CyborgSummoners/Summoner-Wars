@@ -83,7 +83,7 @@ namespace sum {
 			// True, ha sikeres, False ha a viselkedés nem létezik, vagy ha a Puppet nem regisztrált.
 			bool set_behaviour(Puppet& puppet, const std::string& behaviour, const std::string& owner = "");
 
-			std::string get_behaviour(Puppet& puppet) const;
+			std::string get_behaviour(const Puppet& puppet) const;
 
 		private:
 			// executes the instruction in program at program_counter, using the specified stack, with given base pointer

@@ -70,6 +70,9 @@ namespace Logic {
 			bool is_free(coord pos) const;
 
 			std::string describe(size_t actor_id) const;
+			std::string describe(const Puppet& puppet) const;
+			std::string describe(const Summoner& summoner) const;
+
 	};
 
 

@@ -262,6 +262,31 @@ std::string World::describe(size_t actor_id) const {
 	}
 	return "";
 }
+std::string World::describe(const Puppet& puppet) const {
+	std::stringstream Result;
+	coord pos = get_pos(puppet);
+	Result  << "Postion: (" << pos.x << "," << pos.y << "), facing " << toString(puppet.facing) << std::endl
+	        << "HP: " << puppet.hp << "/" << puppet.attributes.maxhp << std::endl
+	        << "Behaviour: " << interpreter.get_behaviour(puppet) << std::endl
+	;
+	return Result.str();
+}
+std::string World::describe(const Summoner& summoner) const {
+	std::stringstream Result;
+	Result << "Summoner" << std::endl  // insert name, eventually
+	       //<< "Facing " << toString(summoner.facing) << std::endl	//sounds silly
+	       << "HP: " << summoner.hp << "/" << 20 << std::endl
+	       << "Mana: " << summoner.mana << "/" << 100 << std::endl
+	;
+	return Result.str();
+}
+std::string Puppet::describe() const {
+	return my_world.describe(*this);
+}
+std::string Summoner::describe() const {
+	return my_world.describe(*this);
+}
+
 
 size_t Actor::maxid = 0;
 size_t Actor::gen_id() {
@@ -360,26 +385,8 @@ void Summoner::die() {
 	my_world.kill(*this);
 }
 
-std::string Puppet::describe() const {
-	std::stringstream Result;
-	Result << "Facing " << toString(this->facing) << std::endl
-	       << "HP: " << this->hp << "/" << this->attributes.maxhp << std::endl
-	;
-	return Result.str();
-}
-
 
 Summoner::Summoner(World& my_world) : Actor(my_world, 20), mana(100) {
-}
-
-std::string Summoner::describe() const {
-	std::stringstream Result;
-	Result << "Summoner" << std::endl  // insert name, eventually
-	       << "Facing " << toString(this->facing) << std::endl
-	       << "HP: " << this->hp << "/" << 20 << std::endl
-	       << "Mana: " << this->mana << "/" << 100 << std::endl
-	;
-	return Result.str();
 }
 
 

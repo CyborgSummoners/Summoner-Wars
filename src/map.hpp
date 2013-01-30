@@ -4,6 +4,7 @@
 #include "observable.hpp"
 #include "widget.hpp"
 #include <queue>
+#include <map>
 
 namespace sum
 {
@@ -26,42 +27,22 @@ private:
 	enum Facing {down=0,left,right,up};
 	static const int SPRITE_SIZE=32;
 
+
 	struct Moving
 	{
-		Moving(Facing _way, int source_x, int source_y) :
-			way(_way), dest_x(0),dest_y(0)
-		{
-			switch(_way)
-			{
-				case down:
-					dest_x=source_x;
-					dest_y=source_y+SPRITE_SIZE;
-					break;
-				case left:
-					dest_x=source_x-SPRITE_SIZE;
-					dest_y=source_y;
-					break;
-				case right:
-					dest_x=source_x+SPRITE_SIZE;
-					dest_y=source_y;
-					break;
-				case up:
-					dest_x=source_x;
-					dest_y=source_y-SPRITE_SIZE;
-					break;
-				default:
-					break;
-			}
-		}
+		Moving(Facing _way, int _duration=SPRITE_SIZE, bool _turn=false):
+			way(_way), duration(_duration), turn(_turn){}
 
 		Facing way;
-		int dest_x;
-		int dest_y;
-		float speed;
+		int duration;
+		bool turn;
 	};
 
 	class Robot : public Widget
 	{
+
+	friend class Map;
+
 	public:
 
 		Robot(int _ID,int _team, int _x, int _y, Map *_map);
@@ -70,9 +51,12 @@ private:
 
 		int ID;
 		int team;
+		int map_x,map_y;
+		float speed;
 		Facing facing;
 		sf::Sprite sprite;
 		std::queue<Moving> movings;
+		void setToPos();
 
 	public:
 
@@ -86,7 +70,7 @@ private:
 		const Map *map;
 	};
 
-	std::vector<Robot> robots;
+	std::map<int,Robot> robots;
 
 };
 

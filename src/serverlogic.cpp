@@ -183,11 +183,12 @@ void World::kill(Summoner& summoner) {
 Summoner& World::create_summoner(coord pos, const std::string& client_id) {
 	Summoner* Result = new Summoner(*this);
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
+	std::cout << client_id << "  mukmuk" << std::endl;
 	summoners.insert( std::make_pair(client_id, Result) );
 	return *Result;
 }
 
-Puppet* World::create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, std::string& failure_reason) {
+Puppet* World::create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, const std::string& behaviour, std::string& failure_reason) {
 	debugf("Creating new puppet for client %s... ", client_id.c_str());
 
 	// do we know this summoner?
@@ -222,7 +223,7 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 	}
 
 	interpreter.register_puppet(*Result);
-	interpreter.set_behaviour(*Result, "DEMO", client_id);
+	interpreter.set_behaviour(*Result, behaviour, (behaviour == "NOP"? "" : client_id)); //aargh
 	owner->mana -= attributes.mana_cost;
 
 	debugf("Created puppet id %d.\n", Result->get_id());
@@ -256,12 +257,51 @@ bool World::is_free(coord pos) const {
 	return is_valid(pos) && puppets.count(pos)==0;
 }
 
+
+// this is truly terrible
+Puppet* World::get_puppet(size_t actor_id, const std::string& client_id) const {
+	assert( summoners.find(client_id) != summoners.end() );
+	for(std::map<coord, Actor*>::const_iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+		if(it->second->get_id() == actor_id) {
+			Puppet* p = dynamic_cast<Puppet*>(it->second); // aaaargh
+			if(p != 0 && &p->owner == (summoners.find(client_id)->second)) return p;	// AAAARGH
+			else return 0;
+		}
+	}
+	return false;
+}
+
 std::string World::describe(size_t actor_id) const {
 	for(std::map<coord, Actor*>::const_iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 		if(it->second->get_id() == actor_id) return it->second->describe();
 	}
 	return "";
 }
+std::string World::describe(const Puppet& puppet) const {
+	std::stringstream Result;
+	coord pos = get_pos(puppet);
+	Result  << "Postion: (" << pos.x << "," << pos.y << "), facing " << toString(puppet.facing) << std::endl
+	        << "HP: " << puppet.hp << "/" << puppet.attributes.maxhp << std::endl
+	        << "Behaviour: " << interpreter.get_behaviour(puppet) << std::endl
+	;
+	return Result.str();
+}
+std::string World::describe(const Summoner& summoner) const {
+	std::stringstream Result;
+	Result << "Summoner" << std::endl  // insert name, eventually
+	       //<< "Facing " << toString(summoner.facing) << std::endl	//sounds silly
+	       << "HP: " << summoner.hp << "/" << 20 << std::endl
+	       << "Mana: " << summoner.mana << "/" << 100 << std::endl
+	;
+	return Result.str();
+}
+std::string Puppet::describe() const {
+	return my_world.describe(*this);
+}
+std::string Summoner::describe() const {
+	return my_world.describe(*this);
+}
+
 
 size_t Actor::maxid = 0;
 size_t Actor::gen_id() {
@@ -360,26 +400,8 @@ void Summoner::die() {
 	my_world.kill(*this);
 }
 
-std::string Puppet::describe() const {
-	std::stringstream Result;
-	Result << "Facing " << toString(this->facing) << std::endl
-	       << "HP: " << this->hp << "/" << this->attributes.maxhp << std::endl
-	;
-	return Result.str();
-}
-
 
 Summoner::Summoner(World& my_world) : Actor(my_world, 20), mana(100) {
-}
-
-std::string Summoner::describe() const {
-	std::stringstream Result;
-	Result << "Summoner" << std::endl  // insert name, eventually
-	       << "Facing " << toString(this->facing) << std::endl
-	       << "HP: " << this->hp << "/" << 20 << std::endl
-	       << "Mana: " << this->mana << "/" << 100 << std::endl
-	;
-	return Result.str();
 }
 
 

@@ -85,6 +85,7 @@ class Server : public sf::Thread {
 		const std::string summon(Client& client, sf::Packet& packet);
 		const std::string puppetinfo(Client& client, sf::Packet& packet);
 		const std::string register_script(Client& client, sf::Packet& packet);
+		const std::string set_behaviour(Client& client, sf::Packet& packet);
 };
 
 }

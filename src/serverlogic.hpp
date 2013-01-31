@@ -55,7 +55,7 @@ namespace Logic {
 			~World();
 
 			Summoner& create_summoner(coord pos, const std::string& client_id);
-			Puppet* create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, std::string& failure_reason);
+			Puppet* create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, const std::string& behaviour, std::string& failure_reason);
 
 			std::deque<ServerMessage>& advance(step steps);
 
@@ -70,6 +70,11 @@ namespace Logic {
 			bool is_free(coord pos) const;
 
 			std::string describe(size_t actor_id) const;
+			std::string describe(const Puppet& puppet) const;
+			std::string describe(const Summoner& summoner) const;
+
+			Puppet* get_puppet(size_t actor_id, const std::string& client_id) const;
+
 	};
 
 

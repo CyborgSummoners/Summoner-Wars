@@ -373,17 +373,17 @@ Map::Summoner::Summoner(int _ID,int _client_ID, int _x, int _y, Map *_map) :
 		map_y(_y),
 		map(_map)
 {
-	/*if(!initiated)
-		if (!summoner_image.LoadFromFile("resources/summoners.png"))
-		{
-			std::cout<<"couldn't load resources/summoners.png";
-		}
-		*/
 	if(!initiated)
+		if (!summoner_image.LoadFromFile("resources/summoner.png"))
+		{
+			std::cout<<"couldn't load resources/summoner.png";
+		}
+		
+	/*if(!initiated)
 		if (!summoner_image.LoadFromFile("resources/robots.png"))
 		{
 			std::cout<<"couldn't load resources/robots.png";
-		}
+		}*/
 	initiated=true;
 
 	setX(map->x + x*SPRITE_SIZE);
@@ -393,12 +393,12 @@ Map::Summoner::Summoner(int _ID,int _client_ID, int _x, int _y, Map *_map) :
 	sprite.SetBlendMode(sf::Blend::Multiply);
 	sprite.SetX(x);
 	sprite.SetY(y);
-	sprite.SetSubRect(
+	/*sprite.SetSubRect(
 	sf::IntRect(
 		0,
 		2*SPRITE_SIZE,
 		SPRITE_SIZE,
-		3*SPRITE_SIZE));
+		3*SPRITE_SIZE));*/
 
 }
 

@@ -211,6 +211,19 @@ void World::kill(Puppet& puppet) {
 }
 void World::kill(Summoner& summoner) {
 	debugf("A summoner died!\n");
+	for(std::map<coord, Actor*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+		if(&summoner == it->second) {
+			puppets.erase(it);
+			break;
+		}
+	}
+
+	post_message(
+		ServerMessage(ServerMessage::death) << summoner.get_id() // this puppet died :(
+											<< summoner.hp // because he had only this many hp.
+	);
+
+	delete &summoner;
 }
 
 

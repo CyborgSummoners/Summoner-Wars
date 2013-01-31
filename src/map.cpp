@@ -123,8 +123,9 @@ void Map::parse_startmessage(const std::vector<std::string>& res) {
 
 	for(int i=0;i<client_size;++i)
 	{
+		std::cout << "Summoner  #" << string_to_int(res[5+i*4]) << std::endl;
 		summoners.insert(std::pair<int,Summoner>(
-			string_to_int(res[5+i*4]),
+			string_to_int(res[7+i*4]),
 			Summoner(
 				string_to_int(res[7+i*4]),
 				string_to_int(res[6+i*4]),
@@ -147,7 +148,7 @@ void Map::update(const ServerMessage &message)
 	switch(message.type)
 	{
 		case ServerMessage::unknown:
-			std::cout<<"Map received unknown message: "<<message.msg;
+			//std::cout<<"Map received unknown message: "<<message.msg;
 			break;
 		case ServerMessage::summon:
 			robots.insert(
@@ -178,8 +179,9 @@ void Map::update(const ServerMessage &message)
 				return;
 			}
 			it2=summoners.find(string_to_int(res[0]));
-			if(it2!=summoners.end())
+			if(it2!=summoners.end()) {
 				summoners.erase(it2);
+			}
 			break;
 
 		case ServerMessage::turn:
@@ -340,7 +342,7 @@ void Map::Robot::update(float tick)
 		move.duration-=tick*move.time;
 		if(move.duration<=0 && !move.turn)
 		{
-			
+
 				switch(move.way)
 				{
 					case down:

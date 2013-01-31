@@ -171,13 +171,13 @@ void Map::update(const ServerMessage &message)
 			break;
 
 		case ServerMessage::death:
-			it=robots.find(res[0]);
+			it=robots.find(string_to_int(res[0]));
 			if(it!=robots.end())
 			{
 				robots.erase(it);
 				return;
 			}
-			it2=summoners.find(res[0]);
+			it2=summoners.find(string_to_int(res[0]));
 			if(it2!=summoners.end())
 				summoners.erase(it2);
 			break;

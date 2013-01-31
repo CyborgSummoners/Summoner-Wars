@@ -4,6 +4,7 @@
 #include "observable.hpp"
 #include "widget.hpp"
 #include <queue>
+#include <map>
 
 namespace sum
 {
@@ -23,56 +24,96 @@ public:
 
 private:
 
-	enum Facing {down=0,left,right,up};
+	enum Facing {down=0,left,right,up,unknown};
+	Facing coord_to_facing(int x1, int y1, int x2, int y2);
+	Facing armin_facing_converter(int facing);
+
+	struct Field
+	{
+		enum Type {field, block, brick};
+		Field(Type _type=field) : type(_type){}
+
+		Type type;
+	};
+
 	static const int SPRITE_SIZE=32;
+	static const int CAMERA_WIDTH=32;
+	static const int CAMERA_HEIGHT=16;
+	int camera_x;
+	int camera_y;
+	sf::Image map_image;
+	sf::Sprite map_sprite;
+	std::vector<std::vector<Field> > map_layout;
 
 	struct Moving
 	{
-		Moving(Facing _way, int source_x, int source_y) :
-			way(_way), dest_x(0),dest_y(0)
-		{
-			switch(_way)
-			{
-				case down:
-					dest_x=source_x;
-					dest_y=source_y+SPRITE_SIZE;
-					break;
-				case left:
-					dest_x=source_x-SPRITE_SIZE;
-					dest_y=source_y;
-					break;
-				case right:
-					dest_x=source_x+SPRITE_SIZE;
-					dest_y=source_y;
-					break;
-				case up:
-					dest_x=source_x;
-					dest_y=source_y-SPRITE_SIZE;
-					break;
-				default:
-					break;
-			}
-		}
+		Moving(Facing _way, float _duration, bool _turn=false):
+			way(_way), duration(_duration),time(_duration), turn(_turn){}
 
 		Facing way;
-		int dest_x;
-		int dest_y;
-		float speed;
+		float duration;
+		float time;
+		bool turn;
 	};
 
-	class Robot : public Widget
+	class Summoner : public Widget
 	{
+
+	friend class Map;
+
 	public:
 
-		Robot(int _ID,int _team, int _x, int _y, Map *_map);
+		Summoner(int _ID, int _client_ID,int _x, int _y, Map *_map);
 
 	private:
 
 		int ID;
+		int client_ID;
+		int map_x;
+		int map_y;
+		sf::Sprite sprite;
+
+	public:
+
+		void draw();
+		void update(float tick);
+
+	private:
+
+		static sf::Image summoner_image;
+		static bool initiated;
+		const Map *map;
+
+	};
+
+	class Robot : public Widget
+	{
+
+	friend class Map;
+
+	public:
+
+		Robot(
+			int _ID,
+			int _client_ID,
+			Facing _facing,
+			int _team, 
+			int _x, 
+			int _y, 
+			Map *_map);
+
+	private:
+
+		int ID;
+		int client_ID;
 		int team;
+		int map_x;
+		int map_y;
+		float speed;
 		Facing facing;
 		sf::Sprite sprite;
 		std::queue<Moving> movings;
+		void setToPos();
 
 	public:
 
@@ -86,7 +127,11 @@ private:
 		const Map *map;
 	};
 
-	std::vector<Robot> robots;
+	std::map<int,Robot> robots; // key::actor ID
+	std::map<int,Summoner> summoners; // key::client ID
+	float tick;
+	int step_size;
+	float steps_in_sec;
 
 };
 

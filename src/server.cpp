@@ -253,20 +253,20 @@ void sum::Server::gamestart() {
 	debugf("%d players have gathered, we can now start playing.\n", clients.size());
 	ServerMessage sm(ServerMessage::start);
 
-	world = new Logic::World(interpreter, 50,50);
+	world = new Logic::World(interpreter, 10,10);
 
 	// generic data
 	sm << stringutils::float_to_string(sec_per_tick) // a tick is this many seconds
 	   << step_size       // this many steps are in a tick.
-	   << 50              // map x
-	   << 50              // map y
+	   << 10              // map x
+	   << 10              // map y
 	   << clients.size()  // játékosok száma
 	;
 	// create summoners;
 	size_t num = 0;
 	for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
 		Logic::Summoner& s = world->create_summoner(
-			Logic::default_startpos(Logic::coord(50,50), clients.size(), num++),	//default starting pos
+			Logic::default_startpos(Logic::coord(6,6), clients.size(), num++),	//default starting pos
 			(*lit)->client_id
 		);
 		sm << (*lit)->client_id // client's id
@@ -407,7 +407,8 @@ const std::string sum::Server::puppetinfo(Client& client, sf::Packet& packet) {
 
 	// args expected to contain puppet-id.
 	std::vector<std::string> parts = string_explode(stringutils::trim(args), stringutils::whitespace);
-	size_t puppet_id;
+	//size_t puppet_id;
+	unsigned puppet_id;
 	if(!stringutils::to_unsigned(parts[0], puppet_id)) {
 		Result = "Error: argument not an actor-id.";
 	}

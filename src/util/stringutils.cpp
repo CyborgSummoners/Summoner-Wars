@@ -87,6 +87,22 @@ std::string float_to_string(float f) {
 	return ss.str();
 }
 
+float string_to_float(std::string str) {
+	std::stringstream ss;
+	ss<<str;
+	float ret;
+	ss>>ret;
+	return ret;
+}
+
+int string_to_int(std::string str) {
+	std::stringstream ss;
+	ss<<str;
+	int ret;
+	ss>>ret;
+	return ret;
+}
+
 
 bool is_valid_path_char(char c) {
 	return isalnum(c) || c=='/';

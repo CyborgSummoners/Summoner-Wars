@@ -252,6 +252,16 @@ void Map::Robot::update(float tick)
 		Moving &move=movings.back();
 		if(!move.turn)
 		{
+			if(facing!=move.way)
+			{
+				facing=move.way;
+				sprite.SetSubRect(
+					sf::IntRect(
+						(team%2)*SPRITE_SIZE,
+						facing*SPRITE_SIZE,
+						(team%2)*SPRITE_SIZE+SPRITE_SIZE,
+						facing*SPRITE_SIZE+SPRITE_SIZE));
+			}
 			switch(move.way)
 			{
 				case down:
@@ -270,7 +280,7 @@ void Map::Robot::update(float tick)
 			sprite.SetX(x);
 			sprite.SetY(y);
 		}
-		else
+		/*else
 		{
 			facing=move.way;
 			sprite.SetSubRect(
@@ -281,7 +291,7 @@ void Map::Robot::update(float tick)
 					facing*SPRITE_SIZE+SPRITE_SIZE));
 			movings.pop();
 			return;
-		}
+		}*/
 
 		//move.duration-=tick;
 		if(move.duration<=0 && !move.turn)

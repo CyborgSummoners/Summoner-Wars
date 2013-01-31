@@ -1,4 +1,7 @@
 #include "map.hpp"
+#include "mapgen.hpp"
+#include <sstream>
+
 
 namespace sum
 {
@@ -36,6 +39,18 @@ void Map::draw()
 				map_sprite.SetY(y+i*SPRITE_SIZE);
 				switch(map_layout[i][j].type)
 				{
+					case Field::field:
+						map_sprite.SetSubRect(
+							sf::IntRect(
+								0,0,SPRITE_SIZE,SPRITE_SIZE)
+							);
+						break;
+					case Field::block:
+						map_sprite.SetSubRect(
+							sf::IntRect(
+								SPRITE_SIZE,0,2*SPRITE_SIZE,SPRITE_SIZE)
+							);
+						break;
 					default:
 						map_sprite.SetSubRect(
 							sf::IntRect(
@@ -74,14 +89,60 @@ Map::Facing Map::armin_facing_converter(int facing)
 	}
 }
 
+void Map::parse_startmessage(const std::vector<std::string>& res) {
+	using namespace stringutils;
+	std::vector<Field> vtmp;
+	int client_size(0);
+
+	tick=string_to_float(res[0]);
+	step_size=string_to_int(res[1]);
+	steps_in_sec=step_size/tick;
+
+	size_t map_y = string_to_int(res[3]);
+	size_t map_x = string_to_int(res[2]);
+
+	//mapdata
+	sum::Terrain* terrain = new sum::Terrain[map_x*map_y];
+	std::stringstream ss;
+	ss.str(res[4]);
+	Mapgen::reconstruct_from_dump(terrain, map_x, map_y, ss);
+
+	for(size_t i=0;i<map_y;++i)
+	{
+		for(size_t j=0;j<map_x;++j) {
+			vtmp.push_back(Field( terrain[i*map_y + j] == floor? Field::field : Field::block  )); //why oh why
+		}
+
+		map_layout.push_back(vtmp);
+		vtmp.clear();
+	}
+
+	delete[] terrain;
+
+	client_size=string_to_int(res[5]);
+
+	for(int i=0;i<client_size;++i)
+	{
+		summoners.insert(std::pair<int,Summoner>(
+			string_to_int(res[5+i*4]),
+			Summoner(
+				string_to_int(res[7+i*4]),
+				string_to_int(res[6+i*4]),
+				string_to_int(res[8+i*4]),
+				string_to_int(res[9+i*4]),
+				this
+				)
+			));
+	}
+}
+
+
 void Map::update(const ServerMessage &message)
 {
 	using namespace stringutils;
 
 	std::vector<std::string> res = message.get_parsed_msg();
 	std::map<int,Robot>::iterator it;
-	std::vector<Field> vtmp;
-	int client_size(0);
 	switch(message.type)
 	{
 		case ServerMessage::unknown:
@@ -105,37 +166,8 @@ void Map::update(const ServerMessage &message)
 				);
 			break;
 		case ServerMessage::start:
-			tick=string_to_float(res[0]);
-			step_size=string_to_int(res[1]);
-			steps_in_sec=step_size/tick;
-
-			for(int i=0;i<string_to_int(res[3]);++i)
-			{
-				for(int j=0;j<string_to_int(res[2]);++j)
-					vtmp.push_back(Field());
-				map_layout.push_back(vtmp);
-				vtmp.clear();
-			}
-
-			client_size=string_to_int(res[4]);
-
-			for(int i=0;i<client_size;++i)
-			{
-				summoners.insert(std::pair<int,Summoner>(
-					string_to_int(res[5+i*4]),
-					Summoner(
-						string_to_int(res[6+i*4]),
-						string_to_int(res[5+i*4]),
-						string_to_int(res[7+i*4]),
-						string_to_int(res[8+i*4]),
-						this
-						)
-					));
-			}
-
-
+			parse_startmessage(res);
 			break;
-
 		case ServerMessage::turn:
 			/*it=robots.find(string_to_int(res[0]));
 			it->second.movings.push(

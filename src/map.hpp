@@ -5,6 +5,8 @@
 #include "widget.hpp"
 #include <queue>
 #include <map>
+#include <vector>
+#include <string>
 
 namespace sum
 {
@@ -23,6 +25,7 @@ public:
 	void update(float tick);
 
 private:
+	void parse_startmessage(const std::vector<std::string>& msg);
 
 	enum Facing {down=0,left,right,up,unknown};
 	Facing coord_to_facing(int x1, int y1, int x2, int y2);
@@ -30,7 +33,7 @@ private:
 
 	struct Field
 	{
-		enum Type {field, block, brick};
+		enum Type {unknown, field, block, brick};
 		Field(Type _type=field) : type(_type){}
 
 		Type type;
@@ -98,9 +101,9 @@ private:
 			int _ID,
 			int _client_ID,
 			Facing _facing,
-			int _team, 
-			int _x, 
-			int _y, 
+			int _team,
+			int _x,
+			int _y,
 			Map *_map);
 
 	private:

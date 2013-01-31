@@ -1,16 +1,20 @@
-procedure demo is
-	i := 0;
-	while i < 4 loop
+procedure patrol is
+	i:=0;
+	while i<4 and not Self.sees_enemy() loop
 		Self.turn_left;
-		Self.move;
-		Self.move;
-		Self.move;
+		k:=0;
+		while k<4 loop
+			Self.move;
+			k:=k+1;
+		end loop;
+		attack;
 		i:=i+1;
 	end loop;
+end patrol;
 
-	that;
-end demo;
 
-procedure that is
-	print("It's doing THAT now. Returning to main.");
-end that;
+procedure attack is
+	while Self.sees_enemy() loop
+		Self.move;
+	end loop;
+end attack;

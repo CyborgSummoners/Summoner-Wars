@@ -23,6 +23,7 @@ namespace sum {
 				virtual step turn_right() = 0;
 				virtual step brain_damage(size_t severity, const std::string& message) = 0;
 
+				virtual bool sees_enemy() = 0;
 				virtual bool is_alive() = 0;
 
 				virtual bool operator==(const Puppet& that) = 0;

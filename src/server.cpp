@@ -260,6 +260,7 @@ void sum::Server::gamestart() {
 	   << step_size       // this many steps are in a tick.
 	   << 10              // map x
 	   << 10              // map y
+	   << world->dump_mapdata() 	// naively compressed. Decompress with sum::Mapgen::reconstruct_from_dump)
 	   << clients.size()  // játékosok száma
 	;
 	// create summoners;

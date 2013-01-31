@@ -22,6 +22,7 @@ std::string toString(Facing facing) {
 	}
 }
 
+coord::coord() : x(x), y(y) {}
 coord::coord(size_t x, size_t y) : x(x), y(y) {}
 
 bool coord::operator<(const coord& rhs) const {
@@ -83,11 +84,17 @@ coord default_startpos(coord map_size, size_t player_num, size_t which) {
 }
 
 
-World::World(Interpreter& interpreter, size_t width, size_t height) : interpreter(interpreter), width(width), height(height) {}
+World::World(Interpreter& interpreter, size_t width, size_t height, const Map_generator* const mapgen) : interpreter(interpreter), width(width), height(height) {
+	terrain = new Terrain[width*height];
+	mapgen->generate(terrain, width, height);
+}
+
 World::~World() {
 	for(std::map<coord, Actor*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 		delete it->second;
 	}
+
+	delete[] terrain;
 };
 
 std::deque<ServerMessage>& World::advance(step steps) {
@@ -182,6 +189,36 @@ void World::kill(Summoner& summoner) {
 
 Summoner& World::create_summoner(coord pos, const std::string& client_id) {
 	Summoner* Result = new Summoner(*this);
+
+	assert(pos.x >= 0 && pos.x < width);
+	assert(pos.y >= 0 && pos.y < height);
+
+	//if the suggested starting position is blocked by a wall, start a depth-first search for a free pos.
+	if(terrain[ pos.y*width + pos.x ] != floor) {
+		bool* marked = new bool[width*height];
+		for(size_t k=0; k<width*height; ++k) marked[k] = false;
+
+		std::queue<coord> q;
+		q.push(pos);
+		coord n;
+		while(!q.empty()) {
+			n = q.front();
+			q.pop();
+			if( terrain[ n.y*width + n.x ] ==  floor) {
+				pos.x = n.x;
+				pos.y = n.y;
+				break;
+			}
+			else  {
+				if(n.x>0        && !marked[n.y*width + n.x-1])   { q.push( coord(n.x-1, n.y) ); }  // west
+				if(n.x<width-1  && !marked[n.y*width + n.x+1])   { q.push( coord(n.x+1, n.y) ); } 	// east
+				if(n.y>0        && !marked[(n.y-1)*width + n.x]) { q.push( coord(n.x, n.y-1) ); } 	// north
+				if(n.y<height-1 && !marked[(n.y+1)*width + n.x]) { q.push( coord(n.x, n.y+1) ); } 	// south
+			}
+		}
+
+		delete[] marked;
+	}
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
 	std::cout << client_id << "  mukmuk" << std::endl;
 	summoners.insert( std::make_pair(client_id, Result) );
@@ -206,8 +243,15 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 		return 0;
 	}
 
+	// wall?
+	if( !is_valid(pos) ) {
+		failure_reason = "Invalid position!";
+		debugf("failed: %s\n", failure_reason.c_str());
+		return 0;
+	}
+
 	// is anyone at pos?
-	if( !is_free( pos ) > 0 ) {
+	if( !is_free( pos ) ) {
 		failure_reason = "Position already occupied.";
 		debugf("failed: %s\n", failure_reason.c_str());
 		return 0;
@@ -250,13 +294,12 @@ coord World::get_pos(const Actor& actor) const {
 }
 
 bool World::is_valid(coord pos) const {
-	return pos.x>=0 && pos.y>=0 && pos.x<width && pos.y<height;
+	return pos.x>=0 && pos.y>=0 && pos.x<width && pos.y<height && terrain_at(pos) != wall;
 }
 
 bool World::is_free(coord pos) const {
 	return is_valid(pos) && puppets.count(pos)==0;
 }
-
 
 // this is truly terrible
 Puppet* World::get_puppet(size_t actor_id, const std::string& client_id) const {
@@ -269,6 +312,20 @@ Puppet* World::get_puppet(size_t actor_id, const std::string& client_id) const {
 		}
 	}
 	return false;
+}
+
+Terrain World::terrain_at(coord pos) const {
+	return terrain[ pos.y*width + pos.x ];
+}
+
+const Terrain* const World::get_map() const {
+	return terrain;
+}
+
+std::string World::dump_mapdata() const {
+	std::stringstream ss;
+	Mapgen::dump_compressed(terrain, width, height, ss);
+	return ss.str();
 }
 
 std::string World::describe(size_t actor_id) const {
@@ -422,6 +479,9 @@ const std::map<std::string, Puppet_template> init_default_templates() {
 
 	return Result;
 }
+
+
+const Map_generator& World::Default_mapgen = Mapgen::Arena();
 
 }
 }

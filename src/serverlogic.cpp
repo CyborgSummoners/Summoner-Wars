@@ -144,6 +144,12 @@ step World::move_me(Puppet& actor) {
 	return res;
 }
 
+Actor* World::actor_at(coord pos) const {
+	std::map<coord, Actor*>::const_iterator iter = puppets.find(pos);
+	if(iter != puppets.end()) return iter->second;
+	return 0;
+}
+
 void World::hurt(Actor& actor, const size_t hp_loss) {
 	actor.hp -= hp_loss;
 	if(actor.hp <= 0) {
@@ -391,6 +397,25 @@ step Puppet::brain_damage(size_t severity, const std::string& message) {
 
 	my_world.hurt(*this, hp_loss);
 	return res;
+}
+
+bool Puppet::sees_enemy() {
+	coord pos = my_world.get_pos(*this);
+	pos = pos + this->facing; //csak előre lát
+
+	// more rtti horrors
+	Actor* a=my_world.actor_at(pos);
+	Puppet* p = dynamic_cast<Puppet*>(a);
+	if(p) {
+		return (&(p->owner) != &(this->owner));
+	}
+
+	Summoner* s = dynamic_cast<Summoner*>(a);
+	if(s) {
+		return (s != &(this->owner));
+	}
+
+	return false;
 }
 
 void Puppet::die() {

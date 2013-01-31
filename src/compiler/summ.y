@@ -486,6 +486,23 @@ pseudofunction {
 		}
 		delete $1;
 	}
+| K_SELF OP_MEMBER IDENTIFIER T_OPEN exp_epsilon_list T_CLOSE {
+	std::string norm="SELF::"+subprogram::normalize_name(*$3);
+	int intrpt = get_interrupt_id(norm);
+	if( intrpt >= 0 ) { // does such a method exist?
+		$$ = new expression(any);
+		$$->code.insert($$->code.begin(), $5->code.begin(), $5->code.end());
+		$$->code.push_back( codeline(PUSH_SELF) );
+		$$->code.push_back( codeline(INTERRUPT, intrpt) );
+	}
+	else {
+		$$ = new expression(any);
+		std::stringstream ss;
+		ss << "SELF does not have a method called '" << subprogram::normalize_name(*$3) << "'" << std::endl;
+		delete $5;
+		error(ss.str().c_str());
+	}
+}
 | IDENTIFIER T_OPEN exp_epsilon_list T_CLOSE {
 	$$ = new expression(any);
 	$$->code.insert($$->code.begin(), $3->code.begin(), $3->code.end());

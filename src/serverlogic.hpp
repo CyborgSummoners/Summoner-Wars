@@ -68,6 +68,7 @@ namespace Logic {
 			coord get_pos(const Actor& actor) const;
 			bool is_valid(coord pos) const;
 			bool is_free(coord pos) const;
+			Actor* actor_at(coord pos) const;
 
 			std::string describe(size_t actor_id) const;
 			std::string describe(const Puppet& puppet) const;
@@ -133,6 +134,7 @@ namespace Logic {
 			std::string describe() const;
 
 			step brain_damage(size_t severity, const std::string& message);
+			bool sees_enemy();
 			virtual void die();
 			bool is_alive();
 

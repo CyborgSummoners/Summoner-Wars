@@ -702,6 +702,19 @@ namespace sum {
 					return delay;
 				}
 			};
+			struct self_sees_enemy : public Interrupt  {
+				const char* get_name() const {
+					return "SELF::SEES_ENEMY";
+				}
+				unsigned int operator()(Stack& stack) const {
+					Cell* r1 = stack.pop(); //supposed to be self. need to check.
+					if(r1->tag != puppet) throw except::incompatible_types();
+					bool res = static_cast<PuppetValue*>(r1)->value.sees_enemy();
+					stack.push(new BooleanValue(res));
+					delete r1;
+					return false;
+				}
+			};
 
 			const std::vector<Interrupt*> list_init() {
 				std::vector<Interrupt*> Result;
@@ -710,6 +723,7 @@ namespace sum {
 				Result.push_back( new interrupt::self_move() );
 				Result.push_back( new interrupt::self_turn_left() );
 				Result.push_back( new interrupt::self_turn_right() );
+				Result.push_back( new interrupt::self_sees_enemy() );
 				return Result;
 			}
 			const std::map<std::string, size_t> mapping_init() {

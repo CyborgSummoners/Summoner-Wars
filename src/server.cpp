@@ -324,11 +324,12 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 
 	std::string Result = "";
 	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
-	// expecting format "summon <summonable> [<coord_x> <coord_y>]";
+	// expecting format "summon <summonable> <coord_x> <coord_y> [with behaviour <behaviour>]";
 	std::string actor_type;
 	unsigned int x;
 	unsigned int y;
 	bool success = true;
+	std::string behaviour = "NOP";
 	size_t bit = 0;
 
 	// gather args
@@ -358,6 +359,27 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 			}
 			++bit;
 		}
+		else if(bit ==3) {
+			if(parts[i] != "with") {
+				Result = "Error: expected fourth argument to be 'with'.\n";
+				success = false;
+			}
+			++bit;
+		}
+		else if(bit == 4) {
+			if(parts[i] != "behaviour") {
+				Result = "Error: expected fifth argument to be 'behaviour'.\n";
+				success = false;
+			}
+			++bit;
+		}
+		else if(bit == 5) {
+			if(!interpreter.subprogram_exists(parts[i], client.client_id)) {
+				Result = "Error: '"+parts[i]+"' does not name a subprogram.\n";
+				success = false;
+			} else behaviour = bytecode::subprogram::normalize_name(parts[i]);
+			++bit;
+		}
 	}
 
 	// enough args?
@@ -366,11 +388,11 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 			Result = "Error: too few arguments to function.\n";
 			success=false;
 		}
-		else if(bit > 3) {
+		else if(bit > 6) {
 			Result = "Error: too many arguments to function.\n";
 			success=false;
 		}
-		else if(bit > 1 && bit < 3) {
+		else if( (bit > 1 && bit < 3) || (bit>3 && bit<5)) {
 			Result = "Error: too few arguments to function.\n";
 			success=false;
 		}
@@ -385,6 +407,7 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 			Logic::coord(x, y),
 			client.client_id,
 			client.summonables.find(actor_type)->second,
+			behaviour,
 			Result
 		);
 
@@ -394,9 +417,11 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 		}
 
 		debugf("%s summoned %s to (%d,%d)\n", client.toString().c_str(), actor_type.c_str(), x, y);
-		return "";
+		std::stringstream ss;
+		ss << p->get_id() << std::endl;
+		return ss.str();
 	}
-	return Result.append("Usage: summon <summonable> [<x-coord> <y-coord>]");
+	return Result.append("Usage: summon <summonable> <x-coord> <y-coord> [with behaviour <subprogram>]");
 }
 
 const std::string sum::Server::puppetinfo(Client& client, sf::Packet& packet) {
@@ -457,6 +482,37 @@ const std::string sum::Server::register_script(Client& client, sf::Packet& packe
 	return Result.str();
 }
 
+const std::string sum::Server::set_behaviour(Client& client, sf::Packet& packet) {
+	if(state < Playing) return "Fatal: can't set behaviour of puppets when not playing.";
+	std::string args;
+	packet >> args;
+	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
+	unsigned puppet_id;
+
+	if(parts.size() < 2) {
+		return "Too few arguments to function.\nUsage: makebehave <puppet-id> <subprogram>\n";
+	}
+
+	if(!stringutils::to_unsigned(parts[0], puppet_id)) {
+		return "Invalid argument: " + parts[0] + " does not look like a puppet-id.\n";
+	}
+
+	Logic::Puppet* p = world->get_puppet(puppet_id, client.client_id); // gah
+
+	if(p==0) {
+		return "Invalid argument: " + parts[0] + " does not name one of your puppets.\n";
+	}
+	std::string behaviour = parts[1];
+
+	if(!interpreter.subprogram_exists(behaviour, client.client_id)) {
+		return "Invalid argument: " + behaviour + " does not name a subprogram.\n";
+	}
+
+	interpreter.set_behaviour(*p, behaviour, client.client_id);
+
+	return "";
+}
+
 
 const std::map<std::string, sum::Server::server_function> sum::Server::initialize_server_functions() {
 	std::map<std::string, server_function> Result;
@@ -465,6 +521,7 @@ const std::map<std::string, sum::Server::server_function> sum::Server::initializ
 	Result.insert( make_pair("summon", &Server::summon) );
 	Result.insert( make_pair("describe", &Server::puppetinfo) );
 	Result.insert( make_pair("scriptreg", &Server::register_script) );
+	Result.insert( make_pair("makebehave", &Server::set_behaviour) );
 	return Result;
 }
 

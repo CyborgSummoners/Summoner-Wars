@@ -4,17 +4,37 @@
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
+#include <algorithm>
 
 namespace sum {
 	using namespace bytecode;
 
 	namespace stack_machine {
 		namespace except {
-			struct corrupted_stack : public std::exception {};
-			struct incompatible_types : public std::exception {};
-			struct division_by_zero : public std::exception {};
-			struct subprogram_does_not_exist : public std::exception {};
-			struct index_out_of_range : public std::exception {};
+			struct exception : public std::runtime_error {
+				const size_t severity;
+				exception(size_t severity, const char* msg) : std::runtime_error(msg), severity(severity) {}
+				virtual ~exception() throw() {}
+			};
+
+			struct corrupted_stack : public exception {
+				corrupted_stack() : exception(10, "Corrupted stack!") {}
+			};
+			struct stack_underflow : public exception {
+				stack_underflow() : exception(8, "Stack underflow") {}
+			};
+			struct incompatible_types : public exception {
+				incompatible_types() : exception(3, "Incompatible types") {}
+			};
+			struct division_by_zero : public exception {
+				division_by_zero() : exception(5, "Division by zero") {}
+			};
+			struct subprogram_does_not_exist : public exception {
+				subprogram_does_not_exist() : exception(2, "Subprogram_does_not_exist") {}
+			};
+			struct index_out_of_range : public exception {
+				index_out_of_range() : exception(2, "Index out of range") {}
+			};
 		}
 
 		struct Cell {
@@ -159,13 +179,25 @@ namespace sum {
 				int index;
 				if(idx->tag == integer)
 					index = static_cast<IntegerValue*>(idx)->value;
-				else throw stack_machine::except::incompatible_types();
+				else {
+					delete idx;
+					delete elem;
+					throw stack_machine::except::incompatible_types();
+				}
 
 				if(index < 0) {
 					index = value->len+index;
-					if(index<0) throw except::index_out_of_range();
+					if(index<0) {
+						delete idx;
+						delete elem;
+						throw except::index_out_of_range();
+					}
 				}
-				if(static_cast<size_t>(index) >= value->len) throw except::index_out_of_range();
+				if(static_cast<size_t>(index) >= value->len) {
+					delete idx;
+					delete elem;
+					throw except::index_out_of_range();
+				}
 
 				delete value->value[index];
 				value->value[index] = elem;
@@ -175,14 +207,24 @@ namespace sum {
 				int index;
 				if(idx->tag == integer)
 					index = static_cast<IntegerValue*>(idx)->value;
-				else throw stack_machine::except::incompatible_types();
+				else {
+					delete idx;
+					throw stack_machine::except::incompatible_types();
+				}
 
 				if(index < 0) {
 					index = value->len+index;
-					if(index<0) throw except::index_out_of_range();
+					if(index<0) {
+						delete idx;
+						throw except::index_out_of_range();
+					}
 				}
-				if(static_cast<size_t>(index) >= value->len) throw except::index_out_of_range();
+				if(static_cast<size_t>(index) >= value->len) {
+					delete idx;
+					throw except::index_out_of_range();
+				}
 
+				delete idx;
 				return value->value[index];
 			}
 			virtual ~ListRef() {
@@ -255,6 +297,7 @@ namespace sum {
 		};
 
 		Cell* Stack::pop() {
+			if(stack.size() == 0) throw except::stack_underflow();
 			Cell* Result = stack.back();
 			stack.resize(stack.size()-1);
 			return Result;
@@ -702,7 +745,8 @@ namespace sum {
 //*******************
 //*** Interpreter ***
 //*******************
-	Interpreter::puppet_brain::puppet_brain(Interpreter::Puppet& puppet) : puppet(puppet), program(0), program_counter(0), base_pointer(0), delay(0) {
+	Interpreter::puppet_brain::puppet_brain(Interpreter::Puppet& puppet, size_t delay) : puppet(puppet), program(0), program_counter(0), base_pointer(0), delay(delay), alive(true) {
+		overrides.insert( std::make_pair(0,0) );
 		stack = new stack_machine::Stack();
 	}
 	Interpreter::puppet_brain::~puppet_brain() {
@@ -716,7 +760,9 @@ namespace sum {
 		code[1] = bytecode::DELAY;
 		code[2] = code[3] = code[4] = 0;
 		code[5] = 100;
-		programs.push_back(bytecode::subprogram("NOP", 0, code, 5, false));
+		code[6] = bytecode::RET;
+		programs.push_back(bytecode::subprogram("NOP", 0, code, 7, false));
+		program_map.insert( std::make_pair("NOP", 0) );
 
 		//clock starts at 0
 		clock = 0;
@@ -731,7 +777,7 @@ namespace sum {
 
 	size_t Interpreter::get_program_id(const std::string& str, const std::string& owner) const {
 		std::string nom = ("" == owner? str : owner+"'"+str);
-		std::map<std::string, size_t>::const_iterator it = program_map.find(owner + "'" + str);
+		std::map<std::string, size_t>::const_iterator it = program_map.find(nom);
 		if(it == program_map.end()) {
 			debugf("Subprogram %s does not exist\n", nom.c_str());
 			throw stack_machine::except::subprogram_does_not_exist();
@@ -739,8 +785,9 @@ namespace sum {
 		return it->second;
 	}
 
-	bool Interpreter::subprogram_exists(const std::string& prog_name) {
-		return (program_map.find(prog_name) != program_map.end() );
+	bool Interpreter::subprogram_exists(const std::string& prog_name, const std::string& owner) {
+		std::string nom = ("" == owner? bytecode::subprogram::normalize_name(prog_name) : owner+"'"+bytecode::subprogram::normalize_name(prog_name));
+		return (program_map.find(nom) != program_map.end() );
 	}
 
 	bool Interpreter::register_subprogram(const bytecode::subprogram& prog, bool force_replace) {
@@ -782,13 +829,23 @@ namespace sum {
 			puppet = dequeue_puppet();
 			delay = 0;
 
-			while(delay == 0) {
+			try {
 				if(puppet->program_counter >= programs[ puppet->program ].get_codelen()) puppet->program_counter=0;
 				delay += execute_instruction(puppet->puppet, puppet->program, *(puppet->stack), puppet->program_counter, puppet->base_pointer);
+			} catch(stack_machine::except::exception& e) {
+				delay += puppet->puppet.brain_damage(e.severity, e.what());
 			}
 
-			puppet->delay += delay;
-			enqueue_puppet(puppet);
+
+			// is it in the list?
+			if(puppet->alive) {
+				puppet->delay += delay;
+				enqueue_puppet(puppet);
+			}
+			else {
+				delete puppet;
+				if(puppets.empty()) break;
+			}
 		}
 
 		return true;
@@ -971,7 +1028,16 @@ namespace sum {
 			case FETCH_IDX:
 				r1 = stack.pop();
 				if(r1->tag == list) {
-					stack.push( static_cast<ListRef*>(r1)->get_element( stack.pop() )->clone() );
+					r2 = new NullValue();
+					try {
+						r1 = static_cast<ListRef*>(r1)->get_element( stack.pop() )->clone();
+						stack.push(r1);
+						delete r2;
+					}
+					catch(...) {
+						stack.push(r2);
+						throw;
+					}
 				} else throw stack_machine::except::incompatible_types();
 				break;
 			case STORE_IDX:
@@ -994,19 +1060,46 @@ namespace sum {
 		for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 			if( ((*it)->puppet) == puppet) return false;
 		}
-		puppets.push_front( new puppet_brain(puppet) );
+		puppet_brain* pb = new puppet_brain(puppet, clock);
+		puppets.push_front( pb );
+		puppet_list.push_front( pb );
 		return true;
 	}
 	bool Interpreter::unregister_puppet(Interpreter::Puppet& puppet) {
-		return true;
+		debugf("Unregistering puppet...");
+		for(std::list<puppet_brain*>::iterator it = puppet_list.begin(); it!=puppet_list.end(); ++it) {
+			if( (*it)->puppet == puppet ) {
+				(*it)->alive = false;
+				puppets.erase(it);
+				debugf("done\n");
+
+				// is it in the queue? if so, remove and delete
+				for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+					if( (*it)->puppet == puppet ) {
+						puppet_list.erase(it);
+						break;
+					}
+				}
+				// otherwise advance() will remove it
+				return true;
+			}
+		}
+
+		debugf("failed: no such puppet.\n");
+		return false;
 	}
 	bool Interpreter::set_behaviour(Interpreter::Puppet& puppet, const std::string& behaviour, const std::string& owner) {
-		debugf("Setting behaviour of puppet %s to %s'%s...", puppet.get_name().c_str(), owner.c_str(), behaviour.c_str());
+		std::string nom = ("" == owner? bytecode::subprogram::normalize_name(behaviour) : owner+"'"+bytecode::subprogram::normalize_name(behaviour));
+		debugf("Setting behaviour of puppet %s to %s...", puppet.get_name().c_str(), nom.c_str());
 		try {
-			for(std::list<puppet_brain*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+			for(std::list<puppet_brain*>::iterator it = puppet_list.begin(); it!=puppet_list.end(); ++it) {
 				if( (*it)->puppet == puppet ) {
-					(*it)->overrides[0] = get_program_id(behaviour, owner);
-					if( (*it)->program == 0 )  (*it)->program = (*it)->overrides[0];
+					(*it)->overrides[0] = get_program_id(nom);
+					if( (*it)->program == 0 ) {
+					 	(*it)->program = (*it)->overrides[0];
+					 	(*it)->program_counter = 0;
+					 	(*it)->base_pointer = 0;
+					 }
 					debugf("done\n");
 					return true;
 				}
@@ -1019,7 +1112,13 @@ namespace sum {
 		return false;
 	}
 
-	std::string Interpreter::get_behaviour(Interpreter::Puppet& puppet) const {
-		return "Hát, valami";
+	std::string Interpreter::get_behaviour(const Interpreter::Puppet& puppet) const {
+		std::list<puppet_brain*>::const_iterator it;
+		for(it=puppet_list.begin(); it != puppet_list.end(); ++it) {
+			if( (*it)->puppet == puppet ) break;
+		}
+		if(it == puppet_list.end()) return "";
+
+		return programs[ (*it)->overrides[0] ].get_name();
 	}
 }

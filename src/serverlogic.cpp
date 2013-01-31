@@ -144,14 +144,51 @@ step World::move_me(Puppet& actor) {
 	return res;
 }
 
+void World::hurt(Actor& actor, const size_t hp_loss) {
+	actor.hp -= hp_loss;
+	if(actor.hp <= 0) {
+		actor.die();
+	}
+	else {
+		post_message(
+			ServerMessage(ServerMessage::hp_loss) << actor.get_id() // this puppet
+			                                      << hp_loss // lost this much hp
+			                                      << actor.hp // he has this much remaining.
+		);
+	}
+}
+
+void World::kill(Puppet& puppet) {
+	debugf("puppet %d died\n", puppet.id);
+	interpreter.unregister_puppet(puppet);
+	for(std::map<coord, Actor*>::iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+		if(&puppet == it->second) {
+			puppets.erase(it);
+			break;
+		}
+	}
+
+	post_message(
+		ServerMessage(ServerMessage::death) << puppet.get_id() // this puppet died :(
+											<< puppet.hp // because he had only this many hp.
+	);
+
+	delete &puppet;
+}
+void World::kill(Summoner& summoner) {
+	debugf("A summoner died!\n");
+}
+
+
 Summoner& World::create_summoner(coord pos, const std::string& client_id) {
 	Summoner* Result = new Summoner(*this);
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
+	std::cout << client_id << "  mukmuk" << std::endl;
 	summoners.insert( std::make_pair(client_id, Result) );
 	return *Result;
 }
 
-Puppet* World::create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, std::string& failure_reason) {
+Puppet* World::create_puppet(coord pos, const std::string& client_id, const Puppet_template& attributes, const std::string& behaviour, std::string& failure_reason) {
 	debugf("Creating new puppet for client %s... ", client_id.c_str());
 
 	// do we know this summoner?
@@ -186,7 +223,7 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 	}
 
 	interpreter.register_puppet(*Result);
-	interpreter.set_behaviour(*Result, "DEMO", client_id);
+	interpreter.set_behaviour(*Result, behaviour, (behaviour == "NOP"? "" : client_id)); //aargh
 	owner->mana -= attributes.mana_cost;
 
 	debugf("Created puppet id %d.\n", Result->get_id());
@@ -194,7 +231,7 @@ Puppet* World::create_puppet(coord pos, const std::string& client_id, const Pupp
 	post_message(
 		ServerMessage(ServerMessage::summon) << client_id            // this summoner-soul
 		                                     << Result->get_id()     // summoned this creature
-		                                     << Result->facing
+		                                     << Result->facing       // initial facing
 		                                     << pos.x                // to these coordinates
 		                                     << pos.y
 		                                     << attributes.mana_cost // losing this much mana,
@@ -220,12 +257,51 @@ bool World::is_free(coord pos) const {
 	return is_valid(pos) && puppets.count(pos)==0;
 }
 
+
+// this is truly terrible
+Puppet* World::get_puppet(size_t actor_id, const std::string& client_id) const {
+	assert( summoners.find(client_id) != summoners.end() );
+	for(std::map<coord, Actor*>::const_iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+		if(it->second->get_id() == actor_id) {
+			Puppet* p = dynamic_cast<Puppet*>(it->second); // aaaargh
+			if(p != 0 && &p->owner == (summoners.find(client_id)->second)) return p;	// AAAARGH
+			else return 0;
+		}
+	}
+	return false;
+}
+
 std::string World::describe(size_t actor_id) const {
 	for(std::map<coord, Actor*>::const_iterator it = puppets.begin(); it!=puppets.end(); ++it) {
 		if(it->second->get_id() == actor_id) return it->second->describe();
 	}
 	return "";
 }
+std::string World::describe(const Puppet& puppet) const {
+	std::stringstream Result;
+	coord pos = get_pos(puppet);
+	Result  << "Postion: (" << pos.x << "," << pos.y << "), facing " << toString(puppet.facing) << std::endl
+	        << "HP: " << puppet.hp << "/" << puppet.attributes.maxhp << std::endl
+	        << "Behaviour: " << interpreter.get_behaviour(puppet) << std::endl
+	;
+	return Result.str();
+}
+std::string World::describe(const Summoner& summoner) const {
+	std::stringstream Result;
+	Result << "Summoner" << std::endl  // insert name, eventually
+	       //<< "Facing " << toString(summoner.facing) << std::endl	//sounds silly
+	       << "HP: " << summoner.hp << "/" << 20 << std::endl
+	       << "Mana: " << summoner.mana << "/" << 100 << std::endl
+	;
+	return Result.str();
+}
+std::string Puppet::describe() const {
+	return my_world.describe(*this);
+}
+std::string Summoner::describe() const {
+	return my_world.describe(*this);
+}
+
 
 size_t Actor::maxid = 0;
 size_t Actor::gen_id() {
@@ -293,6 +369,9 @@ std::string Puppet::get_name() {
 	ss << this->get_id();
 	return ss.str();
 }
+bool Puppet::is_alive() {
+	return (hp > 0);
+}
 bool Puppet::operator==(const Puppet& that) {
 	return this == &that;
 }
@@ -300,26 +379,29 @@ bool Puppet::operator==(const Interpreter::Puppet& that) {
 	return this == &that;
 }
 
-std::string Puppet::describe() const {
-	std::stringstream Result;
-	Result << "Facing " << toString(this->facing) << std::endl
-	       << "HP: " << this->hp << "/" << this->attributes.maxhp << std::endl
-	;
-	return Result.str();
+step Puppet::brain_damage(size_t severity, const std::string& message) {
+	size_t hp_loss = severity * 5;
+	step res = severity * 10;
+
+	my_world.post_message(
+		ServerMessage(ServerMessage::program_error) << this -> id  // id of puppet fouling himself
+		                                            << message // description of problem
+		                                            << res
+	);
+
+	my_world.hurt(*this, hp_loss);
+	return res;
+}
+
+void Puppet::die() {
+	my_world.kill(*this);
+}
+void Summoner::die() {
+	my_world.kill(*this);
 }
 
 
 Summoner::Summoner(World& my_world) : Actor(my_world, 20), mana(100) {
-}
-
-std::string Summoner::describe() const {
-	std::stringstream Result;
-	Result << "Summoner" << std::endl  // insert name, eventually
-	       << "Facing " << toString(this->facing) << std::endl
-	       << "HP: " << this->hp << "/" << 20 << std::endl
-	       << "Mana: " << this->mana << "/" << 100 << std::endl
-	;
-	return Result.str();
 }
 
 

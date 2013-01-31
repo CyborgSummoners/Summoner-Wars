@@ -278,9 +278,15 @@ void sum::Server::gamestart() {
 		debugf("Created summoner for %s...\n", (*lit)->toString().c_str());
 	}
 
+	for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
+		ServerMessage usm = sm;
+		usm << (*lit)->client_id;
+		Send(*lit, usm);
+	}
+
 
 	state = Playing;
-	Broadcast(sm);
+	//Broadcast(sm);
 }
 
 

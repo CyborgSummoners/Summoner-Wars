@@ -281,7 +281,7 @@ void sum::Server::gamestart() {
 	for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
 		ServerMessage usm = sm;
 		usm << (*lit)->client_id;
-		Send(*lit, usm);
+		Send(**lit, usm);
 	}
 
 

@@ -17,6 +17,8 @@ public:
 private:
 
 	std::string player_name;
+	std::string ID;
+	std::vector<std::string> summons;
 	sf::String text;
 
 };

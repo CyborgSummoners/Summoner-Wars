@@ -103,6 +103,12 @@ int string_to_int(std::string str) {
 	return ret;
 }
 
+std::string int_to_string(int n) {
+	std::stringstream ss;
+	ss<<n;
+	return ss.str();
+}
+
 
 bool is_valid_path_char(char c) {
 	return isalnum(c) || c=='/';

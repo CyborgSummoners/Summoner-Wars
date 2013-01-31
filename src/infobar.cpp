@@ -21,13 +21,23 @@ void InfoBar::draw()
 
 void InfoBar::update(const ServerMessage &message)
 {
+	using namespace stringutils;
+
+	std::vector<std::string> res = message.get_parsed_msg();
+
 	switch(message.type)
 	{
 		case ServerMessage::unknown:
 			std::cout<<"infobar received unknown message: "<< message.msg << std::endl;
 		break;
+		case ServerMessage::start:
+			///ID=
+		break;
+		case ServerMessage::summon:
+
+		break;
 		default:
-			std::cout << "wtf" << std::endl;
+			//std::cout << "wtf" << std::endl;
 		break;
 	}
 }

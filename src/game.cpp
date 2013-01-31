@@ -29,7 +29,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 		terminal->getHeight() - 30
 		);
 
-	infobar = new InfoBar(mainWindow, "testplaya            ------ INFOBAR -------");
+	infobar = new InfoBar(mainWindow, "testplaya");
 	map = new Map(mainWindow);
 
 	//CREATING CONNECTION WITH OBSERVERS
@@ -41,11 +41,6 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	obss.push_back(terminal);
 
 	connection = new Connection(obss);
-
-	//TESTLINES
-
-	for(int i=0; i<20 ;++i)
-		combat_log->add("combat log line");
 
 	mainWindow->SetFramerateLimit(10);
 	gameState = Game::Playing;

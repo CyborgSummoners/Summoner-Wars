@@ -331,6 +331,8 @@ void Map::Robot::update(float tick)
 			}
 			sprite.SetX(x);
 			sprite.SetY(y);
+			number_text.SetX(x);
+			number_text.SetY(y);
 		}
 		else
 		{

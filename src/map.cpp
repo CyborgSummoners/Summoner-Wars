@@ -196,6 +196,13 @@ void Map::update(const ServerMessage &message)
 						false
 						)
 					);
+				it->second.map_x=string_to_int(res[1]);
+				it->second.map_y=string_to_int(res[2]);
+				it->second.facing=coord_to_facing(
+							string_to_int(res[1]),
+							string_to_int(res[2]),
+							string_to_int(res[3]),
+							string_to_int(res[4]));
 			}
 			break;
 		case ServerMessage::shout:
@@ -287,16 +294,16 @@ void Map::Robot::update(float tick)
 			switch(move.way)
 			{
 				case down:
-					y=y+(SPRITE_SIZE*tick)/(move.time);
+					y=y+(SPRITE_SIZE*tick+1)/(move.time);
 				break;
 				case left:
-					x=x-(SPRITE_SIZE*tick)/(move.time);
+					x=x-(SPRITE_SIZE*tick+1)/(move.time);
 				break;
 				case right:
-					x=x+(SPRITE_SIZE*tick)/(move.time);
+					x=x+(SPRITE_SIZE*tick+1)/(move.time);
 				break;
 				case up:
-					y=y-(SPRITE_SIZE*tick)/(move.time);
+					y=y-(SPRITE_SIZE*tick+1)/(move.time);
 				break;
 			}
 			sprite.SetX(x);
@@ -316,10 +323,10 @@ void Map::Robot::update(float tick)
 		}
 
 		//move.duration-=tick;
+		move.duration-=tick*move.time;
 		if(move.duration<=0 && !move.turn)
 		{
-			move.duration-=tick*move.time;
-
+			
 				switch(move.way)
 				{
 					case down:

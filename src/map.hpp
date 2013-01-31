@@ -44,6 +44,7 @@ private:
 	sf::Image map_image;
 	sf::Sprite map_sprite;
 	std::vector<std::vector<Field> > map_layout;
+	sf::String number_text;
 
 	struct Moving
 	{

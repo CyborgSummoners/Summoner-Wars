@@ -24,6 +24,8 @@ void Map::update(float tick)
 
 void Map::draw()
 {
+	using namespace stringutils;
+
 	window->Draw(
 		sf::Shape::Rectangle(x,y,width,height, sf::Color(255,255,255)));
 	if(!map_layout.empty())
@@ -42,6 +44,14 @@ void Map::draw()
 					break;
 				}
 				window->Draw(map_sprite);
+				if(i==0 || (j==0 && i!=0))
+				{
+					number_text.SetX(i==0 ? x+j*SPRITE_SIZE : x);
+					number_text.SetY(j==0 ? y+i*SPRITE_SIZE : y);
+					number_text.SetSize(textSize);
+					number_text.SetText(int_to_string(i==0 ? j : i));
+					window->Draw(number_text);
+				}
 			}
 	for(std::map<int,Robot>::iterator it=robots.begin(); it!=robots.end(); ++it )
 		it->second.draw();
@@ -127,9 +137,16 @@ void Map::update(const ServerMessage &message)
 			break;
 
 		case ServerMessage::turn:
-			
+			/*it=robots.find(string_to_int(res[0]));
+			it->second.movings.push(
+				Moving(
+					armin_facing_converter(string_to_int(res[3])),
+					string_to_float(res[4])/steps_in_sec,
+					true
+					)
+				);
 
-			break;
+			break;*/
 
 		case ServerMessage::move:
 			if(string_to_int(res[5])!=0)
@@ -233,41 +250,60 @@ void Map::Robot::update(float tick)
 	if(!movings.empty())
 	{
 		Moving &move=movings.back();
-		switch(move.way)
-		{
-			case down:
-				y=y+(SPRITE_SIZE*tick)/(move.time);
-			break;
-			case left:
-				x=x-(SPRITE_SIZE*tick)/(move.time);
-			break;
-			case right:
-				x=x+(SPRITE_SIZE*tick)/(move.time);
-			break;
-			case up:
-				y=y-(SPRITE_SIZE*tick)/(move.time);
-			break;
-		}
-		sprite.SetX(x);
-		sprite.SetY(y);
-		move.duration-=tick*move.time;
-		if(move.duration<=0)
+		if(!move.turn)
 		{
 			switch(move.way)
 			{
 				case down:
-					map_y++;
-				break;
-				case up:
-					map_y--;
+					y=y+(SPRITE_SIZE*tick)/(move.time);
 				break;
 				case left:
-					map_x--;
+					x=x-(SPRITE_SIZE*tick)/(move.time);
 				break;
 				case right:
-					map_x++;
+					x=x+(SPRITE_SIZE*tick)/(move.time);
+				break;
+				case up:
+					y=y-(SPRITE_SIZE*tick)/(move.time);
 				break;
 			}
+			sprite.SetX(x);
+			sprite.SetY(y);
+		}
+		else
+		{
+			facing=move.way;
+			sprite.SetSubRect(
+				sf::IntRect(
+					(team%2)*SPRITE_SIZE,
+					facing*SPRITE_SIZE,
+					(team%2)*SPRITE_SIZE+SPRITE_SIZE,
+					facing*SPRITE_SIZE+SPRITE_SIZE));
+			movings.pop();
+			return;
+		}
+
+		//move.duration-=tick;
+		if(move.duration<=0 && !move.turn)
+		{
+			move.duration-=tick*move.time;
+
+				switch(move.way)
+				{
+					case down:
+						map_y++;
+					break;
+					case up:
+						map_y--;
+					break;
+					case left:
+						map_x--;
+					break;
+					case right:
+						map_x++;
+					break;
+				}
+
 			setToPos();
 			movings.pop();
 		}

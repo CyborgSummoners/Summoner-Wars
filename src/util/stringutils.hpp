@@ -19,6 +19,7 @@ bool to_unsigned(const std::string& str, unsigned int& Result);
 std::string float_to_string(float f);
 float string_to_float(std::string str);
 int string_to_int(std::string str);
+std::string int_to_string(int n);
 
 bool is_valid_path_char(char c);
 

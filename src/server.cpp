@@ -253,13 +253,15 @@ void sum::Server::gamestart() {
 	debugf("%d players have gathered, we can now start playing.\n", clients.size());
 	ServerMessage sm(ServerMessage::start);
 
-	world = new Logic::World(interpreter, 10,10);
+	Logic::coord siz(32,15);
+
+	world = new Logic::World(interpreter, siz.x,siz.y);
 
 	// generic data
 	sm << stringutils::float_to_string(sec_per_tick) // a tick is this many seconds
 	   << step_size       // this many steps are in a tick.
-	   << 10              // map x
-	   << 10              // map y
+	   << siz.x           // map x
+	   << siz.y           // map y
 	   << world->dump_mapdata() 	// naively compressed. Decompress with sum::Mapgen::reconstruct_from_dump)
 	   << clients.size()  // játékosok száma
 	;
@@ -267,7 +269,7 @@ void sum::Server::gamestart() {
 	size_t num = 0;
 	for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
 		Logic::Summoner& s = world->create_summoner(
-			Logic::default_startpos(Logic::coord(6,6), clients.size(), num++),	//default starting pos
+			Logic::default_startpos(siz, clients.size(), num++),	//default starting pos
 			(*lit)->client_id
 		);
 		sm << (*lit)->client_id // client's id

@@ -106,13 +106,13 @@ void Map::parse_startmessage(const std::vector<std::string>& res) {
 	std::stringstream ss;
 	ss.str(res[4]);
 	Mapgen::reconstruct_from_dump(terrain, map_x, map_y, ss);
+	//Mapgen::print_map(terrain, map_x, map_y, std::cout);
 
 	for(size_t i=0;i<map_y;++i)
 	{
 		for(size_t j=0;j<map_x;++j) {
-			vtmp.push_back(Field( terrain[i*map_y + j] == floor? Field::field : Field::block  )); //why oh why
+			vtmp.push_back(Field( terrain[i*map_x + j] == floor? Field::field : Field::block  )); //why oh why
 		}
-
 		map_layout.push_back(vtmp);
 		vtmp.clear();
 	}

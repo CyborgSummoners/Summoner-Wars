@@ -481,7 +481,7 @@ const std::map<std::string, Puppet_template> init_default_templates() {
 }
 
 
-const Map_generator& World::Default_mapgen = Mapgen::Arena();
+const Map_generator& World::Default_mapgen = Mapgen::Caves(3);
 
 }
 }

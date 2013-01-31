@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <deque>
+#include "mapgen.hpp"
 #include "interpreter.hpp"
 #include "measurements.hpp"
 #include "servermessage.hpp"
@@ -27,6 +28,7 @@ namespace Logic {
 		size_t x;
 		size_t y;
 
+		coord();
 		coord(size_t x, size_t y);
 		bool operator<(const coord& rhs) const;
 		coord operator+(const coord& rhs) const;
@@ -41,17 +43,20 @@ namespace Logic {
 	struct Puppet_template;
 
 	class World {
+		static const Map_generator& Default_mapgen;
+
 		Interpreter& interpreter;
 
 		size_t width;
 		size_t height;
 		std::map<coord, Actor*> puppets;
 		std::map<std::string, Summoner*> summoners;
+		Terrain* terrain;
 
 		std::deque<ServerMessage> outbox;
 
 		public:
-			World(Interpreter& interpreter, size_t width, size_t height);
+			World(Interpreter& interpreter, size_t width, size_t height, const Map_generator* const mapgen = &World::Default_mapgen);
 			~World();
 
 			Summoner& create_summoner(coord pos, const std::string& client_id);
@@ -75,6 +80,10 @@ namespace Logic {
 
 			Puppet* get_puppet(size_t actor_id, const std::string& client_id) const;
 
+			Terrain terrain_at(coord pos) const;
+
+			const Terrain* const get_map() const;
+			std::string dump_mapdata() const;
 	};
 
 

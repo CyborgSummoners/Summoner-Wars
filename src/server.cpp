@@ -141,6 +141,16 @@ void sum::Server::Run() {
 
 							// now handshake
 							try {
+								packet >> len;
+								bytecode::subprogram prog;
+								for(size_t i=0; i<len; ++i) {
+									packet >> prog;
+									prog.owner = client->client_id;
+									// we just store it in the client until the game starts.
+									client->progs.push_back(prog);
+								}
+								debugf("Got %d scripts from client #%s.\n", len, client->toString().c_str());
+
 								waiting_list.remove(client);
 								clients.push_back(client);
 

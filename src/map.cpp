@@ -164,6 +164,8 @@ void Map::update(const ServerMessage &message)
 						false
 						)
 					);
+				it->second.map_x=string_to_int(res[1]);
+				it->second.map_y=string_to_int(res[2]);
 			}
 			break;
 		case ServerMessage::shout:
@@ -294,9 +296,9 @@ void Map::Robot::update(float tick)
 		}*/
 
 		//move.duration-=tick;
+		move.duration-=tick*move.time;
 		if(move.duration<=0 && !move.turn)
 		{
-			move.duration-=tick*move.time;
 
 				switch(move.way)
 				{

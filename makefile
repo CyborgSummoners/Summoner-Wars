@@ -22,6 +22,7 @@ RM = /bin/rm -f
 SOURCES := $(wildcard src/*.cpp) $(wildcard src/compiler/*.cpp) $(wildcard src/util/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc
 SOURCES := $(filter-out src/konzoltest.cpp, $(SOURCES))
 SOURCES := $(filter-out src/util/debug_example.cpp, $(SOURCES))
+SOURCES := $(filter-out src/mapgen_demo.cpp, $(SOURCES))
 OBJECTS := $(patsubst src/%.cpp,obj/%.o,$(SOURCES))
 OBJECTS := $(patsubst src/%.cc,obj/%.occ,$(OBJECTS))
 COMPILER_SOURCES := $(wildcard src/compiler/*.cpp) src/compiler/summ.yy.cc src/compiler/parse.cc src/bytecode.cpp src/interpreter.cpp
@@ -30,6 +31,8 @@ COMPILER_OBJECTS := $(patsubst src/%.cc,obj/%.occ,$(COMPILER_OBJECTS))
 COMPILER_OBJECTS := $(filter-out obj/main.o,$(COMPILER_OBJECTS)) obj/compiler/main-compiler.o
 
 PROG = sumwar
+
+all: $(PROG) mapgen
 
 $(PROG): $(OBJECTS)
 	$(CC) -o $(PROG) $(OBJECTS) $(LIBS)
@@ -54,6 +57,9 @@ obj/compiler:
 obj/util:
 	mkdir -p obj/util
 
+mapgen: src/mapgen_demo.cpp src/mapgen.cpp
+	$(CC) -Wall src/mapgen_demo.cpp src/mapgen.cpp -lsfml-system -o mapgen
+
 compiler-demo: $(COMPILER_OBJECTS) src/compiler/parse.cc
 	$(CC) -Wall $(COMPILER_OBJECTS) -o compiler-demo
 
@@ -66,8 +72,5 @@ src/compiler/summ.yy.cc: src/compiler/summ.l
 src/compiler/parse.cc: src/compiler/summ.y src/compiler/summ.yy.cc
 	cd src/compiler && bisonc++ --filenames=summparse summ.y
 
-all:
-	$(PROG)
-
 clean:
-	$(RM) $(sort $(PROG) compiler-demo $(OBJECTS) $(COMPILER_OBJECTS) src/compiler/summparsebase.h src/compiler/parse.cc src/compiler/summ.yy.cc)
+	$(RM) $(sort $(PROG) compiler-demo mapgen $(OBJECTS) $(COMPILER_OBJECTS) src/compiler/summparsebase.h src/compiler/parse.cc src/compiler/summ.yy.cc)

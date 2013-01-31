@@ -76,6 +76,7 @@ private:
 		int map_x;
 		int map_y;
 		sf::Sprite sprite;
+		sf::String number_text;
 
 	public:
 
@@ -116,6 +117,7 @@ private:
 		float speed;
 		Facing facing;
 		sf::Sprite sprite;
+		sf::String number_text;
 		std::queue<Moving> movings;
 		void setToPos();
 

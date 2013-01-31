@@ -265,6 +265,8 @@ Map::Robot::Robot(
 	map(_map),
 	speed(SPRITE_SIZE)
 {
+	using namespace stringutils;
+
 	if(!initiated)
 	{
 		if (!robot_image.LoadFromFile("resources/robots.png"))
@@ -287,11 +289,16 @@ Map::Robot::Robot(
 		facing*SPRITE_SIZE,
 		(team%2)*SPRITE_SIZE+SPRITE_SIZE,
 		facing*SPRITE_SIZE+SPRITE_SIZE));
+	number_text.SetX(x);
+	number_text.SetY(y);
+	number_text.SetSize(textSize);
+	number_text.SetText(int_to_string(ID));
 }
 
 void Map::Robot::draw()
 {
 	window->Draw(sprite);
+	window->Draw(number_text);
 }
 
 void Map::Robot::setToPos()
@@ -373,6 +380,8 @@ Map::Summoner::Summoner(int _ID,int _client_ID, int _x, int _y, Map *_map) :
 		map_y(_y),
 		map(_map)
 {
+	using namespace stringutils;
+
 	if(!initiated)
 		if (!summoner_image.LoadFromFile("resources/summoner.png"))
 		{
@@ -393,6 +402,10 @@ Map::Summoner::Summoner(int _ID,int _client_ID, int _x, int _y, Map *_map) :
 	sprite.SetBlendMode(sf::Blend::Multiply);
 	sprite.SetX(x);
 	sprite.SetY(y);
+	number_text.SetX(x);
+	number_text.SetY(y);
+	number_text.SetSize(textSize);
+	number_text.SetText(int_to_string(client_ID));
 	/*sprite.SetSubRect(
 	sf::IntRect(
 		0,
@@ -405,6 +418,7 @@ Map::Summoner::Summoner(int _ID,int _client_ID, int _x, int _y, Map *_map) :
 void Map::Summoner::draw()
 {
 	window->Draw(sprite);
+	window->Draw(number_text);
 }
 
 void Map::Summoner::update(float tick)

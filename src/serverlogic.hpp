@@ -78,37 +78,11 @@ namespace Logic {
 
 	};
 
-
-	class Actor {
-		static size_t maxid;
-		public:
-			static size_t gen_id();
-
-		protected:
-			const size_t id;
-			World& my_world;
-			attribute hp;
-			Facing facing;
-
-		public:
-			size_t get_id() const;
-			coord get_pos() const;
-
-			virtual std::string describe() const = 0;
-			virtual void die() = 0;
-		protected:
-			Actor(World& my_world, attribute hp);
-
-		public:
-			virtual ~Actor() {}
-
-		friend class World;
-	};
-
-
 	struct Puppet_template {
 		attribute mana_cost;
 		attribute maxhp;
+		attribute attack;
+		attribute defense;
 		// los range, firing range, shooting power, melee attributes...
 		step move_cost;
 		step turn_left_cost;
@@ -119,10 +93,38 @@ namespace Logic {
 	};
 
 
-	class Puppet : public Actor, public Interpreter::Puppet {
-		const Summoner& owner;
-		Puppet_template attributes; // buffs would modify these, I think.
+	class Actor {
+		static size_t maxid;
+		public:
+			static size_t gen_id();
 
+		protected:
+			Puppet_template attributes; // buffs would modify these, I think.
+			const size_t id;
+			World& my_world;
+			attribute hp;
+			Facing facing;
+
+		public:
+			size_t get_id() const;
+			coord get_pos() const;
+
+			virtual bool is_enemy(const Puppet& actor) const = 0;
+			virtual std::string describe() const = 0;
+			virtual void die() = 0;
+		protected:
+			Actor(World& my_world, const Puppet_template& attributes);
+
+		public:
+			virtual ~Actor() {}
+
+		friend class World;
+	};
+
+
+	class Puppet : public Actor, public Interpreter::Puppet {
+		public:
+			const Summoner& owner;
 		private:
 			Puppet(World& my_world, const Summoner& owner, const Puppet_template& attributes);
 
@@ -138,6 +140,8 @@ namespace Logic {
 			virtual void die();
 			bool is_alive();
 
+			bool is_enemy(const Puppet& actor) const;
+
 			bool operator==(const Interpreter::Puppet& that);
 			bool operator==(const Puppet& that);
 		friend class World;
@@ -151,12 +155,16 @@ namespace Logic {
 
 			std::string describe() const;
 			virtual void die();
+			bool is_enemy(const Puppet& actor) const;
 		friend class World;
 	};
 
 	typedef std::map<std::string, Puppet_template> pup_template_map;
 	const pup_template_map init_default_templates();
 	const pup_template_map default_templates = init_default_templates();
+
+
+	Puppet_template serve_summoner_template();
 }
 }
 

@@ -125,10 +125,31 @@ step World::move_me(Puppet& actor) {
 
 	// free?
 	if(!is_free(respos)) {
-		debugf("and bumps into another puppet.\n");
-		sm << 0 << res;
-		post_message(sm);
-		return res;
+		// are they enemies?
+		Actor* other = actor_at(respos);
+		if( other->is_enemy(actor) ){
+			debugf("and attacks another puppet.\n");
+
+			int hploss = ( actor.attributes.attack - other->attributes.defense );
+			sm.type = ServerMessage::attack;
+			sm << other->get_id()
+			   << res
+			   << hploss
+			;
+
+			if(hploss < 0) hurt(actor, static_cast<size_t>(-1*hploss));
+			else if(hploss>0) hurt(*other, static_cast<size_t>(hploss));
+
+			post_message(sm);
+
+			return res;
+		}
+		else {
+			debugf("and bumps into another puppet.\n");
+			sm << 0 << res;
+			post_message(sm);
+			return res;
+		}
 	}
 
 	debugf("to %d,%d.\n", respos.x, respos.y);
@@ -314,7 +335,7 @@ size_t Actor::gen_id() {
 	return ++maxid;
 }
 
-Actor::Actor(World& my_world, attribute hp) : id(gen_id()), my_world(my_world), hp(hp), facing(north) {
+Actor::Actor(World& my_world, const Puppet_template& attributes) : attributes(attributes), id(gen_id()), my_world(my_world), hp(attributes.maxhp), facing(north) {
 }
 
 size_t Actor::get_id() const {
@@ -331,14 +352,15 @@ std::string Puppet_template::toString() const {
 	   << "move_cost = " << move_cost << "\n"
 	   << "turn_left_cost = " << turn_left_cost << "\n"
 	   << "turn_right_cost = " << turn_right_cost << "\n"
+	   << "defense = "  << defense << "\n"
+	   << "attack = " << attack << "\n"
 	;
 
 	return ss.str();
 }
 
 
-Puppet::Puppet(World& my_world, const Summoner& owner, const Puppet_template& attributes) : Actor(my_world, 30), owner(owner), attributes(attributes) {
-	this->hp = attributes.maxhp;
+Puppet::Puppet(World& my_world, const Summoner& owner, const Puppet_template& attributes) : Actor(my_world, attributes), owner(owner) {
 }
 
 step Puppet::move() {
@@ -425,8 +447,15 @@ void Summoner::die() {
 	my_world.kill(*this);
 }
 
+bool Summoner::is_enemy(const Puppet& actor) const {
+	return &(actor.owner) != this;
+}
 
-Summoner::Summoner(World& my_world) : Actor(my_world, 20), mana(100) {
+bool Puppet::is_enemy(const Puppet& actor) const {
+	return &(actor.owner) != &(this->owner);
+}
+
+Summoner::Summoner(World& my_world) : Actor(my_world, serve_summoner_template()), mana(100) {
 }
 
 
@@ -437,15 +466,28 @@ const std::map<std::string, Puppet_template> init_default_templates() {
 		pup.mana_cost = 10;
 		pup.maxhp = 20;
 		pup.move_cost = 40;
+		pup.attack = 30;
+		pup.defense = 20;
 		pup.turn_left_cost = pup.turn_right_cost = 20;
 	Result.insert( std::make_pair("robot", pup) );
 		pup.mana_cost = 15;
-		pup.maxhp = 40;
+		pup.maxhp = 60;
 		pup.move_cost = 60;
+		pup.attack = 80;
+		pup.defense = 10;
 		pup.turn_left_cost = pup.turn_right_cost = 30;
 	Result.insert( std::make_pair("big_robot", pup) );
 
 	return Result;
+}
+
+Puppet_template serve_summoner_template() {
+	Puppet_template t;
+	t.maxhp = 100;
+	t.defense = 5;
+	t.attack = 0;
+
+	return t;
 }
 
 }

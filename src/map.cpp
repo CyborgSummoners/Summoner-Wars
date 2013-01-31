@@ -25,7 +25,7 @@ void Map::update(float tick)
 void Map::draw()
 {
 	window->Draw(
-		sf::Shape::Rectangle(x,y,width,height, sf::Color(128,128,128)));
+		sf::Shape::Rectangle(x,y,width,height, sf::Color(255,255,255)));
 	if(!map_layout.empty())
 		for(int i=camera_y;i<map_layout.size() && i<CAMERA_HEIGHT;++i)
 			for(int j=camera_x;j<map_layout[0].size() && j<CAMERA_WIDTH;++j)
@@ -123,6 +123,11 @@ void Map::update(const ServerMessage &message)
 					));
 			}
 
+
+			break;
+
+		case ServerMessage::turn:
+			
 
 			break;
 

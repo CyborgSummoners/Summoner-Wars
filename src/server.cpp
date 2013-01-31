@@ -417,7 +417,9 @@ const std::string sum::Server::summon(Client& client, sf::Packet& packet) {
 		}
 
 		debugf("%s summoned %s to (%d,%d)\n", client.toString().c_str(), actor_type.c_str(), x, y);
-		return "";
+		std::stringstream ss;
+		ss << p->get_id() << std::endl;
+		return ss.str();
 	}
 	return Result.append("Usage: summon <summonable> <x-coord> <y-coord> [with behaviour <subprogram>]");
 }
@@ -479,6 +481,37 @@ const std::string sum::Server::register_script(Client& client, sf::Packet& packe
 	return Result.str();
 }
 
+const std::string sum::Server::set_behaviour(Client& client, sf::Packet& packet) {
+	if(state < Playing) return "Fatal: can't set behaviour of puppets when not playing.";
+	std::string args;
+	packet >> args;
+	std::vector<std::string> parts = string_explode(args, stringutils::whitespace);
+	unsigned puppet_id;
+
+	if(parts.size() < 2) {
+		return "Too few arguments to function.\nUsage: makebehave <puppet-id> <subprogram>\n";
+	}
+
+	if(!stringutils::to_unsigned(parts[0], puppet_id)) {
+		return "Invalid argument: " + parts[0] + " does not look like a puppet-id.\n";
+	}
+
+	Logic::Puppet* p = world->get_puppet(puppet_id, client.client_id); // gah
+
+	if(p==0) {
+		return "Invalid argument: " + parts[0] + " does not name one of your puppets.\n";
+	}
+	std::string behaviour = parts[1];
+
+	if(!interpreter.subprogram_exists(behaviour, client.client_id)) {
+		return "Invalid argument: " + behaviour + " does not name a subprogram.\n";
+	}
+
+	interpreter.set_behaviour(*p, behaviour, client.client_id);
+
+	return "";
+}
+
 
 const std::map<std::string, sum::Server::server_function> sum::Server::initialize_server_functions() {
 	std::map<std::string, server_function> Result;
@@ -487,6 +520,7 @@ const std::map<std::string, sum::Server::server_function> sum::Server::initializ
 	Result.insert( make_pair("summon", &Server::summon) );
 	Result.insert( make_pair("describe", &Server::puppetinfo) );
 	Result.insert( make_pair("scriptreg", &Server::register_script) );
+	Result.insert( make_pair("makebehave", &Server::set_behaviour) );
 	return Result;
 }
 

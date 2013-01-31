@@ -1089,13 +1089,17 @@ namespace sum {
 		return false;
 	}
 	bool Interpreter::set_behaviour(Interpreter::Puppet& puppet, const std::string& behaviour, const std::string& owner) {
-		std::string nom = ("" == owner? behaviour : owner+"'"+behaviour);
+		std::string nom = ("" == owner? bytecode::subprogram::normalize_name(behaviour) : owner+"'"+bytecode::subprogram::normalize_name(behaviour));
 		debugf("Setting behaviour of puppet %s to %s...", puppet.get_name().c_str(), nom.c_str());
 		try {
 			for(std::list<puppet_brain*>::iterator it = puppet_list.begin(); it!=puppet_list.end(); ++it) {
 				if( (*it)->puppet == puppet ) {
 					(*it)->overrides[0] = get_program_id(nom);
-					if( (*it)->program == 0 )  (*it)->program = (*it)->overrides[0];
+					if( (*it)->program == 0 ) {
+					 	(*it)->program = (*it)->overrides[0];
+					 	(*it)->program_counter = 0;
+					 	(*it)->base_pointer = 0;
+					 }
 					debugf("done\n");
 					return true;
 				}

@@ -73,6 +73,8 @@ namespace Logic {
 			std::string describe(const Puppet& puppet) const;
 			std::string describe(const Summoner& summoner) const;
 
+			Puppet* get_puppet(size_t actor_id, const std::string& client_id) const;
+
 	};
 
 

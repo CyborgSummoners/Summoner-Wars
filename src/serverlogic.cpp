@@ -183,6 +183,7 @@ void World::kill(Summoner& summoner) {
 Summoner& World::create_summoner(coord pos, const std::string& client_id) {
 	Summoner* Result = new Summoner(*this);
 	puppets.insert( std::make_pair(pos, Result) );	// FIXME check if it actually succeeded
+	std::cout << client_id << "  mukmuk" << std::endl;
 	summoners.insert( std::make_pair(client_id, Result) );
 	return *Result;
 }
@@ -254,6 +255,20 @@ bool World::is_valid(coord pos) const {
 
 bool World::is_free(coord pos) const {
 	return is_valid(pos) && puppets.count(pos)==0;
+}
+
+
+// this is truly terrible
+Puppet* World::get_puppet(size_t actor_id, const std::string& client_id) const {
+	assert( summoners.find(client_id) != summoners.end() );
+	for(std::map<coord, Actor*>::const_iterator it = puppets.begin(); it!=puppets.end(); ++it) {
+		if(it->second->get_id() == actor_id) {
+			Puppet* p = dynamic_cast<Puppet*>(it->second); // aaaargh
+			if(p != 0 && &p->owner == (summoners.find(client_id)->second)) return p;	// AAAARGH
+			else return 0;
+		}
+	}
+	return false;
 }
 
 std::string World::describe(size_t actor_id) const {

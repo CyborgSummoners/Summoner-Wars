@@ -143,6 +143,7 @@ void Map::update(const ServerMessage &message)
 
 	std::vector<std::string> res = message.get_parsed_msg();
 	std::map<int,Robot>::iterator it;
+	std::map<int,Summoner>::iterator it2;
 	switch(message.type)
 	{
 		case ServerMessage::unknown:
@@ -168,6 +169,19 @@ void Map::update(const ServerMessage &message)
 		case ServerMessage::start:
 			parse_startmessage(res);
 			break;
+
+		case ServerMessage::death:
+			it=robots.find(res[0]);
+			if(it!=robots.end())
+			{
+				robots.erase(it);
+				return;
+			}
+			it2=summoners.find(res[0]);
+			if(it2!=summoners.end())
+				summoners.erase(it2);
+			break;
+
 		case ServerMessage::turn:
 			/*it=robots.find(string_to_int(res[0]));
 			it->second.movings.push(

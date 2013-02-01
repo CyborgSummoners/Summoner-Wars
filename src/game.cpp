@@ -2,6 +2,7 @@
 #include "bytecode.hpp"
 #include "util/debug.hpp"
 #include "parser.hpp"
+#include "sound.hpp"
 #include <cstdio>
 #include <string>
 #include <sstream>
@@ -31,6 +32,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 
 	infobar = new InfoBar(mainWindow, "testplaya");
 	map = new Map(mainWindow);
+	Sound* sound = new Sound();
 
 	//CREATING CONNECTION WITH OBSERVERS
 
@@ -39,6 +41,7 @@ void Game::Start(std::string server_ip, unsigned short server_port)
 	obss.push_back(infobar);
 	obss.push_back(map);
 	obss.push_back(terminal);
+	obss.push_back(sound);
 
 	connection = new Connection(obss);
 
@@ -115,6 +118,7 @@ void Game::GameLoop()
 				{
 					gameState = Game::Exiting;
 				}
+				map->handleEvent(currentEvent);
 				terminal->handleEvent(currentEvent);
 				break;
 			}

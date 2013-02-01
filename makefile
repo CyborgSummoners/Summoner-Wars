@@ -15,7 +15,7 @@ endif
 # az sfml-graphicsnak
 # - sfml-graphics-nak kell freetype.
 # - sfml-audio-nak kell libsndfile es openal.
-LIBS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
+LIBS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network -lsfml-audio
 
 RM = /bin/rm -f
 

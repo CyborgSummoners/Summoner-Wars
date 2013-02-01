@@ -52,7 +52,7 @@ void sum::Server::Start() {
 
 bool sum::Server::Newgame(unsigned char num_of_players) {
 	if(state != Setup) return false;
-	this->num_of_players = num_of_players;
+	this->num_of_players = 1;
 	state = Joining;
 	return true;
 }
@@ -286,7 +286,8 @@ void sum::Server::gamestart() {
 	std::vector<bool> res;
 	for(std::list<Client*>::iterator lit = clients.begin(); lit != clients.end(); ++lit) {
 		Logic::Summoner& s = world->create_summoner(
-			Logic::default_startpos(Logic::coord(50,50), clients.size(), num++),	//default starting pos
+			Logic::coord(5,5),
+			//Logic::default_startpos(Logic::coord(50,50), clients.size(), num++),	//default starting pos
 			(*lit)->client_id,
 			(*lit)->progs,
 			res

@@ -1,17 +1,21 @@
 #ifndef SOUND_HPP
 #define SOUND_HPP
 
+#include "observable.hpp"
+#include "servermessage.hpp"
 #include <SFML/Audio.hpp>
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <queue>
 
 namespace sum
 {
-	class Sound
+	class Sound:public Observer<ServerMessage>
 	{
 	public:
-		static void PlaySound(std::string filename);
+		void update(const ServerMessage &message);
+		static void PlaySound(void* data);
 	private:
 	};
 }
